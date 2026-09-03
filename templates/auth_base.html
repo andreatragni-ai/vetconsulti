@@ -3,7 +3,9 @@
 auth_base.html — host del portale sopra vetway_ui/auth_base.html (scheda
 centrata su fondo scuro) per accesso, scelta del tipo di registrazione,
 reset password ed esiti. Le pagine definiscono auth_title e auth_content.
-NB: auth_base del pacchetto non carica vetway.css (e quindi le variabili
---ovic-*): qui si usano solo le classi .auth-* e le utility Bootstrap.
+NB: auth_base del pacchetto non carica vetway.css ma, dalla 0.2.0,
+vetway-tokens.css: le variabili --ovic-* ci sono, le classi generiche no
+(solo .auth-* e le utility Bootstrap). I messages di Django compaiono da
+soli dentro .auth-box (blocco auth_messages del pacchetto).
 {% endcomment %}
 {% block auth_title %}VetWay Consulti{% endblock %}

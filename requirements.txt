@@ -13,4 +13,4 @@ django-storages==1.14.6
 # il server non ha il pacchetto da repo e un `pip install -r` con questa riga
 # fallirebbe; deploy.sh lo installa da /home/consulti/vetway-ui (rsync).
 # TODO: URL definitivo del repo; in sviluppo: pip install -e ../vetway-ui
-# vetway-ui @ git+ssh://git@github.com/andreatragni-ai/vetway-ui.git@v0.1.0
+# vetway-ui @ git+ssh://git@github.com/andreatragni-ai/vetway-ui.git@v0.2.0

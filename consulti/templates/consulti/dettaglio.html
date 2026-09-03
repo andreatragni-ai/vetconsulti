@@ -3,7 +3,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 barra-azioni-testata">
   <h4 class="mb-0">{{ richiesta.codice }} <small class="text-muted">{{ richiesta.get_tipo_esame_display }}</small>
-    <span class="stato stato-{{ richiesta.stato }} ms-2">{{ richiesta.get_stato_display }}</span>
+    <span class="pill-stato{% if richiesta.tono_stato %} pill-stato--{{ richiesta.tono_stato }}{% endif %} ms-2">{{ richiesta.get_stato_display }}</span>
     {% if richiesta.urgenza %}<span class="badge bg-danger ms-1">urgenza</span>{% endif %}</h4>
   <a class="btn-testata-ghost" href="{% url 'consulti:mie_richieste' %}"><i class="bi bi-arrow-left"></i> Elenco</a>
 </div>
@@ -37,7 +37,9 @@
                   data-bs-toggle="modal" data-bs-target="#modalConfermaElimina"
                   data-elimina-href="{% url 'consulti:annulla' richiesta.pk %}"
                   data-elimina-titolo="Annullare la richiesta {{ richiesta.codice }}?"
-                  data-elimina-dettaglio="La bozza e i suoi allegati non saranno piu' modificabili.">
+                  data-elimina-dettaglio="La bozza e i suoi allegati non saranno piu' modificabili."
+                  data-elimina-intestazione="Conferma annullamento" data-elimina-azione="Sì, annulla"
+                  data-elimina-tono="warning" data-elimina-icona="x-circle">
             <i class="bi bi-x-circle me-1"></i>Annulla richiesta
           </button>
         </div>

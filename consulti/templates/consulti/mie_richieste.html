@@ -16,7 +16,7 @@
       <td>{{ r.paziente|default:"—" }}</td>
       <td>{{ r.intestatario.denominazione }}{% if not r.clinica_id %} <span class="text-muted">(lib. prof.)</span>{% endif %}</td>
       <td>{{ r.refertatore|default:"—" }}</td>
-      <td><span class="stato stato-{{ r.stato }}">{{ r.get_stato_display }}</span></td>
+      <td><span class="pill-stato{% if r.tono_stato %} pill-stato--{{ r.tono_stato }}{% endif %}">{{ r.get_stato_display }}</span></td>
       <td class="num-tab text-muted">{{ r.creata_il|date:"d/m/Y H:i" }}</td>
     </tr>
   {% empty %}

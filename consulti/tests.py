@@ -401,3 +401,10 @@ def test_elimina_allegato_solo_in_bozza(client, richiedente, refertatore):
     estraneo = User.objects.create_user('x', 'x@x.it', 'pw')
     client.force_login(estraneo)
     assert client.post(reverse('consulti:elimina_allegato', args=[r.pk, b.pk])).status_code == 404
+
+
+def test_ogni_stato_ha_un_tono_per_la_pillola():
+    """La pillola .pill-stato di vetway-ui prende il tono da Richiesta.TONO_STATO:
+    uno stato nuovo senza tono uscirebbe grigio in silenzio."""
+    assert set(Richiesta.TONO_STATO) == {s.value for s in StatoRichiesta}
+    assert set(Richiesta.TONO_STATO.values()) <= {'', 'corso', 'ok', 'attesa', 'chiusa', 'errore'}

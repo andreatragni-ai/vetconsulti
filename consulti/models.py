@@ -112,6 +112,22 @@ class Richiesta(models.Model):
     def __str__(self):
         return f'{self.codice} — {self.get_tipo_esame_display()} ({self.get_stato_display()})'
 
+    # Tono della pillola di stato (.pill-stato--<tono> di vetway-ui): la
+    # semantica sta qui, accanto agli stati, non sparsa nei template.
+    TONO_STATO = {
+        'BOZZA': '',                    # neutro
+        'INVIATA': 'corso',
+        'PRESA_IN_CARICO': 'attesa',
+        'REFERTATA': 'ok',
+        'ANNULLATA': 'chiusa',
+        'DECLINATA': 'errore',
+        'NON_REFERTABILE': 'errore',
+    }
+
+    @property
+    def tono_stato(self):
+        return self.TONO_STATO.get(self.stato, '')
+
     def save(self, *args, **kwargs):
         if not self.codice:
             self.codice = ContatoreAnno.prossimo_codice(timezone.now().year)

@@ -44,25 +44,8 @@
 }
 .consulti-avviso a { color: inherit; font-weight: 700; }
 
-/* ── Footer: seconda riga con i termini (il partial del pacchetto ha solo privacy_url) ── */
-.consulti-footer-termini { padding-top: 0; margin-top: -4px; }
-
-/* ── Stato della richiesta ── */
-.stato {
-  font-size: .72rem;
-  padding: .2em .65em;
-  border-radius: 1em;
-  font-weight: 600;
-  white-space: nowrap;
-  border: 1px solid transparent;
-}
-.stato-BOZZA { background: var(--ovic-grigio); color: var(--ovic-testo); border-color: var(--ovic-bordo); }
-.stato-INVIATA { background: var(--bs-primary-bg-subtle); color: var(--ovic-link); border-color: var(--bs-primary-border-subtle); }
-.stato-PRESA_IN_CARICO { background: var(--bs-warning-bg-subtle); color: var(--bs-warning-text-emphasis); border-color: var(--bs-warning-border-subtle); }
-.stato-REFERTATA { background: var(--bs-success-bg-subtle); color: var(--bs-success-text-emphasis); border-color: var(--bs-success-border-subtle); }
-.stato-NON_REFERTABILE, .stato-DECLINATA, .stato-ANNULLATA {
-  background: var(--bs-danger-bg-subtle); color: var(--bs-danger-text-emphasis); border-color: var(--bs-danger-border-subtle);
-}
+/* ── Stato della richiesta: .pill-stato del pacchetto (dalla 0.2.0) con il
+   tono scelto da Richiesta.tono_stato; qui non serve piu' nulla. ── */
 
 /* ── Form lunghi a blocchi (registrazione): titolo di blocco = .sezione-sottotitolo del pacchetto ── */
 .blocco-form { margin-top: 1.1rem; }

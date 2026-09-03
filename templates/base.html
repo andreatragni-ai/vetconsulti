@@ -5,7 +5,7 @@ base.html — template "ospite" di VetWay Consulti sopra vetway_ui/base.html
 (pacchetto vetway-ui). Qui resta SOLO cio' che e' del portale: testata con
 il nome del prodotto, voci della navbar (dal context processor
 core.context_processors.navigazione), avviso "completa i dati di
-fatturazione", footer con privacy e termini, CSS di dominio. Vendor
+fatturazione", footer con privacy e termini (vetway-ui >= 0.2.0), CSS di dominio. Vendor
 (Bootstrap, Icons, HTMX in locale), sessione, spinner, messaggi e modale
 di conferma vengono dal pacchetto.
 I template del portale estendono "base.html" e usano i blocchi
@@ -43,10 +43,8 @@ title / content / js (alias di extra_js) / extra_head / extra_body.
 {% endblock %}
 
 {% block footer %}
-{% url 'core:privacy' as privacy_url %}
-{% include "vetway_ui/partials/_footer.html" with privacy_url=privacy_url prodotto="VetWay Consulti" %}
-{# Il partial del pacchetto prevede solo privacy_url: i termini vanno in una seconda riga #}
-<div class="ovic-footer consulti-footer-termini"><a href="{% url 'core:termini' %}" style="color:rgba(255,255,255,0.7);">Termini del servizio</a></div>
+{% url 'core:privacy' as privacy_url %}{% url 'core:termini' as termini_url %}
+{% include "vetway_ui/partials/_footer.html" with privacy_url=privacy_url termini_url=termini_url prodotto="VetWay Consulti" %}
 {% endblock %}
 
 {% block extra_js %}{% block js %}{% endblock %}{% endblock %}

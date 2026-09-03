@@ -1,0 +1,12 @@
+# /etc/systemd/system/gunicorn-consulti.socket
+[Unit]
+Description=Socket Gunicorn VetWay Consulti
+
+[Socket]
+ListenStream=/run/gunicorn-consulti.sock
+SocketUser=www-data
+SocketGroup=www-data
+SocketMode=0660
+
+[Install]
+WantedBy=sockets.target

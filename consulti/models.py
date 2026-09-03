@@ -1,0 +1,375 @@
+"""
+La richiesta di consulto e cio' che le sta attorno.
+
+## Il codice e' un contatore per anno, non un id
+
+`TC-2026-0042` si legge al telefono, si scrive su una fattura, non salta
+quando una bozza viene cancellata. Il contatore si incrementa dentro una
+transazione con select_for_update: due richieste create nello stesso istante
+non prendono lo stesso numero (su Postgres; sqlite serializza da solo).
+
+## Le transizioni sono metodi, non assegnazioni
+
+Nessuno scrive `richiesta.stato = 'INVIATA'` da fuori: si chiama `invia()`,
+che controlla da dove si parte, applica le regole di consulti/regole.py,
+mette la data giusta e scrive l'audit. Se una transizione non e' ammessa
+solleva TransizioneNonValida con una frase per l'utente.
+
+## L'intestatario non e' sempre una clinica
+
+Chi chiede puo' essere una clinica o un singolo veterinario: `clinica` e'
+nulla nel secondo caso e `intestatario()` ritorna chi va in testa al
+referto e alla fattura, senza che chi lo usa debba distinguere.
+
+## L'audit non si tocca
+
+EventoAudit e' append-only: save() rifiuta di modificare una riga esistente
+e delete() solleva. Non e' paranoia: e' l'unica cosa che permette, fra sei
+mesi, di dire chi ha preso in carico cosa e quando.
+"""
+
+import hashlib
+import mimetypes
+import os
+
+from django.conf import settings
+from django.db import models, transaction
+from django.utils import timezone
+
+from accounts.models import Clinica, Refertatore, Richiedente
+from core.tipi import TipoEsame
+
+
+class TransizioneNonValida(Exception):
+    """Il messaggio e' pensato per l'utente."""
+
+
+class ContatoreAnno(models.Model):
+    """Ultimo progressivo assegnato in un anno. Una riga per anno."""
+
+    anno = models.PositiveIntegerField(unique=True)
+    ultimo = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = 'Contatore annuale'
+        verbose_name_plural = 'Contatori annuali'
+
+    def __str__(self):
+        return f'{self.anno}: {self.ultimo}'
+
+    @classmethod
+    def prossimo_codice(cls, anno):
+        with transaction.atomic():
+            contatore, _ = cls.objects.select_for_update().get_or_create(anno=anno)
+            contatore.ultimo += 1
+            contatore.save(update_fields=['ultimo'])
+            return f'TC-{anno}-{contatore.ultimo:04d}'
+
+
+class StatoRichiesta(models.TextChoices):
+    BOZZA = 'BOZZA', 'Bozza'
+    INVIATA = 'INVIATA', 'Inviata'
+    PRESA_IN_CARICO = 'PRESA_IN_CARICO', 'Presa in carico'
+    REFERTATA = 'REFERTATA', 'Refertata'
+    NON_REFERTABILE = 'NON_REFERTABILE', 'Non refertabile'
+    DECLINATA = 'DECLINATA', 'Declinata'
+    ANNULLATA = 'ANNULLATA', 'Annullata'
+
+
+STATI_CHIUSI = (StatoRichiesta.REFERTATA, StatoRichiesta.NON_REFERTABILE,
+                StatoRichiesta.DECLINATA, StatoRichiesta.ANNULLATA)
+
+
+class Richiesta(models.Model):
+    codice = models.CharField(max_length=15, unique=True, editable=False)
+    tipo_esame = models.CharField(max_length=10, choices=TipoEsame.choices, db_index=True)
+    richiedente = models.ForeignKey(Richiedente, on_delete=models.PROTECT, related_name='richieste')
+    clinica = models.ForeignKey(
+        Clinica, on_delete=models.PROTECT, null=True, blank=True, related_name='richieste',
+        help_text='Vuota se chiede un libero professionista.')
+    refertatore = models.ForeignKey(
+        Refertatore, on_delete=models.PROTECT, null=True, blank=True, related_name='richieste')
+    urgenza = models.BooleanField(default=False)
+    stato = models.CharField(
+        max_length=20, choices=StatoRichiesta.choices, default=StatoRichiesta.BOZZA, db_index=True)
+
+    quesito = models.TextField(blank=True, help_text='Cosa si chiede al collega.')
+    anamnesi = models.TextField(blank=True)
+    terapia = models.TextField(blank=True, help_text='Terapia in corso.')
+    motivo_esame = models.CharField(max_length=200, blank=True)
+
+    creata_il = models.DateTimeField(auto_now_add=True)
+    inviata_il = models.DateTimeField(null=True, blank=True)
+    presa_in_carico_il = models.DateTimeField(null=True, blank=True)
+    chiusa_il = models.DateTimeField(null=True, blank=True)
+    motivo_rifiuto = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = 'Richiesta di consulto'
+        verbose_name_plural = 'Richieste di consulto'
+        ordering = ['-creata_il']
+
+    def __str__(self):
+        return f'{self.codice} — {self.get_tipo_esame_display()} ({self.get_stato_display()})'
+
+    def save(self, *args, **kwargs):
+        if not self.codice:
+            self.codice = ContatoreAnno.prossimo_codice(timezone.now().year)
+        super().save(*args, **kwargs)
+
+    def intestatario(self):
+        """Chi va in testa al referto e alla fattura: la clinica, oppure il
+        richiedente stesso se e' un libero professionista. Entrambi espongono
+        `denominazione` e `dati_fatturazione_predefiniti`."""
+        return self.clinica if self.clinica_id else self.richiedente
+
+    # ── Audit ──────────────────────────────────────────────────────────
+
+    def registra(self, azione, utente=None, **dettaglio):
+        return EventoAudit.objects.create(
+            richiesta=self, utente=utente, azione=azione, dettaglio=dettaglio)
+
+    # ── Transizioni ────────────────────────────────────────────────────
+
+    def _pretendi_stato(self, *ammessi):
+        if self.stato not in ammessi:
+            raise TransizioneNonValida(
+                f'La richiesta {self.codice} e\' «{self.get_stato_display()}»: '
+                f'operazione non ammessa.')
+
+    def invia(self, utente=None):
+        from . import regole
+        self._pretendi_stato(StatoRichiesta.BOZZA)
+        motivo = regole.perche_non_puoi_inviare(self)
+        if motivo:
+            raise TransizioneNonValida(motivo)
+        self.stato = StatoRichiesta.INVIATA
+        self.inviata_il = timezone.now()
+        self.save(update_fields=['stato', 'inviata_il'])
+        self.registra('INVIATA', utente, refertatore=self.refertatore_id)
+
+    def prendi_in_carico(self, refertatore, utente=None):
+        self._pretendi_stato(StatoRichiesta.INVIATA)
+        if not refertatore.referta(self.tipo_esame):
+            raise TransizioneNonValida(
+                f'{refertatore} non e\' referente per {self.get_tipo_esame_display()}.')
+        self.refertatore = refertatore
+        self.stato = StatoRichiesta.PRESA_IN_CARICO
+        self.presa_in_carico_il = timezone.now()
+        self.save(update_fields=['refertatore', 'stato', 'presa_in_carico_il'])
+        self.registra('PRESA_IN_CARICO', utente or refertatore.user, refertatore=refertatore.id)
+
+    def rilascia_presa_in_carico(self, utente=None, motivo=''):
+        """Torna INVIATA: il refertatore resta indicato, ma il caso e' di
+        nuovo aperto. Lo usa anche sorveglia_consulti per le prese in carico
+        dimenticate."""
+        self._pretendi_stato(StatoRichiesta.PRESA_IN_CARICO)
+        self.stato = StatoRichiesta.INVIATA
+        self.presa_in_carico_il = None
+        self.save(update_fields=['stato', 'presa_in_carico_il'])
+        self.registra('RILASCIATA', utente, motivo=motivo)
+
+    def declina(self, motivo, utente=None):
+        self._pretendi_stato(StatoRichiesta.INVIATA, StatoRichiesta.PRESA_IN_CARICO)
+        if not (motivo or '').strip():
+            raise TransizioneNonValida('Per declinare serve un motivo: lo legge chi ha chiesto.')
+        self.stato = StatoRichiesta.DECLINATA
+        self.motivo_rifiuto = motivo.strip()
+        self.chiusa_il = timezone.now()
+        self.save(update_fields=['stato', 'motivo_rifiuto', 'chiusa_il'])
+        self.registra('DECLINATA', utente, motivo=self.motivo_rifiuto)
+
+    def segna_non_refertabile(self, motivo, utente=None):
+        self._pretendi_stato(StatoRichiesta.PRESA_IN_CARICO)
+        if not (motivo or '').strip():
+            raise TransizioneNonValida('Serve il motivo per cui il caso non e\' refertabile.')
+        self.stato = StatoRichiesta.NON_REFERTABILE
+        self.motivo_rifiuto = motivo.strip()
+        self.chiusa_il = timezone.now()
+        self.save(update_fields=['stato', 'motivo_rifiuto', 'chiusa_il'])
+        self.registra('NON_REFERTABILE', utente, motivo=self.motivo_rifiuto)
+
+    def annulla(self, utente=None):
+        """Solo chi ha chiesto annulla, e solo prima che qualcuno ci lavori."""
+        self._pretendi_stato(StatoRichiesta.BOZZA, StatoRichiesta.INVIATA)
+        self.stato = StatoRichiesta.ANNULLATA
+        self.chiusa_il = timezone.now()
+        self.save(update_fields=['stato', 'chiusa_il'])
+        self.registra('ANNULLATA', utente)
+
+    def segna_refertata(self, utente=None):
+        """Chiamata da Referto.firma(): non si referta da fuori."""
+        self._pretendi_stato(StatoRichiesta.PRESA_IN_CARICO)
+        self.stato = StatoRichiesta.REFERTATA
+        self.chiusa_il = timezone.now()
+        self.save(update_fields=['stato', 'chiusa_il'])
+        self.registra('REFERTATA', utente)
+
+    @property
+    def chiusa(self):
+        return self.stato in STATI_CHIUSI
+
+    @property
+    def modificabile(self):
+        return self.stato == StatoRichiesta.BOZZA
+
+
+class Specie(models.TextChoices):
+    CANE = 'CANE', 'Cane'
+    GATTO = 'GATTO', 'Gatto'
+    ALTRO = 'ALTRO', 'Altro'
+
+
+class Sesso(models.TextChoices):
+    M = 'M', 'Maschio'
+    MC = 'MC', 'Maschio castrato'
+    F = 'F', 'Femmina'
+    FS = 'FS', 'Femmina sterilizzata'
+    ND = 'ND', 'Non noto'
+
+
+class Paziente(models.Model):
+    """I dati del paziente vivono sulla richiesta, non in un'anagrafica: il
+    portale non e' la cartella clinica della clinica, e lo stesso cane su due
+    richieste diverse sono due pazienti (potrebbe essere cambiato il peso,
+    o il proprietario)."""
+
+    richiesta = models.OneToOneField(Richiesta, on_delete=models.CASCADE, related_name='paziente')
+    nome = models.CharField(max_length=100)
+    specie = models.CharField(max_length=10, choices=Specie.choices, default=Specie.CANE)
+    specie_altro = models.CharField(max_length=50, blank=True)
+    razza = models.CharField(max_length=100, blank=True)
+    sesso = models.CharField(max_length=2, choices=Sesso.choices, default=Sesso.ND)
+    data_nascita = models.DateField(null=True, blank=True)
+    eta_testo = models.CharField(max_length=30, blank=True, help_text='Es. «8 anni», se la data non e\' nota.')
+    peso_kg = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    cognome_proprietario = models.CharField(max_length=100, blank=True)
+
+    class Meta:
+        verbose_name = 'Paziente'
+        verbose_name_plural = 'Pazienti'
+
+    def __str__(self):
+        specie = self.specie_altro if self.specie == Specie.ALTRO and self.specie_altro else self.get_specie_display()
+        return f'{self.nome} ({specie}{", " + self.razza if self.razza else ""})'
+
+
+class CategoriaAllegato(models.TextChoices):
+    ECG_PDF = 'ECG_PDF', 'Tracciato ECG (PDF)'
+    ECG_IMMAGINE = 'ECG_IMMAGINE', 'Tracciato ECG (immagine)'
+    HOLTER_REFERTO = 'HOLTER_REFERTO', 'Referto Holter dell\'apparecchio'
+    HOLTER_FILE = 'HOLTER_FILE', 'File grezzo Holter'
+    ECO_REFERTO_PDF = 'ECO_REFERTO_PDF', 'Referto ecografo (PDF)'
+    ECO_STATICA = 'ECO_STATICA', 'Immagine eco statica'
+    ECO_CLIP = 'ECO_CLIP', 'Clip eco'
+    ALTRO = 'ALTRO', 'Altro'
+
+
+class StatoAllegato(models.TextChoices):
+    CARICATO = 'CARICATO', 'Caricato'
+    TRANSCODIFICATO = 'TRANSCODIFICATO', 'Transcodificato'
+    SCARTATO = 'SCARTATO', 'Scartato'
+
+
+def percorso_allegato(allegato, nome):
+    """allegati/2026/TC-2026-0042/<nome>: si ritrova a mano e non collide
+    fra richieste. Il nome originale sta nel campo, non nel percorso."""
+    base, ext = os.path.splitext(nome)
+    ext = ext.lower()[:10]
+    codice = allegato.richiesta.codice
+    anno = codice.split('-')[1]
+    return f'allegati/{anno}/{codice}/{allegato.categoria.lower()}_{timezone.now():%H%M%S%f}{ext}'
+
+
+class Allegato(models.Model):
+    richiesta = models.ForeignKey(Richiesta, on_delete=models.CASCADE, related_name='allegati')
+    categoria = models.CharField(max_length=20, choices=CategoriaAllegato.choices, db_index=True)
+    file = models.FileField(upload_to=percorso_allegato, max_length=300)
+    nome_originale = models.CharField(max_length=255, blank=True)
+    dimensione = models.PositiveBigIntegerField(default=0)
+    sha256 = models.CharField(max_length=64, blank=True, db_index=True)
+    mime = models.CharField(max_length=100, blank=True)
+    stato = models.CharField(max_length=20, choices=StatoAllegato.choices, default=StatoAllegato.CARICATO)
+    caricato_da = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    caricato_il = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Allegato'
+        verbose_name_plural = 'Allegati'
+        ordering = ['caricato_il']
+
+    def __str__(self):
+        return f'{self.richiesta.codice} — {self.get_categoria_display()} — {self.nome_originale or self.file.name}'
+
+    @classmethod
+    def da_upload(cls, richiesta, file_caricato, categoria, utente=None):
+        """Crea un allegato da un UploadedFile calcolando impronta e dimensione
+        in un solo passaggio, prima che il file finisca nello storage."""
+        digest = hashlib.sha256()
+        for blocco in file_caricato.chunks():
+            digest.update(blocco)
+        file_caricato.seek(0)
+        nome = getattr(file_caricato, 'name', '') or ''
+        mime = getattr(file_caricato, 'content_type', '') or mimetypes.guess_type(nome)[0] or ''
+        allegato = cls(richiesta=richiesta, categoria=categoria, nome_originale=os.path.basename(nome)[:255],
+                       dimensione=file_caricato.size, sha256=digest.hexdigest(), mime=mime[:100],
+                       caricato_da=utente)
+        allegato.file.save(os.path.basename(nome) or 'allegato', file_caricato, save=True)
+        richiesta.registra('ALLEGATO_CARICATO', utente, allegato=allegato.id, categoria=categoria,
+                           nome=allegato.nome_originale)
+        return allegato
+
+
+class Commento(models.Model):
+    richiesta = models.ForeignKey(Richiesta, on_delete=models.CASCADE, related_name='commenti')
+    autore = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    testo = models.TextField()
+    allegato = models.ForeignKey(Allegato, on_delete=models.SET_NULL, null=True, blank=True)
+    quando = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Commento'
+        verbose_name_plural = 'Commenti'
+        ordering = ['quando']
+
+    def __str__(self):
+        return f'{self.richiesta.codice} — {self.autore} — {self.quando:%d/%m/%Y %H:%M}'
+
+
+class AuditNonModificabile(Exception):
+    pass
+
+
+class EventoAuditQuerySet(models.QuerySet):
+    def delete(self):
+        raise AuditNonModificabile('L\'audit non si cancella.')
+
+    def update(self, **kwargs):
+        raise AuditNonModificabile('L\'audit non si modifica.')
+
+
+class EventoAudit(models.Model):
+    richiesta = models.ForeignKey(Richiesta, on_delete=models.CASCADE, related_name='audit')
+    utente = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    azione = models.CharField(max_length=40, db_index=True)
+    dettaglio = models.JSONField(default=dict, blank=True)
+    quando = models.DateTimeField(auto_now_add=True)
+
+    objects = EventoAuditQuerySet.as_manager()
+
+    class Meta:
+        verbose_name = 'Evento di audit'
+        verbose_name_plural = 'Eventi di audit'
+        ordering = ['quando']
+
+    def __str__(self):
+        return f'{self.richiesta.codice} — {self.azione} — {self.quando:%d/%m/%Y %H:%M}'
+
+    def save(self, *args, **kwargs):
+        if self.pk is not None:
+            raise AuditNonModificabile('Un evento di audit non si modifica: se ne scrive un altro.')
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise AuditNonModificabile('L\'audit non si cancella.')

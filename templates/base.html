@@ -1,0 +1,52 @@
+{% extends "vetway_ui/base.html" %}
+{% load static %}
+{% comment %}
+base.html — template "ospite" di VetWay Consulti sopra vetway_ui/base.html
+(pacchetto vetway-ui). Qui resta SOLO cio' che e' del portale: testata con
+il nome del prodotto, voci della navbar (dal context processor
+core.context_processors.navigazione), avviso "completa i dati di
+fatturazione", footer con privacy e termini, CSS di dominio. Vendor
+(Bootstrap, Icons, HTMX in locale), sessione, spinner, messaggi e modale
+di conferma vengono dal pacchetto.
+I template del portale estendono "base.html" e usano i blocchi
+title / content / js (alias di extra_js) / extra_head / extra_body.
+{% endcomment %}
+{% block title %}VetWay Consulti{% endblock %}
+
+{% block host_head %}
+  <!-- Regole di dominio del portale, subito dopo vetway.css del pacchetto -->
+  <link href="{% static 'consulti/css/consulti.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block avvisi %}
+{% if richiedente and not richiedente.puo_richiedere and request.resolver_match.url_name != 'profilo_richiedente' %}
+<div class="consulti-avviso">
+  <i class="bi bi-exclamation-triangle me-1"></i>
+  Completa i dati di fatturazione per chiedere un consulto.
+  <a href="{% url 'accounts:profilo_richiedente' %}">Vai al profilo</a>.
+</div>
+{% endif %}
+{% endblock %}
+
+{% block header %}
+<div class="consulti-testata">
+  <a href="{% url 'accounts:home' %}" class="prodotto d-flex align-items-center gap-2">
+    <img src="{% static 'vetway_ui/img/brand/vetway-simbolo-bianco-256.png' %}" alt="Vetway">
+    VetWay <span>Consulti</span>
+  </a>
+  <span class="sottotitolo">Teleconsulto cardiologico veterinario</span>
+</div>
+{% endblock %}
+
+{% block navbar %}
+{% include "vetway_ui/partials/_navbar.html" with nav_voci=nav_voci nav_menu_titolo=nav_menu_titolo utente_label=utente_label utente_url=utente_url logout_url=logout_url %}
+{% endblock %}
+
+{% block footer %}
+{% url 'core:privacy' as privacy_url %}
+{% include "vetway_ui/partials/_footer.html" with privacy_url=privacy_url prodotto="VetWay Consulti" %}
+{# Il partial del pacchetto prevede solo privacy_url: i termini vanno in una seconda riga #}
+<div class="ovic-footer consulti-footer-termini"><a href="{% url 'core:termini' %}" style="color:rgba(255,255,255,0.7);">Termini del servizio</a></div>
+{% endblock %}
+
+{% block extra_js %}{% block js %}{% endblock %}{% endblock %}

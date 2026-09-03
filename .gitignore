@@ -1,0 +1,20 @@
+# Ambiente
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Database locale e segreti — MAI versionati
+*.sqlite3
+.env
+*.env
+secrets.env
+config/settings/local.py
+
+# File caricati e raccolti
+media/
+staticfiles/
+logs/
+
+# Test e cache
+.pytest_cache/

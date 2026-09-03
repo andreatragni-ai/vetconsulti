@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-8 legale">
+  <div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-1"></i> <strong>Bozza da far validare a un legale.</strong>
+    Testo redatto per lo sviluppo del portale: le parti evidenziate come <span class="segnaposto">[segnaposto]</span> vanno completate e il contenuto va rivisto da un professionista prima della messa in produzione.
+  </div>
+  <div class="ovic-card"><div class="card-body-ovic">
+    <h3>{% block titolo_legale %}{% endblock %}</h3>
+    <p class="text-muted small">Versione {{ versione }}</p>
+    {% block testo_legale %}{% endblock %}
+  </div></div>
+</div></div>
+{% endblock %}

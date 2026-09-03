@@ -1,0 +1,10 @@
+Ciao {{ user.first_name }},
+
+e' stato creato per te un account da refertatore su VetWay Consulti (username: {{ user.get_username }}).
+Per scegliere la tua password apri questo link:
+
+  {{ protocol }}://{{ domain }}{% url 'accounts:password_reset_confirm' uidb64=uid token=token %}
+
+Il link vale una sola volta. Se scade, usa «Password dimenticata» dalla pagina di accesso.
+
+VetWay Consulti

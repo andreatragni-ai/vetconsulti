@@ -1,0 +1,10 @@
+{% extends "auth_base.html" %}
+{% block auth_title %}Link non valido · VetWay Consulti{% endblock %}
+{% block auth_content %}
+<div class="auth-head">
+  <div class="ico"><i class="bi bi-link-45deg"></i></div>
+  <h2>Link non valido</h2>
+  <p>Il link di conferma non e' valido o e' scaduto.</p>
+</div>
+<div class="text-center"><a class="auth-link" href="{% url 'accounts:password_reset' %}">Richiedine uno nuovo</a> indicando la tua email.</div>
+{% endblock %}

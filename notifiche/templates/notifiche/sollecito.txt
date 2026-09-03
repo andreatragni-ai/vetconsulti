@@ -1,0 +1,9 @@
+Gentile {{ refertatore.nome_completo }},
+
+il caso {{ richiesta.codice }} ({{ richiesta.get_tipo_esame_display }}, paziente {{ richiesta.paziente }}) era stato preso in carico ma non risulta ancora refertato. E' stato rimesso a disposizione: se vuoi ancora occupartene, riprendilo da qui:
+
+  {{ link }}
+
+Se non puoi, va bene cosi': chi ha chiesto potra' girarlo a un altro collega.
+
+VetWay Consulti

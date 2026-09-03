@@ -1,0 +1,16 @@
+Django==5.1.5
+psycopg2-binary==2.9.11
+django-htmx==1.27.0
+weasyprint==66.0
+pillow==12.3.0
+gunicorn==25.1.0
+pytest==9.0.2
+pytest-django==4.11.1
+boto3==1.42.9
+django-storages==1.14.6
+
+# Strato grafico condiviso (template base, CSS, vendor). Riga COMMENTATA:
+# il server non ha il pacchetto da repo e un `pip install -r` con questa riga
+# fallirebbe; deploy.sh lo installa da /home/consulti/vetway-ui (rsync).
+# TODO: URL definitivo del repo; in sviluppo: pip install -e ../vetway-ui
+# vetway-ui @ git+ssh://git@github.com/andreatragni-ai/vetway-ui.git@v0.1.0

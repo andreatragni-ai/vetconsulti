@@ -1,0 +1,26 @@
+{% extends "auth_base.html" %}
+{% block auth_title %}Accedi · VetWay Consulti{% endblock %}
+{% block auth_content %}
+<div class="auth-head">
+  <div class="ico"><i class="bi bi-heart-pulse"></i></div>
+  <h2>VetWay Consulti</h2>
+  <p>Teleconsulto cardiologico veterinario</p>
+</div>
+{% if form.non_field_errors %}<ul class="errorlist">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+<form method="post">{% csrf_token %}
+  <div class="mb-3"><label class="form-label" for="id_username">Username</label>
+    <input class="form-control" type="text" name="username" id="id_username" autofocus required autocomplete="username"></div>
+  <div class="mb-3"><label class="form-label" for="id_password">Password</label>
+    <input class="form-control" type="password" name="password" id="id_password" required autocomplete="current-password"></div>
+  <input type="hidden" name="next" value="{{ next }}">
+  <button class="btn-auth" type="submit"><i class="bi bi-box-arrow-in-right me-1"></i>ENTRA</button>
+</form>
+<div class="text-center mt-3">
+  <a class="auth-link" href="{% url 'accounts:password_reset' %}">Password dimenticata?</a>
+  <span class="text-muted mx-1">·</span>
+  <a class="auth-link" href="{% url 'accounts:registrati' %}">Registrati</a>
+</div>
+<div class="text-center mt-2" style="font-size:.72rem;">
+  <a class="auth-link" href="{% url 'core:privacy' %}">Privacy</a> · <a class="auth-link" href="{% url 'core:termini' %}">Termini</a>
+</div>
+{% endblock %}

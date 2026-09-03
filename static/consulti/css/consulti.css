@@ -1,0 +1,88 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   consulti.css — regole di DOMINIO del portale VetWay Consulti.
+   Caricato nel blocco host_head, subito DOPO vetway.css del pacchetto
+   vetway-ui. Nessun colore, font o breakpoint letterale: i valori vengono
+   dalle variabili --ovic-* del pacchetto e, per le semantiche
+   successo/pericolo/avviso, dalle variabili --bs-* di Bootstrap.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Testata del portale (blocco header): simbolo + nome prodotto ── */
+.consulti-testata {
+  background: var(--ovic-blu);
+  padding: .55rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+.consulti-testata img { height: 28px; width: auto; }
+.consulti-testata .prodotto {
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-decoration: none;
+}
+.consulti-testata .prodotto span { color: var(--ovic-oro-lt); }
+.consulti-testata .sottotitolo {
+  color: rgba(255, 255, 255, .6);
+  font-size: .78rem;
+  margin-left: auto;
+}
+@media (max-width: 767.98px) {
+  .consulti-testata { padding: .45rem .75rem; }
+  .consulti-testata .sottotitolo { display: none; }
+}
+
+/* ── Avviso sopra la testata (blocco avvisi): "completa i dati di fatturazione" ── */
+.consulti-avviso {
+  background: var(--bs-warning-bg-subtle);
+  color: var(--bs-warning-text-emphasis);
+  border-bottom: 1px solid var(--bs-warning-border-subtle);
+  padding: 6px 14px;
+  font-size: .82rem;
+  text-align: center;
+  font-weight: 500;
+}
+.consulti-avviso a { color: inherit; font-weight: 700; }
+
+/* ── Footer: seconda riga con i termini (il partial del pacchetto ha solo privacy_url) ── */
+.consulti-footer-termini { padding-top: 0; margin-top: -4px; }
+
+/* ── Stato della richiesta ── */
+.stato {
+  font-size: .72rem;
+  padding: .2em .65em;
+  border-radius: 1em;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.stato-BOZZA { background: var(--ovic-grigio); color: var(--ovic-testo); border-color: var(--ovic-bordo); }
+.stato-INVIATA { background: var(--bs-primary-bg-subtle); color: var(--ovic-link); border-color: var(--bs-primary-border-subtle); }
+.stato-PRESA_IN_CARICO { background: var(--bs-warning-bg-subtle); color: var(--bs-warning-text-emphasis); border-color: var(--bs-warning-border-subtle); }
+.stato-REFERTATA { background: var(--bs-success-bg-subtle); color: var(--bs-success-text-emphasis); border-color: var(--bs-success-border-subtle); }
+.stato-NON_REFERTABILE, .stato-DECLINATA, .stato-ANNULLATA {
+  background: var(--bs-danger-bg-subtle); color: var(--bs-danger-text-emphasis); border-color: var(--bs-danger-border-subtle);
+}
+
+/* ── Form lunghi a blocchi (registrazione): titolo di blocco = .sezione-sottotitolo del pacchetto ── */
+.blocco-form { margin-top: 1.1rem; }
+.blocco-form > .sezione-sottotitolo {
+  border-bottom: 1px solid var(--ovic-bordo);
+  border-radius: 4px;
+  margin-bottom: .75rem;
+}
+
+/* ── Cronologia (audit) nel dettaglio richiesta ── */
+.cronologia { font-size: .8rem; }
+.cronologia .quando { color: var(--ovic-testo); opacity: .55; font-variant-numeric: tabular-nums; }
+
+/* ── Testi legali ── */
+.legale h5 { margin-top: 1.5rem; color: var(--ovic-blu); font-size: 1rem; }
+.legale p, .legale li { line-height: 1.55; font-size: .9rem; }
+.segnaposto {
+  background: var(--bs-warning-bg-subtle);
+  border: 1px dashed var(--bs-warning-border-subtle);
+  padding: 0 .3em;
+  border-radius: 3px;
+  font-weight: 600;
+}

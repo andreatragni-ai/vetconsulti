@@ -1,0 +1,10 @@
+<select name="r-refertatore" id="id_r-refertatore" class="form-select">
+  <option value="">— scegli l'esperto —</option>
+  {% for e in esperti %}
+    <option value="{{ e.refertatore.pk }}" {% if selezionato == e.refertatore.pk|stringformat:"s" %}selected{% endif %}>
+      {{ e.refertatore }}{% if e.prezzo %} — € {{ e.prezzo.totale }} (imp. {{ e.prezzo.imponibile }}{% if e.prezzo.origine == 'REFERTATORE' %}, prezzo personale{% endif %}){% else %} — prezzo non disponibile{% endif %}{% if e.tempo %} — risposta in {{ e.tempo }} h{% endif %}{% if not e.refertatore.disponibile_oggi %} — assente{% if e.refertatore.assente_al %} fino al {{ e.refertatore.assente_al|date:"d/m" }}{% endif %}{% endif %}{% if e.refertatore.messaggio %} — {{ e.refertatore.messaggio }}{% endif %}
+    </option>
+  {% empty %}
+    <option value="" disabled>Nessun referente per questo tipo di esame</option>
+  {% endfor %}
+</select>

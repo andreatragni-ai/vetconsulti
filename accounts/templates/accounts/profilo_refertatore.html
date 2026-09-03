@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Profilo refertatore — VetWay Consulti{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 barra-azioni-testata">
+  <h4 class="mb-0">Il mio profilo refertatore</h4>
+  <a class="btn-testata-ghost" href="{% url 'accounts:password_cambia' %}"><i class="bi bi-key"></i> Cambia password</a>
+</div>
+<form method="post" enctype="multipart/form-data">{% csrf_token %}
+<div class="row">
+  <div class="col-lg-5">
+    <div class="ovic-card"><div class="card-header-ovic">Dati e assenza</div><div class="card-body-ovic">
+      {% for campo in form_p %}{% include "_campo_form.html" with campo=campo %}{% endfor %}
+      {% if refertatore.firma %}<div class="small text-muted mb-2">Firma attuale caricata.</div>{% endif %}
+      <div class="small">
+        Disponibile oggi: {% if refertatore.disponibile_oggi %}<span class="badge bg-success">si'</span>{% else %}<span class="badge bg-secondary">no</span>{% endif %}
+        · Fattura: {{ refertatore.get_soggetto_emittente_display }}
+      </div>
+    </div></div>
+  </div>
+  <div class="col-lg-7">
+    <div class="ovic-card"><div class="card-header-ovic">Competenze</div><div class="card-body-ovic">
+      {{ formset.management_form }}
+      <div class="table-responsive">
+      <table class="tbl-risultati align-middle">
+        <thead><tr><th>Esame</th><th>Referente</th><th>Prezzo personalizzato (imponibile)</th><th>Tempo di risposta (ore)</th></tr></thead>
+        <tbody>
+        {% for f in formset %}
+          <tr>
+            <td>{{ f.id }}{{ f.tipo_esame }}<strong>{{ f.instance.get_tipo_esame_display }}</strong>
+              {% for e in f.non_field_errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</td>
+            <td>{{ f.referente }}</td>
+            <td>{{ f.prezzo_personalizzato }}{% for e in f.prezzo_personalizzato.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</td>
+            <td>{{ f.tempo_risposta_ore }}{% for e in f.tempo_risposta_ore.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      <div class="form-text">Prezzo vuoto = listino. «Referente» = compari nell'elenco per quel tipo di esame.</div>
+    </div></div>
+    <button class="btn-nuova" type="submit"><i class="bi bi-save me-1"></i>Salva profilo</button>
+  </div>
+</div>
+</form>
+<div class="ovic-card mt-3"><div class="card-header-ovic">Chiedere consulti a tuo nome</div><div class="card-body-ovic small">
+  {% if richiedente %}
+    Sei anche richiedente ({{ richiedente.get_tipo_display|lower }}): <a href="{% url 'accounts:profilo_richiedente' %}">profilo richiedente</a>.
+  {% else %}
+    <p class="mb-2">Puoi chiedere un consulto a un collega come libero professionista: la fattura sara' intestata a te{% if refertatore.dati_fatturazione %}, con i dati di fatturazione che hai gia' indicato{% endif %}.</p>
+    <form method="post" action="{% url 'accounts:refertatore_diventa_richiedente' %}">{% csrf_token %}
+      <button class="btn btn-outline-secondary btn-sm"><i class="bi bi-person-plus me-1"></i>Attiva il profilo richiedente</button>
+    </form>
+  {% endif %}
+</div></div>
+{% endblock %}

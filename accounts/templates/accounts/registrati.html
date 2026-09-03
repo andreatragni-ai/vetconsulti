@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Registrazione — VetWay Consulti{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-8">
+  <div class="ovic-card"><div class="card-header-ovic">Registrazione {% if form.e_libero_professionista %}libero professionista{% else %}richiedente di una clinica{% endif %}</div><div class="card-body-ovic">
+    <p class="text-muted small">
+      {% if form.e_libero_professionista %}La fattura sara' intestata a te.{% else %}La fattura sara' intestata alla clinica.{% endif %}
+      <a href="{% url 'accounts:registrati' %}">Non e' il tuo caso?</a>
+    </p>
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors|join:"<br>" }}</div>{% endif %}
+    <form method="post" id="form-registrazione">{% csrf_token %}
+
+      <div class="blocco-form mt-0"><div class="sezione-sottotitolo"><i class="bi bi-person me-1"></i>Account</div>
+      <div class="row">
+        <div class="col-md-6">{% include "_campo_form.html" with campo=form.first_name %}</div>
+        <div class="col-md-6">{% include "_campo_form.html" with campo=form.last_name %}</div>
+        <div class="col-md-6">{% include "_campo_form.html" with campo=form.username %}</div>
+        <div class="col-md-6">{% include "_campo_form.html" with campo=form.email %}</div>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label" for="{{ form.password1.id_for_label }}">{{ form.password1.label }} <span class="text-danger">*</span></label>
+            {{ form.password1 }}
+            {% for e in form.password1.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            {% include "vetway_ui/partials/_regole_password.html" %}
+            {% include "vetway_ui/partials/_genera_password.html" with campo=form.password1.id_for_label conferma=form.password2.id_for_label %}
+          </div>
+        </div>
+        <div class="col-md-6">{% include "_campo_form.html" with campo=form.password2 %}</div>
+      </div></div>
+
+      <div class="blocco-form"><div class="sezione-sottotitolo"><i class="bi bi-award me-1"></i>Dati professionali</div>
+      <div class="row">
+        <div class="col-md-4">{% include "_campo_form.html" with campo=form.ruolo %}</div>
+        <div class="col-md-4">{% include "_campo_form.html" with campo=form.telefono %}</div>
+        <div class="col-md-4">{% include "_campo_form.html" with campo=form.numero_iscrizione %}</div>
+        <div class="col-md-12">{% include "_campo_form.html" with campo=form.ordine_provinciale %}</div>
+      </div></div>
+
+      {% if not form.e_libero_professionista %}
+      <div class="blocco-form"><div class="sezione-sottotitolo"><i class="bi bi-hospital me-1"></i>Clinica</div>
+      {% include "_campo_form.html" with campo=form.clinica %}
+      <div class="row">
+        <div class="col-md-6">{% include "_campo_form.html" with campo=form.nuova_clinica %}</div>
+        <div class="col-md-4">{% include "_campo_form.html" with campo=form.nuova_clinica_comune %}</div>
+        <div class="col-md-2">{% include "_campo_form.html" with campo=form.nuova_clinica_provincia %}</div>
+      </div></div>
+      {% endif %}
+
+      <div class="blocco-form"><div class="sezione-sottotitolo"><i class="bi bi-receipt me-1"></i>Dati per la fatturazione elettronica</div>
+      <p class="small text-muted">Serve almeno uno fra partita IVA e codice fiscale, e un recapito per la fattura elettronica: codice destinatario SDI oppure PEC.{% if not form.e_libero_professionista %} Se la clinica scelta ha gia' i dati di fatturazione, puoi lasciare vuoto.{% endif %}</p>
+      {% include "_campo_form.html" with campo=form.intestatario %}
+      <div class="row">
+        <div class="col-md-6">{% include "_campo_form.html" with campo=form.partita_iva %}</div>
+        <div class="col-md-6">{% include "_campo_form.html" with campo=form.codice_fiscale %}</div>
+        <div class="col-md-12">{% include "_campo_form.html" with campo=form.indirizzo_sede %}</div>
+        <div class="col-md-3">{% include "_campo_form.html" with campo=form.cap %}</div>
+        <div class="col-md-6">{% include "_campo_form.html" with campo=form.comune %}</div>
+        <div class="col-md-3">{% include "_campo_form.html" with campo=form.provincia %}</div>
+        <div class="col-md-4">{% include "_campo_form.html" with campo=form.codice_sdi %}</div>
+        <div class="col-md-4">{% include "_campo_form.html" with campo=form.pec_fatturazione %}</div>
+        <div class="col-md-4">{% include "_campo_form.html" with campo=form.regime_iva %}</div>
+      </div></div>
+
+      <div class="blocco-form"><div class="sezione-sottotitolo"><i class="bi bi-shield-check me-1"></i>Consensi</div>
+      {% include "_campo_form.html" with campo=form.accetto_privacy %}
+      {% include "_campo_form.html" with campo=form.accetto_termini %}
+      </div>
+
+      <button class="btn-nuova mt-2" type="submit">Registrati</button>
+    </form>
+  </div></div>
+</div></div>
+{% endblock %}
+{% block js %}
+<script>
+  // Intestatario precompilato finche' l'utente non lo tocca: nome e cognome
+  // per il libero professionista, denominazione per la clinica nuova o scelta.
+  (function () {
+    var f = document.getElementById('form-registrazione');
+    var intest = f.querySelector('[name=intestatario]');
+    if (!intest) return;
+    var toccato = intest.value !== '';
+    intest.addEventListener('input', function () { toccato = intest.value !== ''; });
+    function proposta() {
+      var nuova = f.querySelector('[name=nuova_clinica]');
+      var sel = f.querySelector('[name=clinica]');
+      if (nuova) {
+        if (sel && sel.value) return sel.options[sel.selectedIndex].text;
+        return nuova.value.trim();
+      }
+      return ((f.querySelector('[name=first_name]').value || '') + ' ' + (f.querySelector('[name=last_name]').value || '')).trim();
+    }
+    function aggiorna() { if (!toccato) intest.value = proposta(); }
+    ['first_name', 'last_name', 'nuova_clinica', 'clinica'].forEach(function (n) {
+      var el = f.querySelector('[name=' + n + ']');
+      if (el) { el.addEventListener('input', aggiorna); el.addEventListener('change', aggiorna); }
+    });
+  })();
+</script>
+{% endblock %}

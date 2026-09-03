@@ -1,0 +1,31 @@
+# /etc/systemd/system/gunicorn-consulti.service
+#
+# Gunicorn per VetWay Consulti. Le variabili non segrete stanno in
+# /etc/consulti/env, quelle segrete in /etc/consulti/secrets.env (root:consulti,
+# 640). Nessun valore qui dentro.
+[Unit]
+Description=Gunicorn VetWay Consulti
+Requires=gunicorn-consulti.socket
+After=network.target postgresql.service
+
+[Service]
+User=consulti
+Group=www-data
+WorkingDirectory=/home/consulti/app
+EnvironmentFile=/etc/consulti/env
+EnvironmentFile=/etc/consulti/secrets.env
+# 2 worker: il carico e' basso e ogni worker tiene una connessione Postgres.
+# Il timeout alto serve agli upload grandi che passano ancora da Python
+# (la conclusione di un upload a pezzi copia il file nello storage).
+ExecStart=/home/consulti/app/venv/bin/gunicorn \
+    --workers 2 \
+    --timeout 300 \
+    --bind unix:/run/gunicorn-consulti.sock \
+    --access-logfile /home/consulti/app/logs/gunicorn-access.log \
+    --error-logfile /home/consulti/app/logs/gunicorn-error.log \
+    config.wsgi:application
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

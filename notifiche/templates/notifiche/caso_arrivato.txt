@@ -1,0 +1,11 @@
+Gentile {{ refertatore.nome_completo }},
+
+{{ richiesta.richiedente.user.get_full_name }} ({{ richiesta.intestatario.denominazione }}{% if not richiesta.clinica_id %}, libero professionista{% endif %}) ti ha inviato un nuovo caso:
+
+  {{ richiesta.codice }} — {{ richiesta.get_tipo_esame_display }}{% if richiesta.urgenza %} — URGENTE{% endif %}
+  Paziente: {{ richiesta.paziente }}
+{% if richiesta.quesito %}  Quesito: {{ richiesta.quesito }}
+{% endif %}
+Lo trovi qui: {{ link }}
+
+VetWay Consulti

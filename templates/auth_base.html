@@ -1,0 +1,9 @@
+{% extends "vetway_ui/auth_base.html" %}
+{% comment %}
+auth_base.html — host del portale sopra vetway_ui/auth_base.html (scheda
+centrata su fondo scuro) per accesso, scelta del tipo di registrazione,
+reset password ed esiti. Le pagine definiscono auth_title e auth_content.
+NB: auth_base del pacchetto non carica vetway.css (e quindi le variabili
+--ovic-*): qui si usano solo le classi .auth-* e le utility Bootstrap.
+{% endcomment %}
+{% block auth_title %}VetWay Consulti{% endblock %}

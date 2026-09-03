@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Le mie richieste — VetWay Consulti{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 barra-azioni-testata">
+  <h4 class="mb-0">Le mie richieste</h4>
+  {% if richiedente %}<a class="btn-nuova {% if not puo_richiedere %}disabled{% endif %}" href="{% url 'consulti:nuova' %}"><i class="bi bi-plus-circle me-1"></i>Nuova richiesta</a>{% endif %}
+</div>
+<div class="ovic-card"><div class="table-responsive">
+<table class="tbl-risultati align-middle">
+  <thead><tr><th>Codice</th><th>Esame</th><th>Paziente</th><th>Intestatario</th><th>Refertatore</th><th>Stato</th><th>Creata</th></tr></thead>
+  <tbody>
+  {% for r in richieste %}
+    <tr class="riga-cliccabile" onclick="window.location='{% url 'consulti:dettaglio' r.pk %}'">
+      <td><a href="{% url 'consulti:dettaglio' r.pk %}"><strong>{{ r.codice }}</strong></a>{% if r.urgenza %} <i class="bi bi-lightning-fill text-danger" title="Urgenza"></i>{% endif %}</td>
+      <td>{{ r.get_tipo_esame_display }}</td>
+      <td>{{ r.paziente|default:"—" }}</td>
+      <td>{{ r.intestatario.denominazione }}{% if not r.clinica_id %} <span class="text-muted">(lib. prof.)</span>{% endif %}</td>
+      <td>{{ r.refertatore|default:"—" }}</td>
+      <td><span class="stato stato-{{ r.stato }}">{{ r.get_stato_display }}</span></td>
+      <td class="num-tab text-muted">{{ r.creata_il|date:"d/m/Y H:i" }}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="7" class="text-center text-muted py-5"><i class="bi bi-inbox fs-3 d-block mb-2"></i>Nessuna richiesta ancora.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div></div>
+{% endblock %}

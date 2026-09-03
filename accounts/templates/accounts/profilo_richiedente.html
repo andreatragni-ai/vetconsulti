@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Profilo — VetWay Consulti{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 barra-azioni-testata">
+  <h4 class="mb-0">Il mio profilo <small class="text-muted fs-6">{{ richiedente.get_tipo_display }}</small></h4>
+  <a class="btn-testata-ghost" href="{% url 'accounts:password_cambia' %}"><i class="bi bi-key"></i> Cambia password</a>
+</div>
+{% if not richiedente.puo_richiedere %}
+  <div class="alert alert-warning py-2"><i class="bi bi-exclamation-triangle me-1"></i> Completa i dati di fatturazione per chiedere un consulto.</div>
+{% endif %}
+{% if not richiedente.approvazione_ok %}
+  <div class="alert alert-info py-2"><i class="bi bi-hourglass-split me-1"></i>
+    {% if e_clinica %}{% if clinica %}La clinica «{{ clinica.denominazione }}» e' in attesa di approvazione{% else %}Indica la tua clinica{% endif %}{% else %}Il tuo profilo e' in attesa di approvazione{% endif %}: puoi preparare le richieste, l'invio si sblocca all'approvazione.</div>
+{% endif %}
+<div class="row">
+  <div class="col-lg-4">
+    <div class="ovic-card"><div class="card-header-ovic">Dati personali</div><div class="card-body-ovic">
+      {% include "vetway_ui/partials/_campo.html" with label="Nome" val=user.get_full_name %}
+      {% include "vetway_ui/partials/_campo.html" with label="Email" val=user.email %}
+      <form method="post" class="mt-3">{% csrf_token %}
+        {% for campo in form_r %}{% include "_campo_form.html" with campo=campo %}{% endfor %}
+        <button class="btn-nuova" name="salva" value="richiedente">Salva</button>
+      </form>
+    </div></div>
+    <div class="ovic-card"><div class="card-header-ovic">Consensi</div><div class="card-body-ovic small">
+      {% for c in consensi %}<div><i class="bi bi-check-circle text-success me-1"></i>{{ c.get_tipo_display }} v{{ c.versione }} — {{ c.accettato_il|date:"d/m/Y" }}</div>{% empty %}<span class="text-muted">Nessun consenso registrato.</span>{% endfor %}
+    </div></div>
+  </div>
+  {% if e_clinica %}
+  <div class="col-lg-4">
+    <div class="ovic-card"><div class="card-header-ovic">Clinica {% if clinica.approvata %}<i class="bi bi-patch-check"></i>{% endif %}</div><div class="card-body-ovic">
+      <form method="post">{% csrf_token %}
+        {% for campo in form_c %}{% include "_campo_form.html" with campo=campo %}{% endfor %}
+        <button class="btn-nuova" name="salva" value="clinica">Salva</button>
+      </form>
+    </div></div>
+  </div>
+  {% endif %}
+  <div class="col-lg-4">
+    <div class="ovic-card"><div class="card-header-ovic">Dati di fatturazione — {% if e_clinica %}{{ clinica.denominazione|default:"clinica" }}{% else %}{{ richiedente.denominazione }}{% endif %}</div><div class="card-body-ovic">
+      {% if not e_clinica %}<p class="small text-muted">La fattura e' intestata a te: partita IVA o codice fiscale, e un recapito per la fattura elettronica (SDI o PEC).</p>{% endif %}
+      {% if form_f.non_field_errors %}<div class="alert alert-danger">{{ form_f.non_field_errors|join:" " }}</div>{% endif %}
+      <form method="post">{% csrf_token %}
+        {% for campo in form_f %}{% include "_campo_form.html" with campo=campo %}{% endfor %}
+        <button class="btn-nuova" name="salva" value="fatturazione" {% if e_clinica and not clinica %}disabled{% endif %}>Salva</button>
+      </form>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

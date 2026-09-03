@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Referto {{ richiesta.codice }}</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 20mm 16mm;
+    @bottom-center { content: "VetWay Consulti — {{ richiesta.codice }} — pagina " counter(page) " di " counter(pages); font-size: 8pt; color: #666; } }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 10.5pt; color: #1e2a38; }
+  .testata { display: flex; justify-content: space-between; border-bottom: 2px solid #123c44; padding-bottom: 6pt; margin-bottom: 10pt; }
+  .testata h1 { font-size: 15pt; margin: 0; color: #123c44; }
+  .testata .clinica { text-align: right; font-size: 9.5pt; }
+  .testata .clinica strong { font-size: 11pt; }
+  h2 { font-size: 10pt; text-transform: uppercase; letter-spacing: .05em; color: #2f9da3; border-bottom: 1px solid #dde2ea; margin: 12pt 0 4pt; }
+  table.dati { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+  table.dati td { padding: 2pt 4pt; vertical-align: top; }
+  table.dati td.k { color: #666; width: 28%; }
+  .testo { white-space: pre-wrap; line-height: 1.4; }
+  .firma { margin-top: 24pt; display: flex; justify-content: flex-end; }
+  .firma .blocco { text-align: center; min-width: 60mm; }
+  .firma img { max-height: 22mm; max-width: 60mm; }
+  .firma .nome { border-top: 1px solid #1e2a38; padding-top: 3pt; font-size: 9.5pt; }
+  .bozza { color: #b00; font-weight: bold; }
+</style>
+</head>
+<body>
+<div class="testata">
+  <div>
+    <h1>Referto di teleconsulto — {{ richiesta.get_tipo_esame_display }}</h1>
+    <div>Codice {{ richiesta.codice }}{% if richiesta.urgenza %} · <strong>urgenza</strong>{% endif %}</div>
+    {% if not referto.firmato %}<div class="bozza">BOZZA NON FIRMATA</div>{% endif %}
+  </div>
+  <div class="clinica">
+    <strong>{{ intestatario.denominazione }}</strong>{% if not clinica %} <span style="color:#666">— libero professionista</span>{% endif %}<br>
+    {% if dati_fiscali %}
+      {% if dati_fiscali.intestatario != intestatario.denominazione %}{{ dati_fiscali.intestatario }}<br>{% endif %}
+      {{ dati_fiscali.indirizzo_sede }}<br>
+      {{ dati_fiscali.cap }} {{ dati_fiscali.comune }} ({{ dati_fiscali.provincia }})<br>
+      {% if dati_fiscali.partita_iva %}P.IVA {{ dati_fiscali.partita_iva }}{% elif dati_fiscali.codice_fiscale %}C.F. {{ dati_fiscali.codice_fiscale }}{% endif %}<br>
+    {% elif clinica %}
+      {% if clinica.indirizzo %}{{ clinica.indirizzo }}<br>{% endif %}
+      {% if clinica.cap or clinica.comune %}{{ clinica.cap }} {{ clinica.comune }} {% if clinica.provincia %}({{ clinica.provincia }}){% endif %}<br>{% endif %}
+    {% endif %}
+    {% if intestatario.telefono %}Tel. {{ intestatario.telefono }}<br>{% endif %}
+    {% if intestatario.email %}{{ intestatario.email }}{% endif %}
+  </div>
+
+<h2>Paziente</h2>
+<table class="dati">
+  <tr><td class="k">Nome</td><td>{{ paziente.nome|default:"—" }}</td>
+      <td class="k">Proprietario</td><td>{{ paziente.cognome_proprietario|default:"—" }}</td></tr>
+  <tr><td class="k">Specie / razza</td><td>{% if paziente.specie == 'ALTRO' %}{{ paziente.specie_altro }}{% else %}{{ paziente.get_specie_display }}{% endif %}{% if paziente.razza %}, {{ paziente.razza }}{% endif %}</td>
+      <td class="k">Sesso</td><td>{{ paziente.get_sesso_display|default:"—" }}</td></tr>
+  <tr><td class="k">Eta'</td><td>{% if paziente.data_nascita %}nato il {{ paziente.data_nascita|date:"d/m/Y" }}{% else %}{{ paziente.eta_testo|default:"—" }}{% endif %}</td>
+      <td class="k">Peso</td><td>{% if paziente.peso_kg %}{{ paziente.peso_kg }} kg{% else %}—{% endif %}</td></tr>
+</table>
+
+<h2>Richiesta</h2>
+<table class="dati">
+  <tr><td class="k">Richiedente</td><td>{{ richiesta.richiedente.user.get_full_name }}</td></tr>
+  {% if richiesta.motivo_esame %}<tr><td class="k">Motivo dell'esame</td><td>{{ richiesta.motivo_esame }}</td></tr>{% endif %}
+  {% if richiesta.quesito %}<tr><td class="k">Quesito</td><td class="testo">{{ richiesta.quesito }}</td></tr>{% endif %}
+  {% if richiesta.anamnesi %}<tr><td class="k">Anamnesi</td><td class="testo">{{ richiesta.anamnesi }}</td></tr>{% endif %}
+  {% if richiesta.terapia %}<tr><td class="k">Terapia in corso</td><td class="testo">{{ richiesta.terapia }}</td></tr>{% endif %}
+</table>
+
+{% if referto.descrizione %}<h2>Descrizione</h2><div class="testo">{{ referto.descrizione }}</div>{% endif %}
+<h2>Conclusioni</h2><div class="testo">{{ referto.conclusioni|default:"—" }}</div>
+{% if referto.raccomandazioni %}<h2>Raccomandazioni</h2><div class="testo">{{ referto.raccomandazioni }}</div>{% endif %}
+{% if referto.classificazione %}
+<h2>Classificazione</h2>
+<table class="dati">
+  {% for k, v in referto.classificazione.items %}<tr><td class="k">{{ k|capfirst }}</td><td>{{ v }}</td></tr>{% endfor %}
+</table>
+{% endif %}
+
+<div class="firma">
+  <div class="blocco">
+    {% if referto.firmato and refertatore.firma %}<img src="{{ refertatore.firma.path }}" alt="firma"><br>{% endif %}
+    <div class="nome">
+      <strong>{{ refertatore.nome_completo }}</strong><br>
+      {% if refertatore.specializzazione %}{{ refertatore.specializzazione }}<br>{% endif %}
+      {% if refertatore.numero_iscrizione %}Iscr. n. {{ refertatore.numero_iscrizione }}{% if refertatore.ordine_provinciale %} — {{ refertatore.ordine_provinciale }}{% endif %}<br>{% endif %}
+      {% if referto.firmato %}Firmato il {{ referto.firmato_il|date:"d/m/Y H:i" }}{% endif %}
+    </div>
+  </div>
+</div>
+</body>
+</html>

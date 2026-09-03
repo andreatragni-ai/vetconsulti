@@ -1,0 +1,23 @@
+{% extends "auth_base.html" %}
+{% block auth_title %}Registrazione · VetWay Consulti{% endblock %}
+{% block auth_content %}
+<div class="auth-head">
+  <div class="ico"><i class="bi bi-person-plus"></i></div>
+  <h2>Registrazione</h2>
+  <p>Chi sei? Il consulto viene fatturato a chi lo chiede: una struttura oppure te, a tuo nome.</p>
+</div>
+<div class="list-group mb-3">
+  <a class="list-group-item list-group-item-action py-3" href="{% url 'accounts:registrati_tipo' 'clinica' %}">
+    <div class="fw-bold"><i class="bi bi-hospital me-2"></i>Lavoro in una clinica</div>
+    <div class="small text-muted mt-1">Veterinario o tecnico di una struttura. La fattura e' intestata alla clinica; se non e' ancora nel portale la proponi tu e l'amministrazione la approva.</div>
+  </a>
+  <a class="list-group-item list-group-item-action py-3" href="{% url 'accounts:registrati_tipo' 'libero-professionista' %}">
+    <div class="fw-bold"><i class="bi bi-person-vcard me-2"></i>Sono un libero professionista</div>
+    <div class="small text-muted mt-1">Veterinario (anche cardiologo) senza struttura: la fattura e' intestata a te. Servono iscrizione all'Ordine e dati fiscali; il profilo viene approvato dall'amministrazione.</div>
+  </a>
+</div>
+<div class="text-center" style="font-size:.8rem;">
+  I refertatori vengono invitati dall'amministrazione.<br>
+  Hai gia' un account? <a class="auth-link" href="{% url 'accounts:accedi' %}">Accedi</a>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Richiedenti — VetWay Consulti{% endblock %}
+{% block content %}
+<h4 class="mb-3">Richiedenti da approvare</h4>
+<div class="ovic-card"><div class="card-header-ovic">Cliniche</div><div class="table-responsive">
+<table class="tbl-risultati align-middle">
+  <thead><tr><th>Denominazione</th><th>Comune</th><th>Richiedenti</th><th>Stato</th><th></th></tr></thead>
+  <tbody>
+  {% for c in cliniche %}
+    <tr>
+      <td><a href="{% url 'admin:accounts_clinica_change' c.pk %}">{{ c.denominazione }}</a></td>
+      <td>{{ c.comune }} {% if c.provincia %}({{ c.provincia }}){% endif %}</td>
+      <td>{% for r in c.richiedenti.all %}{{ r.user.get_full_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+      <td>{% if c.approvata %}<span class="badge bg-success">approvata</span>{% else %}<span class="badge bg-warning text-dark">in attesa</span>{% endif %}</td>
+      <td class="text-end">{% if not c.approvata %}
+        <form method="post" action="{% url 'accounts:admin_clinica_approva' c.pk %}" class="d-inline">{% csrf_token %}
+          <button class="btn-sel"><i class="bi bi-check2"></i> Approva</button></form>{% endif %}</td>
+    </tr>
+  {% empty %}<tr><td colspan="5" class="text-muted text-center py-4">Nessuna clinica.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div></div>
+<div class="ovic-card"><div class="card-header-ovic">Liberi professionisti</div><div class="table-responsive">
+<table class="tbl-risultati align-middle">
+  <thead><tr><th>Nome</th><th>Email</th><th>Iscrizione</th><th>Dati fiscali</th><th>Stato</th><th></th></tr></thead>
+  <tbody>
+  {% for r in liberi %}
+    <tr>
+      <td><a href="{% url 'admin:accounts_richiedente_change' r.pk %}">{{ r.denominazione }}</a></td>
+      <td>{{ r.user.email }}</td>
+      <td>{{ r.numero_iscrizione|default:"—" }} {{ r.ordine_provinciale }}</td>
+      <td>{% with d=r.dati_fatturazione_predefiniti %}{% if d %}{{ d.intestatario }} — {{ d.partita_iva|default:d.codice_fiscale }}{% else %}<span class="text-muted">mancanti</span>{% endif %}{% endwith %}</td>
+      <td>{% if r.approvato %}<span class="badge bg-success">approvato</span>{% else %}<span class="badge bg-warning text-dark">in attesa</span>{% endif %}</td>
+      <td class="text-end">{% if not r.approvato %}
+        <form method="post" action="{% url 'accounts:admin_richiedente_approva' r.pk %}" class="d-inline">{% csrf_token %}
+          <button class="btn-sel"><i class="bi bi-check2"></i> Approva</button></form>{% endif %}</td>
+    </tr>
+  {% empty %}<tr><td colspan="6" class="text-muted text-center py-4">Nessun libero professionista.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div></div>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "auth_base.html" %}
+{% block auth_title %}Conferma l'email · VetWay Consulti{% endblock %}
+{% block auth_content %}
+<div class="auth-head">
+  <div class="ico"><i class="bi bi-envelope-check"></i></div>
+  <h2>Controlla la posta</h2>
+  <p>Ti abbiamo scritto a <strong>{{ email }}</strong>: apri il link per confermare l'indirizzo e attivare l'account.</p>
+</div>
+<div class="text-center"><a class="auth-link" href="{% url 'accounts:accedi' %}">Torna all'accesso</a></div>
+{% endblock %}

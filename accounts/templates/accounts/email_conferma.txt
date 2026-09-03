@@ -1,0 +1,9 @@
+Ciao {{ utente.first_name }},
+
+per confermare la tua email e attivare l'account su VetWay Consulti apri questo link:
+
+  {{ link }}
+
+Se non ti sei registrato tu, ignora questo messaggio.
+
+VetWay Consulti

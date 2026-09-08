@@ -1,0 +1,61 @@
+# VetWay Consulti
+
+Portale di teleconsulto cardiologico veterinario (ECG, Holter, eco): cliniche e
+liberi professionisti caricano gli esami, un refertatore referta, il registro
+tiene le prestazioni da fatturare. Progetto gemello di VetCardio (`../vetcardio`)
+ma **indipendente: non importa mai da `cardio`**. Lo sviluppa Andre da solo, a
+sessioni brevi: ogni sessione deve lasciare il repo in uno stato ripartibile.
+
+## Stato (aggiornare quando cambia)
+
+- **Non e' in produzione.** Verificato l'08/09/2026: sul server (10.10.0.1)
+  non esistono utente `consulti`, db, vhost nginx, ne' il record DNS di
+  `consulti.vetway.it`. Tutto `deploy/` e' scritto ma mai eseguito.
+- Obiettivo: poche cliniche amiche entro 1-2 mesi (ottobre-novembre 2026).
+  Priorita': F2 (caricamento per tipo) e F3 (refertazione). F4 (fatturazione)
+  puo' aspettare. Il lavoro e' in `docs/BACKLOG.md`.
+- Il catalogo delle proiezioni eco (`eco/fixtures/proiezioni_bozza.json`) e'
+  una bozza: Andre deve ancora confermarlo.
+
+## Avvio e collaudo
+
+    venv/bin/python manage.py migrate && venv/bin/python manage.py seed_demo
+    venv/bin/python manage.py runserver
+    venv/bin/python -m pytest          # ~30 s, deve essere verde prima di ogni commit
+
+`seed_demo` (solo DEBUG) crea listino e utenti: `admin/admin`, refertatori
+`rferrari` (ECG+Holter) e `lmonti` (eco), richiedenti `gbianchi` (clinica) e
+`mrossi` (libero professionista), password `prova12345`. Le email escono in
+console. Grafica dal pacchetto `../vetway-ui` installato con `pip install -e`.
+
+## Regole
+
+- **Migrazioni libere fino al go-live**: si possono cancellare e rigenerare;
+  `db_dev.sqlite3` si ricrea con `migrate` + `seed_demo`. Si congelano al
+  primo deploy con dati veri (segnarlo qui quel giorno).
+- Commit `tipo(area): cosa cambia per chi usa il portale`, in italiano
+  (`feat` `fix` `docs` `test` `refactor` `chore`). Un branch `feat/...` per
+  cosa; `main` sempre verde. Push a fine sessione, anche `wip`.
+- Testi in italiano con apostrofo ASCII al posto delle accentate (`e'`,
+  `piu'`, `gia'`) in codice, commenti, commit e docs: convenzione storica.
+- Ogni bug corretto lascia un test nel `tests.py` dell'app.
+- UI solo con classi, partial e variabili `--ovic-*` di vetway-ui: nessun
+  colore letterale. Attenzione all'omonimia `_campo_form.html` (form) vs
+  `vetway_ui/partials/_campo.html` (lettura).
+- Nessun deploy, DNS, o comando sul server senza che Andre lo chieda in
+  quella sessione. Il primo deploy sara' una staging non pubblicizzata.
+
+## Zone fragili (leggere prima di toccare)
+
+- `accounts/fiscale.py`: validazioni CF/P.IVA/SDI; un solo soggetto fiscale
+  fra clinica e richiedente. `Richiedente.tipo` decide a chi si fattura.
+- `consulti/regole.py`: transizioni di stato della Richiesta con
+  `EventoAudit` append-only. Non aggiungere stati senza un test per ogni
+  transizione.
+- `registro/`: `Prestazione` e' immutabile una volta registrata.
+- `core/views_media.py` + `consulti/upload_chunk.py`: gli allegati non sono
+  mai serviti come statici (FileResponse in dev, X-Accel-Redirect in prod).
+- `config/settings/prod.py`: tutto dall'ambiente, `check --deploy` pulito.
+
+Struttura delle app e dettagli: `README.md`. Installazione server:
+`deploy/INSTALLAZIONE.md`. Skill globale `vetcardio-django` per il gemello.

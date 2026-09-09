@@ -21,10 +21,6 @@ spunta. Le idee grosse hanno un file loro in `docs/`.
 
 - [2026-09-08] vetway-ui e' su GitHub: scommentare la riga in
   `requirements.txt` (`@v0.2.0`) e semplificare `deploy.sh` (step 1b).
-- [2026-09-08] Suite contro Postgres locale (db `consulti_dev`) prima del
-  primo deploy: sqlite perdona, Postgres no.
-- [2026-09-08] `DJANGO_SETTINGS_MODULE=config.settings.prod manage.py check
-  --deploy` e `collectstatic` in locale con `deploy/env.example`.
 - [2026-09-08] Staging: record DNS `consulti.vetway.it` + INSTALLAZIONE.md
   sul server, collaudo con `seed_demo` per qualche giorno prima di aprire.
 - [2026-09-08] Privacy e termini: bozze reali da far validare a un legale

@@ -43,7 +43,11 @@ venv/bin/python manage.py runserver
 console). In produzione `DJANGO_SETTINGS_MODULE=config.settings.prod` con le
 variabili di `deploy/env.example` e `deploy/secrets.env.example`.
 
-Test: `venv/bin/python -m pytest`.
+Test: `venv/bin/python -m pytest`. Prima di un deploy, anche contro Postgres
+con i settings di produzione: `scripts/test_postgres.sh` (una volta:
+`createdb consulti_dev`). Il controllo dei settings di produzione senza
+server: `set -a; . deploy/env.example; set +a` piu' i quattro segreti finti,
+poi `DJANGO_SETTINGS_MODULE=config.settings.prod manage.py check --deploy`.
 
 ## Grafica: pacchetto vetway-ui
 

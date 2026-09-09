@@ -82,3 +82,12 @@ CONSULTI_BASE_URL = os.environ.get('CONSULTI_BASE_URL', 'https://consulti.vetway
 #             'file_overwrite': False,
 #         },
 #     }
+
+# ── Avvisi di `check --deploy` gia' gestiti altrove ──────────────────────────
+# Verificato in locale il 09/09/2026: senza questi tre, `check --deploy` e'
+# pulito. Silenziarli serve a far risaltare un avviso NUOVO al prossimo giro.
+SILENCED_SYSTEM_CHECKS = [
+    'security.W005',  # HSTS sui sottodomini: vetway.it ne ha altri, resta False apposta
+    'security.W008',  # redirect http→https: lo fa nginx (deploy/nginx-consulti.conf)
+    'security.W021',  # HSTS preload: non serve, non si chiede l'iscrizione alla lista
+]

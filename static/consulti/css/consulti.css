@@ -651,3 +651,25 @@ a.riferimento:hover, a.riferimento:focus-visible { outline: 3px solid var(--ovic
 @media (max-width: 767.98px) {
   .elenco-filtrato-voci [role="option"] { min-height: 44px; display: flex; align-items: center; }
 }
+
+/* ── Foto dell'esperto: riquadro in testa alla scheda (passo 2), iniziali se manca ── */
+.scheda-esperto .esperto-testa { display: flex; align-items: center; gap: .75rem; margin-bottom: .2rem; }
+.scheda-esperto .esperto-nome { min-width: 0; }
+.esperto-foto {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--ovic-grigio);
+  border: 1px solid var(--ovic-bordo);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.esperto-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.esperto-iniziali { font-size: 1.3rem; font-weight: 700; letter-spacing: .04em; color: var(--ovic-blu); }
+.btn-check:disabled + .scheda-scelta .esperto-foto { opacity: .6; }
+/* Il campo foto nel profilo e nell'admin: anteprima protetta + «Togli la foto». */
+.foto-attuale { display: flex; align-items: center; gap: .75rem; margin-bottom: .4rem; }
+.foto-attuale img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; border: 1px solid var(--ovic-bordo); }

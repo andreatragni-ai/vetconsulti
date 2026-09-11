@@ -196,12 +196,24 @@ class DatiFatturazioneForm(forms.ModelForm):
         _bootstrap(self)
 
 
+class FotoInput(forms.ClearableFileInput):
+    """Il campo foto dell'esperto: l'anteprima dalla consegna protetta
+    (Refertatore.url_foto) al posto del link «Attualmente» di Django, che
+    punterebbe a /media/, mai servito. Lo usano il profilo e l'admin."""
+
+    template_name = 'accounts/_widget_foto.html'
+    clear_checkbox_label = 'Togli la foto'
+
+
 class RefertatoreProfiloForm(forms.ModelForm):
     class Meta:
         model = Refertatore
         fields = ['titolo', 'specializzazione', 'numero_iscrizione', 'ordine_provinciale',
-                  'firma', 'assente_dal', 'assente_al', 'messaggio']
+                  'foto', 'firma', 'assente_dal', 'assente_al', 'messaggio']
+        labels = {'foto': 'Foto'}
+        help_texts = {'foto': 'La vedono i colleghi quando scelgono a chi mandare il caso. JPG o PNG.'}
         widgets = {
+            'foto': FotoInput(attrs={'accept': 'image/jpeg,image/png,image/webp'}),
             'assente_dal': forms.DateInput(attrs={'type': 'date'}),
             'assente_al': forms.DateInput(attrs={'type': 'date'}),
         }

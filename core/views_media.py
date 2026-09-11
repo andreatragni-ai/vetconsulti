@@ -112,3 +112,17 @@ def immagine_riferimento(request, pk):
     if not riferimento.immagine:
         raise Http404
     return consegna(riferimento.immagine.name, inline=True)
+
+
+@login_required
+def foto_refertatore(request, pk):
+    """La foto di un esperto (accounts.Refertatore.foto) per la sua scheda
+    nel passo 2 della richiesta e per il suo profilo. Non e' un dato
+    clinico, ma come le immagini di riferimento sta sotto MEDIA_ROOT e passa
+    dalla stessa consegna: nessun file pubblico. Basta essere autenticati."""
+    from accounts.models import Refertatore
+
+    refertatore = get_object_or_404(Refertatore, pk=pk)
+    if not refertatore.foto:
+        raise Http404
+    return consegna(refertatore.foto.name, inline=True)

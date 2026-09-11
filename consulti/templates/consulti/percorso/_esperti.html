@@ -3,7 +3,9 @@ Schede degli esperti per il tipo scelto (passo 2; frammento htmx di
 consulti/views_percorso.py:esperti). Contesto: esperti [{refertatore,
 prezzo, disponibile, rientro, tempo}], selezionato (pk come stringa),
 tipo_scelto, tipo_label. Chi e' assente si vede, con il rientro, ma non si
-sceglie (e il form lo rifiuta comunque: EsameForm.clean_refertatore).
+sceglie (e il form lo rifiuta comunque: EsameForm.clean_refertatore). In
+testa alla scheda la foto dell'esperto (consegna protetta, url_foto) o, se
+manca, le sue iniziali su fondo neutro.
 {% endcomment %}
 {% if not tipo_scelto %}
   <p class="text-muted mb-0"><i class="bi bi-arrow-up me-1"></i>Scegli prima il tipo di esame: qui compaiono gli esperti che lo refertano, con prezzo e tempi.</p>
@@ -16,8 +18,13 @@ sceglie (e il form lo rifiuta comunque: EsameForm.clean_refertatore).
     <div>
       <input type="radio" class="btn-check" name="refertatore" id="esperto-{{ r.pk }}" value="{{ r.pk }}"{% if e.disponibile and selezionato == r.pk|stringformat:"s" %} checked{% endif %}{% if not e.disponibile %} disabled{% endif %} required>
       <label class="scheda-scelta scheda-esperto" for="esperto-{{ r.pk }}">
-        <span class="titolo">{{ r.nome_completo }}</span>
-        {% if r.specializzazione %}<span class="specializzazione">{{ r.specializzazione }}</span>{% endif %}
+        <span class="esperto-testa">
+          <span class="esperto-foto">{% if r.foto %}<img src="{{ r.url_foto }}" alt="" width="64" height="64" loading="lazy">{% else %}<span class="esperto-iniziali" aria-hidden="true">{{ r.iniziali }}</span>{% endif %}</span>
+          <span class="esperto-nome">
+            <span class="titolo">{{ r.nome_completo }}</span>
+            {% if r.specializzazione %}<span class="specializzazione">{{ r.specializzazione }}</span>{% endif %}
+          </span>
+        </span>
         {% if e.prezzo %}
           <span class="prezzo">€ {{ e.prezzo.totale }} <small class="fw-normal">IVA inclusa</small></span>
           <span class="imponibile">imponibile € {{ e.prezzo.imponibile_totale }}{% if e.prezzo.supplementi %}, compreso il supplemento urgenza di € {{ e.prezzo.supplementi }}{% endif %}</span>

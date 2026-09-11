@@ -1,5 +1,7 @@
+from django import forms
 from django.contrib import admin
 
+from .forms import FotoInput
 from .models import (Clinica, CompetenzaRefertatore, Consenso, DatiFatturazione, Refertatore,
                      Richiedente)
 
@@ -14,12 +16,24 @@ class DatiFatturazioneInline(admin.StackedInline):
     extra = 0
 
 
+class RefertatoreAdminForm(forms.ModelForm):
+    class Meta:
+        model = Refertatore
+        fields = '__all__'
+        widgets = {'foto': FotoInput}
+
+
 @admin.register(Refertatore)
 class RefertatoreAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'attivo', 'soggetto_emittente', 'assente_dal', 'assente_al')
+    form = RefertatoreAdminForm
+    list_display = ('__str__', 'con_foto', 'attivo', 'soggetto_emittente', 'assente_dal', 'assente_al')
     list_filter = ('attivo', 'soggetto_emittente')
     search_fields = ('user__username', 'user__last_name', 'user__email')
     inlines = [CompetenzaInline]
+
+    @admin.display(description='Foto', boolean=True)
+    def con_foto(self, obj):
+        return bool(obj.foto)
 
 
 @admin.register(Clinica)

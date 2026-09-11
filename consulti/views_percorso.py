@@ -23,8 +23,7 @@ from . import caricamento, percorso, regole, upload_chunk
 from .forms import EsameForm, PazienteForm
 from .permessi import caso_del_richiedente
 
-CAMPI_PAZIENTE = ('nome', 'specie', 'specie_altro', 'razza', 'sesso', 'data_nascita', 'eta_anni', 'peso_kg',
-                  'cognome_proprietario')
+CAMPI_PAZIENTE = ('nome', 'specie', 'razza', 'sesso', 'data_nascita', 'eta_anni', 'peso_kg', 'cognome_proprietario')
 CAMPI_ESAME = ('tipo_esame', 'refertatore', 'urgenza', 'quesito', 'anamnesi', 'terapia')
 
 # Cosa servira' caricare, per le schede del tipo di esame (passo 2).
@@ -66,6 +65,24 @@ def _grezzi(post, campi):
     return {c: post.get(c) for c in campi if post.get(c) not in (None, '')}
 
 
+# Testi che il form ripulisce (razza come nell'elenco, maiuscole sui nomi, data
+# gg/mm/aaaa): in sessione vanno gia' puliti, cosi' il passo 2 e il ritorno al passo 1 li
+# mostrano come verranno salvati.
+TESTI_PULITI = ('nome', 'razza', 'cognome_proprietario')
+
+
+def _paziente_in_sessione(form, post):
+    grezzi = _grezzi(post, CAMPI_PAZIENTE)
+    for campo in TESTI_PULITI:
+        if form.cleaned_data.get(campo):
+            grezzi[campo] = form.cleaned_data[campo]
+        else:
+            grezzi.pop(campo, None)
+    if form.cleaned_data.get('data_nascita'):
+        grezzi['data_nascita'] = form.cleaned_data['data_nascita'].strftime('%d/%m/%Y')
+    return grezzi
+
+
 def _tipi(form):
     scelto = form['tipo_esame'].value()
     return [{**t, 'etichetta': TipoEsame(t['valore']).label, 'scelto': scelto == t['valore']} for t in TIPI]
@@ -77,10 +94,12 @@ def _contesto_esperti(form):
     if isinstance(urgenza, str):
         urgenza = urgenza in ('on', 'true', '1', 'True')
     selezionato = form['refertatore'].value()
+    esperti = percorso.esperti_con_prezzo(tipo, bool(urgenza)) if tipo in TipoEsame.values else []
     return {
         'tipo_scelto': tipo if tipo in TipoEsame.values else '',
         'tipo_label': TipoEsame(tipo).label.lower() if tipo in TipoEsame.values else '',
-        'esperti': percorso.esperti_con_prezzo(tipo, bool(urgenza)) if tipo in TipoEsame.values else [],
+        'esperti': esperti, 'urgenza': bool(urgenza),
+        'nessuno_per_urgenza': bool(urgenza and esperti and not any(e['accetta_urgenze'] for e in esperti)),
         'selezionato': str(selezionato or ''),
     }
 
@@ -102,7 +121,7 @@ def nuova_paziente(request):
     if request.method == 'POST':
         form = PazienteForm(request.POST)
         if form.is_valid():
-            request.session[percorso.SESSIONE_PAZIENTE] = _grezzi(request.POST, CAMPI_PAZIENTE)
+            request.session[percorso.SESSIONE_PAZIENTE] = _paziente_in_sessione(form, request.POST)
             return redirect('consulti:nuova_esame')
     else:
         form = PazienteForm(initial=salvati or {})
@@ -203,9 +222,11 @@ def esperti(request):
     if tipo not in TipoEsame.values:
         raise Http404
     urgenza = request.GET.get('urgenza') in ('on', 'true', '1')
+    esperti = percorso.esperti_con_prezzo(tipo, urgenza)
     return render(request, 'consulti/percorso/_esperti.html', {
-        'esperti': percorso.esperti_con_prezzo(tipo, urgenza), 'selezionato': request.GET.get('refertatore', ''),
-        'tipo_scelto': tipo, 'tipo_label': TipoEsame(tipo).label.lower(),
+        'esperti': esperti, 'selezionato': request.GET.get('refertatore', ''),
+        'tipo_scelto': tipo, 'tipo_label': TipoEsame(tipo).label.lower(), 'urgenza': urgenza,
+        'nessuno_per_urgenza': bool(urgenza and esperti and not any(e['accetta_urgenze'] for e in esperti)),
     })
 
 
@@ -218,10 +239,10 @@ def _file_per_categorie(allegati, categorie):
 TESTI_ZONA = {
     # tipo_media -> (testo con il mouse, testo al tocco, sottotesto)
     'CLIP': ('Trascina qui il filmato', 'Tocca per scegliere il filmato',
-             'MP4, AVI, MOV o DICOM · circa 10 secondi'),
+             'MP4, AVI, MOV o DICOM · massimo 10 secondi'),
     'STATICA': ('Trascina qui l\'immagine', 'Tocca per scegliere l\'immagine', 'JPG, PNG o DICOM'),
     'ENTRAMBI': ('Trascina qui il filmato o l\'immagine', 'Tocca per scegliere il file',
-                 'Un file: filmato (circa 10 secondi) oppure immagine'),
+                 'Un file: filmato (massimo 10 secondi) oppure immagine'),
 }
 ATTESO = {'CLIP': ('camera-reels', 'Filmato'), 'STATICA': ('image', 'Immagine'),
           'ENTRAMBI': ('collection-play', 'Filmato o immagine')}
@@ -377,5 +398,5 @@ def passo_riepilogo(request, pk):
         'prezzo': prezzo, 'motivo_blocco': motivo,
         'url_correggi': percorso.url_passo(richiesta, passo) if motivo and passo < 4 else None,
         'allegati': _allegati_in_ordine(richiesta),
-        'ore_risposta': regole.ore_risposta_dichiarate(richiesta) if richiesta.refertatore_id else None,
+        'ore_risposta': regole.ore_risposta(richiesta) if richiesta.refertatore_id else None,
     })

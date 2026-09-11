@@ -1,5 +1,5 @@
 {
- "versione": "2026-09-11d",
+ "versione": "2026-09-11e",
  "fonte": "dettato di Andre (nota Obsidian Telemedicina) + guida proiezioni-eco dalla sua presentazione",
  "sempre_obbligatorio": "Referto dell'ecografo in PDF, con le misure",
  "righe": [
@@ -10,7 +10,7 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "DX-1",
-   "istruzioni": "Filmato di circa 10 secondi. Angolo sonda / torace 45°. Cavo della sonda verso il gomito. Marker verso la colonna. Appoggio sulla giunzione costo-condrale. Cane di piccola taglia o gatto: sonda sullo sterno.",
+   "istruzioni": "Filmato di massimo 10 secondi. Angolo sonda / torace 45°. Cavo della sonda verso il gomito. Marker verso la colonna. Appoggio sulla giunzione costo-condrale. Cane di piccola taglia o gatto: sonda sullo sterno.",
    "deve_essere_visibile": "Le quattro camere con apice non troncato, setto interventricolare e interatriale, entrambe le valvole atrio-ventricolari.",
    "serve_per": "Morfologia di mitrale e tricuspide, spessori parietali, rapporti fra le camere. IVS ≈ PLVsx parete VD ≈ ½ VS camera VD ≈ ⅓ VS",
    "immagini_riferimento": [
@@ -28,7 +28,7 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "DX-1",
-   "istruzioni": "Filmato di circa 10 secondi. Color Doppler su mitrale e tricuspide (filmato separato dal B-mode). Angolo sonda / torace 45°. Cavo della sonda verso il gomito. Marker verso la colonna. Appoggio sulla giunzione costo-condrale. Cane di piccola taglia o gatto: sonda sullo sterno.",
+   "istruzioni": "Filmato di massimo 10 secondi. Color Doppler su mitrale e tricuspide (filmato separato dal B-mode). Angolo sonda / torace 45°. Cavo della sonda verso il gomito. Marker verso la colonna. Appoggio sulla giunzione costo-condrale. Cane di piccola taglia o gatto: sonda sullo sterno.",
    "deve_essere_visibile": "Le quattro camere con apice non troncato, setto interventricolare e interatriale, entrambe le valvole atrio-ventricolari.",
    "serve_per": "Morfologia di mitrale e tricuspide, spessori parietali, rapporti fra le camere. IVS ≈ PLVsx parete VD ≈ ½ VS camera VD ≈ ⅓ VS",
    "immagini_riferimento": [
@@ -46,7 +46,7 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "DX-2",
-   "istruzioni": "Filmato di circa 10 secondi. Angolo sonda / torace 60°. Punta della sonda verso le vertebre lombari. Cavo della sonda verso il gomito. Marker verso il collo.",
+   "istruzioni": "Filmato di massimo 10 secondi. Angolo sonda / torace 60°. Punta della sonda verso le vertebre lombari. Cavo della sonda verso il gomito. Marker verso il collo.",
    "deve_essere_visibile": "Tratto di efflusso sinistro con valvola aortica e radice aortica in continuità con il setto.",
    "serve_per": "Valutazione di setto ed efflusso, rapporti bidimensionali asse lungo (Strohm 2018). LV / Ao 1,8–2,5 AS / Ao 1,8–2,4",
    "immagini_riferimento": [
@@ -65,7 +65,7 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "DX-2",
-   "istruzioni": "Filmato di circa 10 secondi. Color sul tratto di efflusso e sulla valvola aortica (filmato separato dal B-mode). Angolo sonda / torace 60°. Punta della sonda verso le vertebre lombari. Cavo della sonda verso il gomito. Marker verso il collo.",
+   "istruzioni": "Filmato di massimo 10 secondi. Color sul tratto di efflusso e sulla valvola aortica (filmato separato dal B-mode). Angolo sonda / torace 60°. Punta della sonda verso le vertebre lombari. Cavo della sonda verso il gomito. Marker verso il collo.",
    "deve_essere_visibile": "Tratto di efflusso sinistro con valvola aortica e radice aortica in continuità con il setto.",
    "serve_per": "Valutazione di setto ed efflusso, rapporti bidimensionali asse lungo (Strohm 2018). LV / Ao 1,8–2,5 AS / Ao 1,8–2,4",
    "immagini_riferimento": [
@@ -84,7 +84,7 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "DX-3",
-   "istruzioni": "Filmato di circa 10 secondi. Scansione a ventaglio continua dall'apice alla base del cuore. Dalle 4 camere ruotare il marker verso il gomito (rotazione antioraria). Mantenere l'angolo di 45° sonda-torace. Sezioni a ventaglio dall'apice alla base.",
+   "istruzioni": "Filmato di massimo 10 secondi. Scansione a ventaglio continua dall'apice alla base del cuore. Dalle 4 camere ruotare il marker verso il gomito (rotazione antioraria). Mantenere l'angolo di 45° sonda-torace. Sezioni a ventaglio dall'apice alla base.",
    "deve_essere_visibile": "Il “fungo simmetrico”: ventricolo circolare con i due muscoli papillari simmetrici e ventricolo destro riconoscibile.",
    "serve_per": "Immagine di partenza per l'M-mode e per la valutazione della cinetica parietale.",
    "immagini_riferimento": [
@@ -102,7 +102,7 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "DX-3",
-   "istruzioni": "Filmato di circa 10 secondi. Stessa scansione dall'apice alla base, con il color attivo (filmato separato dal B-mode). Dalle 4 camere ruotare il marker verso il gomito (rotazione antioraria). Mantenere l'angolo di 45° sonda-torace. Sezioni a ventaglio dall'apice alla base.",
+   "istruzioni": "Filmato di massimo 10 secondi. Stessa scansione dall'apice alla base, con il color attivo (filmato separato dal B-mode). Dalle 4 camere ruotare il marker verso il gomito (rotazione antioraria). Mantenere l'angolo di 45° sonda-torace. Sezioni a ventaglio dall'apice alla base.",
    "deve_essere_visibile": "Il “fungo simmetrico”: ventricolo circolare con i due muscoli papillari simmetrici e ventricolo destro riconoscibile.",
    "serve_per": "Immagine di partenza per l'M-mode e per la valutazione della cinetica parietale.",
    "immagini_riferimento": [
@@ -237,7 +237,7 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "",
-   "istruzioni": "Filmato di circa 10 secondi. Tratto di efflusso sinistro dalla finestra sottoxifoidea. Dietro lo sterno. Cursore verso la colonna. Sonda parallela alla colonna.",
+   "istruzioni": "Filmato di massimo 10 secondi. Tratto di efflusso sinistro dalla finestra sottoxifoidea. Dietro lo sterno. Cursore verso la colonna. Sonda parallela alla colonna.",
    "deve_essere_visibile": "",
    "serve_per": "",
    "immagini_riferimento": [
@@ -260,7 +260,7 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "",
-   "istruzioni": "Filmato di circa 10 secondi. Stessa finestra con il color sul tratto di efflusso (filmato separato dal B-mode). Dietro lo sterno. Cursore verso la colonna. Sonda parallela alla colonna.",
+   "istruzioni": "Filmato di massimo 10 secondi. Stessa finestra con il color sul tratto di efflusso (filmato separato dal B-mode). Dietro lo sterno. Cursore verso la colonna. Sonda parallela alla colonna.",
    "deve_essere_visibile": "",
    "serve_per": "",
    "immagini_riferimento": [
@@ -337,7 +337,7 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "SX-1",
-   "istruzioni": "Filmato di circa 10 secondi. Punta della sonda verso il collo. Marker verso la colonna. Angolo sonda / torace 30°. Partire dal “fegato sottocostale” e risalire cranialmente.",
+   "istruzioni": "Filmato di massimo 10 secondi. Punta della sonda verso il collo. Marker verso la colonna. Angolo sonda / torace 30°. Partire dal “fegato sottocostale” e risalire cranialmente.",
    "deve_essere_visibile": "Apice del ventricolo in alto, quattro camere allineate, setto interatriale completo, sbocco delle vene polmonari.",
    "serve_per": "Misure area-lunghezza e Simpson, volumi atriali, allineamento per il Doppler degli afflussi.",
    "immagini_riferimento": [
@@ -355,7 +355,7 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "SX-1",
-   "istruzioni": "Filmato di circa 10 secondi. Color su mitrale e tricuspide (filmato separato dal B-mode). Punta della sonda verso il collo. Marker verso la colonna. Angolo sonda / torace 30°. Partire dal “fegato sottocostale” e risalire cranialmente.",
+   "istruzioni": "Filmato di massimo 10 secondi. Color su mitrale e tricuspide (filmato separato dal B-mode). Punta della sonda verso il collo. Marker verso la colonna. Angolo sonda / torace 30°. Partire dal “fegato sottocostale” e risalire cranialmente.",
    "deve_essere_visibile": "Apice del ventricolo in alto, quattro camere allineate, setto interatriale completo, sbocco delle vene polmonari.",
    "serve_per": "Misure area-lunghezza e Simpson, volumi atriali, allineamento per il Doppler degli afflussi.",
    "immagini_riferimento": [
@@ -373,7 +373,7 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "SX-2",
-   "istruzioni": "Filmato di circa 10 secondi. Dalla apicale 4 camere, alzare la coda della sonda fino a far comparire il tratto di efflusso e la valvola aortica.",
+   "istruzioni": "Filmato di massimo 10 secondi. Dalla apicale 4 camere, alzare la coda della sonda fino a far comparire il tratto di efflusso e la valvola aortica.",
    "deve_essere_visibile": "Efflusso sinistro allineato all'asse del fascio, valvola aortica al centro dell'immagine.",
    "serve_per": "Doppler dell'aorta, anomalie del tratto di efflusso, TVI aortico per il metodo volumetrico.",
    "immagini_riferimento": [
@@ -391,7 +391,7 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "SX-2",
-   "istruzioni": "Filmato di circa 10 secondi. Color sul tratto di efflusso e sulla valvola aortica (filmato separato dal B-mode). Dalla apicale 4 camere, alzare la coda della sonda fino a far comparire il tratto di efflusso e la valvola aortica.",
+   "istruzioni": "Filmato di massimo 10 secondi. Color sul tratto di efflusso e sulla valvola aortica (filmato separato dal B-mode). Dalla apicale 4 camere, alzare la coda della sonda fino a far comparire il tratto di efflusso e la valvola aortica.",
    "deve_essere_visibile": "Efflusso sinistro allineato all'asse del fascio, valvola aortica al centro dell'immagine.",
    "serve_per": "Doppler dell'aorta, anomalie del tratto di efflusso, TVI aortico per il metodo volumetrico.",
    "immagini_riferimento": [
@@ -510,7 +510,7 @@
    "obbligatoria": false,
    "libera": true,
    "scheda_guida": "",
-   "istruzioni": "Filmato di circa 10 secondi. Per una richiesta specifica: scrivi cosa mostra e cosa chiedi.",
+   "istruzioni": "Filmato di massimo 10 secondi. Per una richiesta specifica: scrivi cosa mostra e cosa chiedi.",
    "deve_essere_visibile": "",
    "serve_per": "",
    "immagini_riferimento": [],
@@ -525,7 +525,7 @@
    "obbligatoria": false,
    "libera": true,
    "scheda_guida": "",
-   "istruzioni": "Filmato di circa 10 secondi. Per una richiesta specifica: scrivi cosa mostra e cosa chiedi.",
+   "istruzioni": "Filmato di massimo 10 secondi. Per una richiesta specifica: scrivi cosa mostra e cosa chiedi.",
    "deve_essere_visibile": "",
    "serve_per": "",
    "immagini_riferimento": [],

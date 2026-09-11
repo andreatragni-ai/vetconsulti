@@ -1,6 +1,6 @@
 Gentile {{ refertatore.nome_completo }},
 
-il caso {{ richiesta.codice }} ({{ richiesta.get_tipo_esame_display }}{% if richiesta.urgenza %}, URGENTE{% endif %}, paziente {{ richiesta.paziente }}) ti e' stato inviato il {{ richiesta.inviata_il|date:"d/m/Y" }} alle {{ richiesta.inviata_il|date:"H:i" }}{% if ore_dichiarate %} e il tempo di risposta indicato e' di {{ ore_dichiarate }} ore: siamo a meta'{% endif %}.
+il caso {{ richiesta.codice }} ({{ richiesta.get_tipo_esame_display }}{% if richiesta.urgenza %}, URGENTE{% endif %}, paziente {{ richiesta.paziente }}) ti e' stato inviato il {{ richiesta.inviata_il|date:"d/m/Y" }} alle {{ richiesta.inviata_il|date:"H:i" }}{% if ore_risposta %}{% if richiesta.urgenza %}: e' un caso urgente, con risposta entro {{ ore_risposta }} ore, e siamo a meta'{% else %} e il tempo di risposta indicato e' di {{ ore_risposta }} ore: siamo a meta'{% endif %}{% endif %}.
 
 {% if richiesta.stato == 'INVIATA' %}Non l'hai ancora preso in carico. {% endif %}Lo trovi qui:
 

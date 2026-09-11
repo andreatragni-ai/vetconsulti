@@ -88,23 +88,27 @@ def _pdf_allegato(versione):
 # ── Al refertatore ──────────────────────────────────────────────────────────
 
 def avvisa_caso_arrivato(richiesta):
+    """Con l'ora entro cui rispondere (consulti.regole: 4 ore se urgente)."""
+    from consulti import regole
     ref = richiesta.refertatore
     if ref is None:
         return False
     return _invia(TipoInvio.CASO_ARRIVATO, ref.user.email,
                   f'[VetWay Consulti] Nuovo caso{" URGENTE" if richiesta.urgenza else ""}: {_caso(richiesta)}',
-                  'notifiche/caso_arrivato.txt', {'refertatore': ref}, richiesta,
-                  link=_link_refertazione(richiesta))
+                  'notifiche/caso_arrivato.txt',
+                  {'refertatore': ref, 'ore_risposta': regole.ore_risposta(richiesta),
+                   'scadenza': regole.scadenza(richiesta)},
+                  richiesta, link=_link_refertazione(richiesta))
 
 
-def sollecita_refertatore(richiesta, ore_dichiarate=None):
-    """Promemoria a meta' del tempo di risposta dichiarato (sorveglia_consulti)."""
+def sollecita_refertatore(richiesta, ore_risposta=None):
+    """Promemoria a meta' del tempo di risposta (sorveglia_consulti)."""
     ref = richiesta.refertatore
     if ref is None:
         return False
     return _invia(TipoInvio.SOLLECITO, ref.user.email,
                   f'[VetWay Consulti] Promemoria: {_caso(richiesta)} in attesa',
-                  'notifiche/sollecito.txt', {'refertatore': ref, 'ore_dichiarate': ore_dichiarate},
+                  'notifiche/sollecito.txt', {'refertatore': ref, 'ore_risposta': ore_risposta},
                   richiesta, link=_link_refertazione(richiesta))
 
 

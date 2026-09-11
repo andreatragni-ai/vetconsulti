@@ -51,3 +51,26 @@ def test_pie_di_pagina_senza_la_tecnologia(client, mondo):
     pagina = _t(client.get(reverse('consulti:mie_richieste')))
     assert 'Django + PostgreSQL' not in pagina and 'Powered by <strong>VetWay Consulti</strong>' in pagina
     assert reverse('core:privacy') in pagina and reverse('core:termini') in pagina
+
+
+# ── Dati in sola lettura come testo (collaudo dell'11/09/2026) ───────────────
+
+def test_i_dati_in_lettura_sono_testo_non_caselle(client, caso_in_carico, mondo):
+    """Pagina del refertatore, pagina del caso, profilo del richiedente: il
+    partial del portale _dato.html (etichetta + valore, niente bordo da
+    input) al posto di vetway_ui/partials/_campo.html."""
+    from django.urls import reverse
+    caso_in_carico.paziente.cognome_proprietario = 'Rossi'
+    caso_in_carico.paziente.save()
+    pagine = [(mondo.ref.user, reverse('referti:refertazione', args=[caso_in_carico.pk])),
+              (mondo.richiedente.user, reverse('consulti:dettaglio', args=[caso_in_carico.pk])),
+              (mondo.richiedente.user, reverse('accounts:profilo_richiedente'))]
+    for utente, url in pagine:
+        client.force_login(utente)
+        pagina = client.get(url).content.decode()
+        assert 'campo-valore' not in pagina and 'class="dato-valore' in pagina, url
+    client.force_login(mondo.ref.user)
+    pagina = client.get(reverse('referti:refertazione', args=[caso_in_carico.pk])).content.decode()
+    assert '<div class="dato-label">Proprietario</div>\n  <div class="dato-valore">Rossi</div>' in pagina
+    assert '<div class="dato-valore dato-testo">Aritmia?</div>' in pagina          # il quesito, a capo
+    assert '<div class="dato-valore dato-testo vuoto">–</div>' in pagina           # anamnesi vuota

@@ -31,7 +31,7 @@ qualcosa (la frase compare accanto, con il link per sistemare).
     <div class="testa"><h6 id="r-paziente">Paziente</h6><a class="modifica" href="{{ url_1 }}"><i class="bi bi-pencil" aria-hidden="true"></i>Modifica<span class="visually-hidden"> il paziente</span></a></div>
     <dl>
       <dt>Nome</dt><dd>{{ paziente.nome }}</dd>
-      <dt>Specie</dt><dd>{% if paziente.specie == 'ALTRO' and paziente.specie_altro %}{{ paziente.specie_altro }}{% else %}{{ paziente.get_specie_display }}{% endif %}{% if paziente.razza %}, {{ paziente.razza }}{% endif %}</dd>
+      <dt>Specie</dt><dd>{{ paziente.get_specie_display }}{% if paziente.razza %}, {{ paziente.razza }}{% endif %}</dd>
       <dt>Sesso</dt><dd>{{ paziente.get_sesso_display }}</dd>
       {% if paziente.data_nascita %}<dt>Nato il</dt><dd>{{ paziente.data_nascita|date:"d/m/Y" }}</dd>{% elif paziente.eta_testo %}<dt>Eta'</dt><dd>{{ paziente.eta_testo }}</dd>{% endif %}
       {% if paziente.peso_kg %}<dt>Peso</dt><dd>{{ paziente.peso_kg|floatformat:"-2" }} kg</dd>{% endif %}

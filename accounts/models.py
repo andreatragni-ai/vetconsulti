@@ -195,6 +195,15 @@ class SoggettoEmittente(models.TextChoices):
 class Refertatore(models.Model):
     """Chi firma i referti.
 
+    ## La foto e' un file protetto come gli altri
+
+    `foto` compare nella scheda dell'esperto al passo 2 della richiesta (senza
+    foto: le iniziali su fondo neutro). Si carica dall'admin o dal profilo;
+    al salvataggio si riduce a un JPEG di al piu' 480 px di lato (una foto
+    del telefono pesa megabyte e la scheda la mostra a 64 px). Non e' mai
+    servita come statico: passa da core.views_media.foto_refertatore, solo
+    per chi e' autenticato (`url_foto`).
+
     ## L'assenza si mostra, non si nasconde
 
     Un refertatore in ferie che sparisce dall'elenco lascia il collega a
@@ -211,6 +220,9 @@ class Refertatore(models.Model):
     numero_iscrizione = models.CharField(max_length=30, blank=True)
     ordine_provinciale = models.CharField(max_length=100, blank=True)
     firma = models.ImageField(upload_to='firme/', blank=True, null=True)
+    foto = models.ImageField(
+        upload_to='foto_refertatori/', blank=True, null=True,
+        help_text='Compare ai colleghi nella scelta dell\'esperto. Si riduce da sola a 480 px.')
     attivo = models.BooleanField(default=True, db_index=True)
     assente_dal = models.DateField(null=True, blank=True)
     assente_al = models.DateField(null=True, blank=True)
@@ -238,6 +250,31 @@ class Refertatore(models.Model):
     def nome_completo(self):
         nome = self.user.get_full_name() or self.user.username
         return f'{self.titolo} {nome}'.strip()
+
+    @property
+    def iniziali(self):
+        """«LM» per Laura Monti: il riquadro della scheda quando manca la foto."""
+        parti = [p for p in (self.user.first_name, self.user.last_name) if p.strip()]
+        if parti:
+            return ''.join(p.strip()[0] for p in parti).upper()
+        return self.user.username[:2].upper()
+
+    @property
+    def url_foto(self):
+        """Indirizzo protetto della foto, o '' se non c'e'. `?v=` cambia con il
+        file: una foto nuova non resta nascosta dietro la cache del browser."""
+        if not self.foto:
+            return ''
+        from hashlib import sha1
+        from django.urls import reverse
+        versione = sha1(self.foto.name.encode()).hexdigest()[:8]
+        return f'{reverse("foto_refertatore", args=[self.pk])}?v={versione}'
+
+    def save(self, *args, **kwargs):
+        if self.foto and not getattr(self.foto, '_committed', True):
+            from .foto import riduci
+            self.foto = riduci(self.foto)
+        super().save(*args, **kwargs)
 
     def clean(self):
         if self.assente_dal and self.assente_al and self.assente_al < self.assente_dal:
@@ -268,6 +305,11 @@ class Refertatore(models.Model):
         """True se e' referente attivo per quel tipo."""
         return self.attivo and self.competenze.filter(tipo_esame=tipo_esame, referente=True).exists()
 
+    def accetta_urgenze_per(self, tipo_esame):
+        """True se per quel tipo e' referente e accetta i casi urgenti
+        (risposta entro 4 ore: consulti.regole.ORE_RISPOSTA_URGENZA)."""
+        return self.competenze.filter(tipo_esame=tipo_esame, referente=True, accetta_urgenze=True).exists()
+
     @classmethod
     def referenti_per(cls, tipo_esame):
         """Refertatori attivi e referenti per un tipo di esame, ordinati per nome.
@@ -287,6 +329,14 @@ class CompetenzaRefertatore(models.Model):
     scavalca il listino (listino.prezzo_effettivo lo dice nell'origine).
     `tempo_risposta_ore` e' una promessa mostrata accanto al nome, non un SLA
     che il sistema fa rispettare.
+
+    `accetta_urgenze` sta qui, per tipo di esame, e non sul Refertatore:
+    promettere una risposta entro 4 ore e' diverso per un ECG (pochi minuti
+    di lettura) e per un'eco con 27 filmati, e accanto ci sono gia' prezzo e
+    tempo di risposta dello stesso tipo. Parte spento: l'urgenza e' un
+    impegno che l'esperto prende, non gli si assegna. Chi non accetta
+    urgenze compare al passo 2 ma non si sceglie con «Urgente» acceso
+    (consulti.regole.rifiuta_urgenza).
     """
 
     refertatore = models.ForeignKey(
@@ -297,6 +347,8 @@ class CompetenzaRefertatore(models.Model):
         max_digits=8, decimal_places=2, null=True, blank=True,
         help_text='Imponibile. Vuoto = listino.')
     tempo_risposta_ore = models.PositiveIntegerField(null=True, blank=True)
+    accetta_urgenze = models.BooleanField(
+        default=False, help_text='Accetta i casi urgenti di questo tipo: risposta entro 4 ore dall\'invio.')
 
     class Meta:
         verbose_name = 'Competenza refertatore'

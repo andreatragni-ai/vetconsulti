@@ -1,0 +1,15 @@
+{% comment %}
+Dato in SOLA LETTURA: etichetta + valore come testo, senza il bordo da
+casella (collaudo dell'11/09/2026: i dati del paziente sembravano campi da
+compilare). Nel portale prende il posto di vetway_ui/partials/_campo.html,
+che disegna il valore dentro un riquadro con bordo come un input: la
+variante «testo» e' da portare nel pacchetto (vetway-ui 0.3.0), poi si
+torna all'include del pacchetto. NON confondere con _campo_form.html, che
+e' un campo di FORM.
+Uso: {% include "_dato.html" with label="Quesito" val=richiesta.quesito multiline=True %}
+Variabili: label (obbligatoria), val, multiline (testo a capo), url (valore cliccabile).
+{% endcomment %}
+<div class="dato">
+  <div class="dato-label">{{ label }}</div>
+  <div class="dato-valore{% if multiline %} dato-testo{% endif %}{% if val is None or val == '' %} vuoto{% endif %}">{% if url and val %}<a href="{{ url }}">{{ val }}</a>{% else %}{{ val|default_if_none:""|default:"–" }}{% endif %}</div>
+</div>

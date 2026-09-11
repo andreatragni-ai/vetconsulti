@@ -2,8 +2,13 @@
 {% comment %}
 Passo 1 della richiesta guidata: il paziente (consulti/views_percorso.py:
 nuova_paziente per una richiesta nuova, passo_paziente per una bozza).
-Obbligatori solo nome, specie e sesso; l'eta' e' la data di nascita
-OPPURE gli anni. «Quale specie?» compare solo con Altro.
+Obbligatori solo nome, specie (cane o gatto) e sesso; l'eta' e' la data
+di nascita OPPURE gli anni. La razza e' un elenco filtrato che cambia con
+la specie (consulti/razze.py, static/consulti/js/elenco_filtrato.js): una
+razza fuori elenco si accetta, con un avviso discreto. La data di nascita
+e' un campo di TESTO gg/mm/aaaa (non type="date": su Safari il campo data
+vuoto mostra la data di oggi in grigio e sembra compilato); il JS qui sotto
+aggiunge le barre mentre si scrive, il form accetta anche - e .
 {% endcomment %}
 {% block title %}{% if richiesta %}{{ richiesta.titolo }} · paziente{% else %}Nuova richiesta{% endif %} — VetWay Consulti{% endblock %}
 {% block content %}
@@ -24,9 +29,18 @@ OPPURE gli anni. «Quale specie?» compare solo con Altro.
         </div>
         {% for e in form.specie.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
       </fieldset>
-      <div id="blocco-specie-altro"{% if form.specie.value != 'ALTRO' %} hidden{% endif %}>{% include "_campo_form.html" with campo=form.specie_altro %}</div>
     </div>
-    <div class="col-md-4">{% include "_campo_form.html" with campo=form.razza %}</div>
+    <div class="col-md-4">
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.razza.id_for_label }}">{{ form.razza.label }}</label>
+        <div class="elenco-filtrato">
+          {{ form.razza }}
+          <ul class="elenco-filtrato-voci" id="razza-elenco" role="listbox" aria-label="Razze" hidden></ul>
+        </div>
+        <div class="form-text elenco-filtrato-avviso" id="razza-avviso" hidden><i class="bi bi-info-circle me-1" aria-hidden="true"></i>Non e' nell'elenco: va bene lo stesso, resta come l'hai scritta.</div>
+        {% for e in form.razza.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+    </div>
     <div class="col-md-4">{% include "_campo_form.html" with campo=form.sesso %}</div>
     <div class="col-md-4">{% include "_campo_form.html" with campo=form.peso_kg %}</div>
   </div>
@@ -52,14 +66,29 @@ OPPURE gli anni. «Quale specie?» compare solo con Altro.
   </div>
 </div>
 </form>
+{{ form.elenchi_razze|json_script:"razze-per-specie" }}
 {% endblock %}
-{% block js %}
+{% block js %}{% load static %}
+<script src="{% static 'consulti/js/elenco_filtrato.js' %}"></script>
 <script>
 (function () {
-  // «Quale specie?» solo con Altro.
-  var blocco = document.getElementById('blocco-specie-altro');
-  document.getElementById('form-paziente').addEventListener('change', function (e) {
-    if (e.target.name === 'specie') blocco.hidden = e.target.value !== 'ALTRO';
+  'use strict';
+  // Data di nascita a mano: con il tastierino numerico (iPhone, iPad) non c'e'
+  // la barra, la mettiamo noi dopo giorno e mese; all'uscita 15032019 e 1-3-2019
+  // diventano 15/03/2019. Il form accetta comunque anche - e . (FORMATI_DATA).
+  document.querySelectorAll('input[data-data-a-mano]').forEach(function (campo) {
+    campo.addEventListener('input', function (e) {
+      if (e.inputType && e.inputType.indexOf('delete') === 0) { return; }
+      // Chi ha la barra sulla tastiera la scrive lo stesso: niente doppioni.
+      if (/\/\/$/.test(campo.value)) { campo.value = campo.value.slice(0, -1); return; }
+      if (/^\d{2}$/.test(campo.value) || /^\d{1,2}\/\d{2}$/.test(campo.value)) { campo.value += '/'; }
+    });
+    campo.addEventListener('blur', function () {
+      var v = campo.value.trim(), m;
+      if ((m = /^(\d{2})(\d{2})(\d{4})$/.exec(v)) || (m = /^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/.exec(v))) {
+        campo.value = ('0' + m[1]).slice(-2) + '/' + ('0' + m[2]).slice(-2) + '/' + m[3];
+      }
+    });
   });
 })();
 </script>

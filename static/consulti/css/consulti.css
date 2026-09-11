@@ -78,10 +78,64 @@
 @media (min-width: 992px) {
   .visore { position: sticky; top: .75rem; }
 }
-.visore-schede { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .6rem; }
-.visore-schede .btn { font-size: .78rem; text-align: left; max-width: 16rem; }
-.visore-schede .btn .proiezione { display: block; font-size: .7rem; opacity: .75; }
-.visore-schede .btn.attiva { background: var(--ovic-blu); border-color: var(--ovic-blu); color: var(--bs-white); }
+/* Elenco dei file a gruppi (consulti/elenco_file.py): titolo della finestra,
+   poi le schede con miniatura (immagini) o icona (filmati, PDF). */
+.visore-elenco { margin-bottom: .6rem; }
+.visore-gruppo {
+  margin: .5rem 0 .3rem;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--ovic-blu);
+}
+.visore-gruppo:first-child { margin-top: 0; }
+.visore-gruppo .conta { font-weight: 600; color: var(--bs-secondary-color); letter-spacing: 0; }
+.visore-schede { display: flex; flex-wrap: wrap; gap: .35rem; }
+.visore-scheda {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  width: 13.5rem;
+  min-height: 44px;
+  padding: .25rem .5rem .25rem .25rem;
+  text-align: left;
+  font-size: .78rem;
+  line-height: 1.2;
+  color: var(--ovic-testo);
+  background: var(--bs-body-bg);
+  border: 1px solid var(--ovic-bordo);
+  border-radius: 6px;
+}
+.visore-scheda:hover { border-color: var(--ovic-oro-lt); }
+.visore-scheda:focus-visible { outline: 3px solid var(--ovic-oro-lt); outline-offset: 1px; }
+.visore-scheda .miniatura {
+  flex: none;
+  width: 48px;
+  height: 36px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--ovic-grigio);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ovic-blu);
+  font-size: 1.1rem;
+}
+.visore-scheda .miniatura img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.visore-scheda .testo { min-width: 0; }
+.visore-scheda .nome {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-weight: 600;
+}
+.visore-scheda .tipo { display: block; font-size: .72rem; color: var(--bs-secondary-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.visore-scheda.attiva { background: var(--ovic-blu); border-color: var(--ovic-blu); color: var(--bs-white); }
+.visore-scheda.attiva .tipo { color: var(--bs-white); opacity: .8; }
+.visore-scheda.attiva .miniatura { color: var(--ovic-blu); }
+.visore-elenco + .visore-scena { margin-top: .6rem; }
 .visore-scena {
   background: var(--ovic-grigio);
   border: 1px solid var(--ovic-bordo);
@@ -100,9 +154,9 @@
 @media (max-width: 767.98px) {
   .visore-scena iframe { height: 60vh; }
   .visore-scena img, .visore-scena video { max-height: 60vh; }
-  /* Su mobile le schede scorrono in orizzontale invece di impilarsi. */
+  /* Su mobile le schede di un gruppo scorrono in orizzontale invece di impilarsi. */
   .visore-schede { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .25rem; }
-  .visore-schede .btn { min-height: 44px; flex: 0 0 auto; max-width: 70%; }
+  .visore-scheda { flex: 0 0 auto; width: 12rem; max-width: 75%; }
 }
 
 /* Barra delle azioni del referto: su mobile resta attaccata in basso,
@@ -620,3 +674,84 @@ a.riferimento:hover, a.riferimento:focus-visible { outline: 3px solid var(--ovic
 .consulti-footer a { color: var(--bs-white); opacity: .75; }
 .consulti-footer a:hover { opacity: 1; }
 .consulti-footer strong { color: var(--bs-white); opacity: .85; }
+
+/* ── Elenco filtrato (razza nel passo 1): combobox con listbox sotto il campo.
+   Generico, candidato per vetway-ui 0.3.0 (static/consulti/js/elenco_filtrato.js). ── */
+.elenco-filtrato { position: relative; }
+.elenco-filtrato-voci {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  /* Sopra la barra di «Avanti», che su telefono sta attaccata in basso (z-index 100). */
+  z-index: 110;
+  max-height: 16rem;
+  max-height: min(16rem, 45vh);
+  overflow-y: auto;
+  margin: 0;
+  padding: .25rem 0;
+  list-style: none;
+  background: var(--bs-body-bg);
+  border: 1px solid var(--ovic-bordo);
+  border-radius: 6px;
+  box-shadow: var(--bs-box-shadow);
+}
+.elenco-filtrato-voci [role="option"] { padding: .4rem .75rem; cursor: pointer; }
+.elenco-filtrato-voci [role="option"]:hover,
+.elenco-filtrato-voci [role="option"][aria-selected="true"] {
+  background: var(--ovic-grigio);
+  background: color-mix(in srgb, var(--ovic-oro) 14%, var(--bs-body-bg));
+  color: var(--ovic-testo);
+}
+.elenco-filtrato-avviso { color: var(--bs-secondary-color); }
+@media (max-width: 767.98px) {
+  .elenco-filtrato-voci [role="option"] { min-height: 44px; display: flex; align-items: center; }
+}
+
+/* ── Foto dell'esperto: riquadro in testa alla scheda (passo 2), iniziali se manca ── */
+.scheda-esperto .esperto-testa { display: flex; align-items: center; gap: .75rem; margin-bottom: .2rem; }
+.scheda-esperto .esperto-nome { min-width: 0; }
+.esperto-foto {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--ovic-grigio);
+  border: 1px solid var(--ovic-bordo);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.esperto-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.esperto-iniziali { font-size: 1.3rem; font-weight: 700; letter-spacing: .04em; color: var(--ovic-blu); }
+.btn-check:disabled + .scheda-scelta .esperto-foto { opacity: .6; }
+/* Il campo foto nel profilo e nell'admin: anteprima protetta + «Togli la foto». */
+.foto-attuale { display: flex; align-items: center; gap: .75rem; margin-bottom: .4rem; }
+.foto-attuale img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; border: 1px solid var(--ovic-bordo); }
+/* Pagina del caso: i file a gruppi per finestra, come nel visore. */
+.tbl-risultati .riga-gruppo th {
+  padding-top: .6rem;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--ovic-blu);
+  background: var(--bs-body-bg);
+}
+
+/* ── Dati in sola lettura (templates/_dato.html): etichetta + valore come
+   TESTO, senza il bordo da casella di _campo.html del pacchetto, che li
+   faceva sembrare campi da compilare. Variante da portare in vetway-ui 0.3.0. ── */
+.dato { margin-bottom: .65rem; min-width: 0; }
+.dato-label {
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--bs-secondary-color);
+  margin-bottom: .05rem;
+}
+.dato-valore { font-size: .95rem; font-weight: 600; color: var(--ovic-testo); overflow-wrap: anywhere; }
+.dato-valore.dato-testo { font-weight: 400; white-space: pre-wrap; line-height: 1.45; }
+.dato-valore.vuoto { font-weight: 400; color: var(--bs-secondary-color); }

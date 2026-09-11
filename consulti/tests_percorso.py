@@ -70,7 +70,8 @@ def esperto_eco(mondo):
         user=User.objects.create_user('eco', 'eco@x.it', 'pw', first_name='Laura', last_name='Monti'),
         titolo='Dott.ssa', specializzazione='Ecocardiografia')
     CompetenzaRefertatore.objects.create(refertatore=r, tipo_esame=TipoEsame.ECO, referente=True,
-                                         prezzo_personalizzato=Decimal('85.00'), tempo_risposta_ore=24)
+                                         prezzo_personalizzato=Decimal('85.00'), tempo_risposta_ore=24,
+                                         accetta_urgenze=True)
     return r
 
 
@@ -189,25 +190,31 @@ def test_passo_1_nome_specie_sesso_obbligatori(loggato):
 
 def test_passo_1_etichette_umane_e_niente_motivo(loggato):
     pagina = _t(loggato.get(reverse('consulti:nuova')))
-    for etichetta in ('Nome del paziente', 'Quale specie?', 'Data di nascita', 'Eta\' in anni', 'Peso (kg)',
+    for etichetta in ('Nome del paziente', 'Data di nascita', 'Eta\' in anni', 'Peso (kg)',
                       'Cognome del proprietario', 'Basta il cognome', 'Non conosci la data?'):
         assert etichetta in pagina, etichetta
-    assert 'Eta testo' not in pagina and 'Specie altro' not in pagina and 'Peso kg' not in pagina
-    # «Quale specie?» e' nascosto finche' non si sceglie Altro.
-    assert 'id="blocco-specie-altro" hidden' in pagina
+    assert 'Eta testo' not in pagina and 'Peso kg' not in pagina
 
 
-def test_passo_1_eta_una_delle_due_e_specie_altro(loggato, mondo, crea_bozza):
+def test_passo_1_specie_solo_cane_e_gatto(loggato):
+    pagina = _t(loggato.get(reverse('consulti:nuova')))
+    assert 'value="CANE"' in pagina and 'value="GATTO"' in pagina
+    assert 'value="ALTRO"' not in pagina and 'Quale specie?' not in pagina and 'specie_altro' not in pagina
+    risposta = loggato.post(reverse('consulti:nuova'), {'nome': 'Nemo', 'specie': 'ALTRO', 'sesso': 'M'})
+    assert risposta.status_code == 200 and 'scegli una delle due specie' in _t(risposta)
+    assert percorso.SESSIONE_PAZIENTE not in loggato.session
+    assert [valore for valore, _ in Paziente._meta.get_field('specie').choices] == ['CANE', 'GATTO']
+
+
+def test_passo_1_eta_una_delle_due(loggato, mondo, crea_bozza):
     risposta = loggato.post(reverse('consulti:nuova'), {'nome': 'Fido', 'specie': 'CANE', 'sesso': 'M',
                                                         'data_nascita': '2020-01-01', 'eta_anni': '6'})
     assert risposta.status_code == 200 and 'Basta una delle due' in _t(risposta)
     r = crea_bozza(loggato, 'ECG', mondo.ref, paziente={
-        'nome': 'Coccola', 'specie': 'CANE', 'specie_altro': 'da buttare', 'eta_anni': '8', 'peso_kg': '12,5'})
-    assert r.paziente.eta_testo == '8 anni' and r.paziente.specie_altro == ''
-    assert r.paziente.peso_kg == Decimal('12.50')
-    r2 = crea_bozza(loggato, 'ECG', mondo.ref, paziente={'nome': 'Nemo', 'specie': 'ALTRO',
-                                                         'specie_altro': 'furetto', 'eta_anni': '1'})
-    assert r2.paziente.specie_altro == 'furetto' and r2.paziente.eta_testo == '1 anno'
+        'nome': 'Coccola', 'specie': 'CANE', 'eta_anni': '8', 'peso_kg': '12,5'})
+    assert r.paziente.eta_testo == '8 anni' and r.paziente.peso_kg == Decimal('12.50')
+    r2 = crea_bozza(loggato, 'ECG', mondo.ref, paziente={'nome': 'Nemo', 'specie': 'GATTO', 'eta_anni': '1'})
+    assert r2.paziente.specie == 'GATTO' and r2.paziente.eta_testo == '1 anno'
 
 
 def test_passo_1_data_nel_futuro_rifiutata(loggato):
@@ -462,7 +469,7 @@ def test_eco_clip_troppo_pesante_rifiutata_con_messaggio(loggato, bozza_eco, cat
     # A pezzi il rifiuto arriva gia' allo stato, prima di mandare i pezzi.
     stato = loggato.get(reverse('consulti:upload_stato', args=[bozza_eco.pk]), {
         'impronta': 'a' * 64, 'slot': 'proiezione', 'proiezione': p.pk, 'nome': 'lunga.mp4', 'dimensione': 5000})
-    assert stato.status_code == 400 and 'una decina di secondi' in stato.json()['errore']
+    assert stato.status_code == 400 and 'massimo 10 secondi' in stato.json()['errore']
     # Un'immagine non ha quel limite.
     assert _carica(loggato, bozza_eco, 'proiezione', _file('ok.png', PNG * 20),
                    proiezione=catalogo['pd_statica'].pk).status_code == 200
@@ -531,7 +538,7 @@ def test_eco_righe_per_finestra_filmati_prima_e_liberi_in_fondo(loggato, bozza_e
 
 def test_eco_riga_con_testi_e_immagini_di_riferimento(loggato, bozza_eco, catalogo):
     p = catalogo['pd_clip']
-    p.istruzioni, p.deve_essere_visibile = 'Filmato di circa 10 secondi.', 'Le quattro camere.'
+    p.istruzioni, p.deve_essere_visibile = 'Filmato di massimo 10 secondi.', 'Le quattro camere.'
     p.serve_per, p.nota_riferimento = 'Soglia IVS 0,6 cm.', 'APPUNTO SOLO ADMIN'
     p.save()
     for i, didascalia in enumerate(('Immagine ecografica', 'Schema', 'Posizione della sonda'), start=1):
@@ -540,7 +547,7 @@ def test_eco_riga_con_testi_e_immagini_di_riferimento(loggato, bozza_eco, catalo
     prima, *altre = list(p.immagini.all())
     pagina = _t(loggato.get(reverse('consulti:passo_carica', args=[bozza_eco.pk])))
     riga = pagina[pagina.index(f'id="proiezione_{p.pk}"'):pagina.index(f'id="proiezione_{catalogo["pd_statica"].pk}"')]
-    assert '<strong>Come:</strong> Filmato di circa 10 secondi.' in riga
+    assert '<strong>Come:</strong> Filmato di massimo 10 secondi.' in riga
     assert '<strong>Deve vedersi:</strong> Le quattro camere.' in riga
     assert '<summary>A cosa serve</summary>' in riga and 'Soglia IVS' in riga
     assert 'APPUNTO SOLO ADMIN' not in pagina

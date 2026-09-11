@@ -5,6 +5,7 @@ Gentile {{ refertatore.nome_completo }},
   {{ richiesta.codice }} — {{ richiesta.get_tipo_esame_display }}{% if richiesta.urgenza %} — URGENTE{% endif %}
   Paziente: {{ richiesta.paziente }}
 {% if richiesta.quesito %}  Quesito: {{ richiesta.quesito }}
+{% endif %}{% if scadenza %}  Risposta entro: {{ scadenza|date:"d/m/Y" }} alle {{ scadenza|date:"H:i" }} ({{ ore_risposta }} ore{% if richiesta.urgenza %}, caso urgente{% endif %})
 {% endif %}
 Lo trovi qui: {{ link }}
 

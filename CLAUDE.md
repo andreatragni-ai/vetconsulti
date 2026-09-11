@@ -57,7 +57,8 @@ Senza librerie il test del PDF vero salta con un messaggio che lo dice.
 - Ogni bug corretto lascia un test nel `tests.py` dell'app.
 - UI solo con classi, partial e variabili `--ovic-*` di vetway-ui: nessun
   colore letterale. Attenzione all'omonimia `_campo_form.html` (form) vs
-  `vetway_ui/partials/_campo.html` (lettura).
+  `_dato.html` (lettura, come testo: nel portale sostituisce
+  `vetway_ui/partials/_campo.html`, che ha il bordo da input).
 - Nessun deploy, DNS, o comando sul server senza che Andre lo chieda in
   quella sessione. Il primo deploy sara' una staging non pubblicizzata.
 
@@ -67,7 +68,9 @@ Senza librerie il test del PDF vero salta con un messaggio che lo dice.
   fra clinica e richiedente. `Richiedente.tipo` decide a chi si fattura.
 - `consulti/regole.py`: transizioni di stato della Richiesta con
   `EventoAudit` append-only. Non aggiungere stati senza un test per ogni
-  transizione.
+  transizione. Un caso urgente scade in 4 ore e va solo a chi accetta le
+  urgenze per quel tipo (`rifiuta_urgenza`, test in
+  `consulti/tests_urgenze.py`).
 - `registro/`: `Prestazione` e' immutabile una volta registrata.
 - `core/views_media.py` + `consulti/upload_chunk.py`: gli allegati non sono
   mai serviti come statici (FileResponse in dev, X-Accel-Redirect in prod).

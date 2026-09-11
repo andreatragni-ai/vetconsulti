@@ -2,7 +2,8 @@
 A che punto e' il caso, visto da chi l'ha chiesto (e dallo staff, in
 lettura). Contesto da consulti/views.py:dettaglio: richiesta, e_richiedente,
 ultima / versioni / classificazione_ultima (solo versioni FIRMATE),
-esperti (per riassegnare un caso declinato), puo_annullare.
+esperti (per riassegnare un caso declinato), puo_annullare, ore_risposta e
+scadenza (consulti.regole: 4 ore se urgente).
 {% endcomment %}
 {% if richiesta.stato == 'REFERTATA' and ultima %}
   {% include "referti/_referto_firmato.html" %}
@@ -10,7 +11,7 @@ esperti (per riassegnare un caso declinato), puo_annullare.
 {% elif richiesta.stato == 'DECLINATA' %}
   <div class="ovic-card"><div class="card-header-ovic">Caso declinato</div><div class="card-body-ovic">
     <p class="mb-2"><strong>{{ richiesta.refertatore }}</strong> non puo' occuparsene.</p>
-    {% include "vetway_ui/partials/_campo.html" with label="Motivo" val=richiesta.motivo_rifiuto multiline=True %}
+    {% include "_dato.html" with label="Motivo" val=richiesta.motivo_rifiuto multiline=True %}
     {% if e_richiedente %}
     <form method="post" action="{% url 'consulti:riassegna' richiesta.pk %}" class="row g-2 align-items-end mt-1">{% csrf_token %}
       <div class="col-md-8">
@@ -26,16 +27,16 @@ esperti (per riassegnare un caso declinato), puo_annullare.
 {% elif richiesta.stato == 'NON_REFERTABILE' %}
   <div class="ovic-card"><div class="card-header-ovic">Caso non refertabile</div><div class="card-body-ovic">
     <p class="mb-2"><strong>{{ richiesta.refertatore }}</strong> non e' in grado di refertare il caso con il materiale inviato. Il consulto non viene addebitato.</p>
-    {% include "vetway_ui/partials/_campo.html" with label="Motivo" val=richiesta.motivo_rifiuto multiline=True %}
+    {% include "_dato.html" with label="Motivo" val=richiesta.motivo_rifiuto multiline=True %}
     {% if e_richiedente %}<a class="btn-testata-ghost" href="{% url 'consulti:nuova' %}"><i class="bi bi-plus-circle"></i>Apri una nuova richiesta</a>{% endif %}
   </div></div>
 
 {% elif richiesta.stato == 'PRESA_IN_CARICO' %}
-  <div class="alert alert-info py-2"><i class="bi bi-hourglass-split me-1"></i><strong>{{ richiesta.refertatore }}</strong> ha preso in carico il caso il {{ richiesta.presa_in_carico_il|date:"d/m/Y" }} alle {{ richiesta.presa_in_carico_il|date:"H:i" }}: riceverai un'email quando il referto e' firmato.</div>
+  <div class="alert alert-info py-2"><i class="bi bi-hourglass-split me-1"></i><strong>{{ richiesta.refertatore }}</strong> ha preso in carico il caso il {{ richiesta.presa_in_carico_il|date:"d/m/Y" }} alle {{ richiesta.presa_in_carico_il|date:"H:i" }}: riceverai un'email quando il referto e' firmato.{% if scadenza %} Risposta attesa entro il {{ scadenza|date:"d/m" }} alle {{ scadenza|date:"H:i" }}{% if richiesta.urgenza %} (urgente: {{ ore_risposta }} ore){% endif %}.{% endif %}</div>
 
 {% elif richiesta.stato == 'INVIATA' %}
   <div class="alert alert-info py-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <span><i class="bi bi-send-check me-1"></i>Inviato a <strong>{{ richiesta.refertatore }}</strong> il {{ richiesta.inviata_il|date:"d/m/Y" }} alle {{ richiesta.inviata_il|date:"H:i" }}. {% if e_richiedente %}{{ richiesta.refertatore.user.get_full_name|default:richiesta.refertatore.nome_completo }} ricevera' una email con il caso. Ti avviseremo quando il referto e' pronto.{% else %}In attesa che lo prenda in carico.{% endif %}</span>
+    <span><i class="bi bi-send-check me-1"></i>Inviato a <strong>{{ richiesta.refertatore }}</strong> il {{ richiesta.inviata_il|date:"d/m/Y" }} alle {{ richiesta.inviata_il|date:"H:i" }}. {% if e_richiedente %}{{ richiesta.refertatore.user.get_full_name|default:richiesta.refertatore.nome_completo }} ricevera' una email con il caso. Ti avviseremo quando il referto e' pronto.{% else %}In attesa che lo prenda in carico.{% endif %}{% if scadenza %} Risposta attesa entro il {{ scadenza|date:"d/m" }} alle {{ scadenza|date:"H:i" }}{% if richiesta.urgenza %} (urgente: {{ ore_risposta }} ore){% endif %}.{% endif %}</span>
     {% if puo_annullare %}
     <button type="button" class="btn btn-outline-danger btn-sm"
             data-bs-toggle="modal" data-bs-target="#modalConfermaElimina"

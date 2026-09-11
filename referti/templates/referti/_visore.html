@@ -1,7 +1,15 @@
 {% comment %}
 Visore degli allegati del caso (pagina di refertazione). Contesto:
-  voci_visore — [{allegato, genere: pdf|immagine|video|altro, proiezione}]
-  iniziale    — la voce aperta all'arrivo (il primo PDF, o il primo allegato)
+  gruppi_visore — [{etichetta, voci}] nell'ordine del catalogo
+                  (consulti/elenco_file.py): per l'eco il referto
+                  dell'ecografo in testa, poi un gruppo per finestra con
+                  prima i filmati e poi le immagini; ECG e Holter un gruppo
+                  solo senza titolo
+  voci_visore   — le stesse voci in fila: {allegato, genere: pdf|immagine|
+                  video|altro, filmato, proiezione, nota, miniatura}
+  iniziale      — la voce aperta all'arrivo (il primo PDF, o il primo allegato)
+Ogni scheda ha una miniatura (le immagini: il file stesso, piccolo e
+caricato solo quando si vede) o un'icona (filmati, PDF, altro).
 I file passano SEMPRE da scarica_allegato (mai statici): ?inline=1 li mostra
 nel browser, il PDF dentro un iframe della stessa origine. Solo la voce
 aperta carica il file (data-src -> src al primo clic): una clip da 200 MB
@@ -10,14 +18,23 @@ non parte finche' non la si guarda.
 <div class="visore">
   <div class="ovic-card"><div class="card-header-ovic">Allegati ({{ voci_visore|length }})</div><div class="card-body-ovic">
     {% if voci_visore %}
-    <div class="visore-schede" role="tablist" aria-label="Allegati del caso">
-      {% for v in voci_visore %}
-      <button type="button" role="tab" data-visore="vis-{{ v.allegato.pk }}"
-              class="btn btn-sm btn-outline-secondary{% if v.allegato.pk == iniziale.allegato.pk %} attiva{% endif %}"
-              aria-selected="{% if v.allegato.pk == iniziale.allegato.pk %}true{% else %}false{% endif %}">
-        <i class="bi bi-{% if v.genere == 'pdf' %}file-earmark-pdf{% elif v.genere == 'immagine' %}image{% elif v.genere == 'video' %}camera-video{% else %}paperclip{% endif %} me-1"></i>{{ v.proiezione|default:v.allegato.get_categoria_display }}
-        {% if v.proiezione %}<span class="proiezione">{{ v.allegato.get_categoria_display }}</span>{% endif %}
-      </button>
+    <div class="visore-elenco">
+      {% for g in gruppi_visore %}
+      {% if g.etichetta %}<div class="visore-gruppo" id="visore-gruppo-{{ forloop.counter }}">{{ g.etichetta }} <span class="conta">{{ g.voci|length }}</span></div>{% endif %}
+      <div class="visore-schede" role="tablist"{% if g.etichetta %} aria-labelledby="visore-gruppo-{{ forloop.counter }}"{% else %} aria-label="Allegati del caso"{% endif %}>
+        {% for v in g.voci %}
+        <button type="button" role="tab" data-visore="vis-{{ v.allegato.pk }}"
+                class="visore-scheda{% if v.allegato.pk == iniziale.allegato.pk %} attiva{% endif %}"
+                aria-selected="{% if v.allegato.pk == iniziale.allegato.pk %}true{% else %}false{% endif %}"
+                title="{{ v.allegato.nome_originale }}">
+          <span class="miniatura" aria-hidden="true">{% if v.miniatura %}<img src="{{ v.miniatura }}" alt="" loading="lazy" decoding="async">{% else %}<i class="bi bi-{% if v.genere == 'pdf' %}file-earmark-pdf{% elif v.filmato %}camera-reels{% elif v.genere == 'immagine' %}image{% else %}paperclip{% endif %}"></i>{% endif %}</span>
+          <span class="testo">
+            <span class="nome">{{ v.proiezione|default:v.allegato.get_categoria_display }}</span>
+            <span class="tipo">{% if v.genere == 'pdf' %}PDF{% elif v.filmato %}Filmato{% elif v.genere == 'immagine' %}Immagine{% else %}Da scaricare{% endif %}{% if v.nota %} · «{{ v.nota }}»{% endif %}</span>
+          </span>
+        </button>
+        {% endfor %}
+      </div>
       {% endfor %}
     </div>
     <div class="visore-scena">

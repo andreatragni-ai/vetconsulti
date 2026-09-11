@@ -5,6 +5,8 @@ from django import forms
 
 from accounts.models import Refertatore
 from core.tipi import TipoEsame
+from . import razze
+from .nomi import maiuscole_nome
 from .models import Paziente, Richiesta, Sesso, Specie
 
 
@@ -27,6 +29,13 @@ def _bootstrap(form):
 
 ETA_IN_ANNI = re.compile(r'^\s*(\d{1,2})\s*ann[oi]\s*$')
 
+# Data di nascita scritta a mano: il campo e' di TESTO, non type="date",
+# perche' Safari (Mac e iPad) mostra la data di oggi in grigio nel campo
+# data vuoto e sembra gia' compilato. Si accettano 15/03/2019, 15-3-2019,
+# 15.03.19, 15032019 e il formato ISO (2019-03-15: dati in sessione di
+# prima e test). Il JS del passo 1 aggiunge le barre mentre si scrive.
+FORMATI_DATA = ['%d/%m/%Y', '%d/%m/%y', '%d-%m-%Y', '%d-%m-%y', '%d.%m.%Y', '%d.%m.%y', '%d%m%Y', '%Y-%m-%d']
+
 
 def _eta_testo(anni):
     return '1 anno' if anni == 1 else f'{anni} anni'
@@ -34,30 +43,40 @@ def _eta_testo(anni):
 
 class PazienteForm(forms.ModelForm):
     """Solo nome, specie e sesso sono obbligatori. L'eta' si da' come data di
-    nascita oppure come anni (in `eta_testo`, «8 anni»), non entrambe."""
+    nascita oppure come anni (in `eta_testo`, «8 anni»), non entrambe. La
+    razza si sceglie dall'elenco della specie (consulti/razze.py) scrivendo
+    per filtrare; una razza fuori elenco si accetta com'e'. Nome e cognome
+    del proprietario prendono le maiuscole (consulti/nomi.py)."""
+
+    # Gli elenchi per il JS del campo razza: {{ form.elenchi_razze|json_script:... }}.
+    elenchi_razze = razze.RAZZE
 
     specie = forms.ChoiceField(
         label='Specie', choices=Specie.choices, widget=forms.RadioSelect,
-        error_messages={'required': 'Scegli la specie.'})
+        error_messages={'required': 'Scegli la specie.', 'invalid_choice': 'Il portale referta cani e gatti: '
+                                                                             'scegli una delle due specie.'})
     sesso = forms.ChoiceField(
         label='Sesso', choices=[('', 'Scegli...')] + list(Sesso.choices),
         error_messages={'required': 'Scegli il sesso (anche «Non noto»).'})
     eta_anni = forms.IntegerField(
         label='Eta\' in anni', required=False, min_value=0, max_value=40,
         widget=forms.NumberInput(attrs={'inputmode': 'numeric'}))
+    data_nascita = forms.DateField(
+        label='Data di nascita', required=False, input_formats=FORMATI_DATA,
+        error_messages={'invalid': 'Scrivi la data come giorno/mese/anno, es. 15/03/2019.'},
+        widget=forms.DateInput(format='%d/%m/%Y', attrs={
+            'placeholder': 'gg/mm/aaaa', 'inputmode': 'numeric', 'autocomplete': 'off', 'maxlength': '10',
+            'data-data-a-mano': ''}))
     peso_kg = forms.DecimalField(
         label='Peso (kg)', required=False, max_digits=5, decimal_places=2, min_value=Decimal('0.01'),
         localize=True, widget=forms.TextInput(attrs={'inputmode': 'decimal', 'placeholder': 'es. 12,5'}))
 
     class Meta:
         model = Paziente
-        fields = ['nome', 'specie', 'specie_altro', 'razza', 'sesso', 'data_nascita', 'peso_kg',
-                  'cognome_proprietario']
+        fields = ['nome', 'specie', 'razza', 'sesso', 'data_nascita', 'peso_kg', 'cognome_proprietario']
         labels = {
             'nome': 'Nome del paziente',
-            'specie_altro': 'Quale specie?',
             'razza': 'Razza',
-            'data_nascita': 'Data di nascita',
             'cognome_proprietario': 'Cognome del proprietario',
         }
         help_texts = {
@@ -65,9 +84,15 @@ class PazienteForm(forms.ModelForm):
                                     'senza portare sul portale i dati del cliente.',
         }
         widgets = {
-            'data_nascita': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
-            'nome': forms.TextInput(attrs={'autocomplete': 'off'}),
-            'specie_altro': forms.TextInput(attrs={'placeholder': 'es. coniglio, furetto'}),
+            # autocapitalize: la tastiera di iPhone e iPad parte gia' con la maiuscola.
+            'nome': forms.TextInput(attrs={'autocomplete': 'off', 'autocapitalize': 'words'}),
+            'cognome_proprietario': forms.TextInput(attrs={'autocapitalize': 'words'}),
+            # Combobox ARIA 1.2 (static/consulti/js/elenco_filtrato.js): l'elenco
+            # e' quello della specie scelta, id dei dati e dei radio qui.
+            'razza': forms.TextInput(attrs={
+                'autocomplete': 'off', 'spellcheck': 'false', 'role': 'combobox', 'aria-autocomplete': 'list',
+                'aria-expanded': 'false', 'aria-controls': 'razza-elenco', 'data-elenco-filtrato': 'razze-per-specie',
+                'data-chiave-da': 'specie', 'data-avviso': 'razza-avviso'}),
         }
         error_messages = {'nome': {'required': 'Scrivi il nome del paziente.'}}
 
@@ -81,6 +106,14 @@ class PazienteForm(forms.ModelForm):
             if corrisponde:
                 self.initial['eta_anni'] = int(corrisponde.group(1))
 
+    # Maiuscole gia' qui (e di nuovo in Paziente.save): il passo 2 mostra il
+    # nome giusto anche prima che la bozza esista.
+    def clean_nome(self):
+        return maiuscole_nome(self.cleaned_data.get('nome'))
+
+    def clean_cognome_proprietario(self):
+        return maiuscole_nome(self.cleaned_data.get('cognome_proprietario'))
+
     def clean_data_nascita(self):
         from datetime import date
         giorno = self.cleaned_data.get('data_nascita')
@@ -92,8 +125,8 @@ class PazienteForm(forms.ModelForm):
         dati = super().clean()
         if dati.get('data_nascita') and dati.get('eta_anni') is not None:
             self.add_error('eta_anni', 'Basta una delle due: la data di nascita oppure l\'eta\'.')
-        if dati.get('specie') != Specie.ALTRO:
-            dati['specie_altro'] = ''
+        # Scritta come nell'elenco della specie se c'e' («maine coon» -> «Maine Coon»), altrimenti com'e'.
+        dati['razza'] = razze.normalizza(dati.get('specie'), dati.get('razza'))
         return dati
 
     def save(self, commit=True):
@@ -129,8 +162,8 @@ class EsameForm(forms.ModelForm):
             'terapia': 'Terapia in corso',
         }
         help_texts = {
-            'urgenza': 'Il collega lo trova in cima alla sua lista; costa un supplemento (i prezzi qui sotto '
-                       'si aggiornano).',
+            'urgenza': 'Risposta entro 4 ore e il caso in cima alla lista del collega; costa un supplemento '
+                       '(i prezzi qui sotto si aggiornano).',
             'quesito': 'Cosa vuoi sapere. Es. «Aritmia all\'auscultazione prima di una TPLO: '
                        'e\' idoneo all\'anestesia?»',
             'anamnesi': 'Sintomi, visita, esami gia\' fatti. Facoltativa.',
@@ -171,6 +204,16 @@ class EsameForm(forms.ModelForm):
             rientro = f' fino al {refertatore.assente_al:%d/%m/%Y}' if refertatore.assente_al else ''
             raise forms.ValidationError(f'{refertatore} e\' assente{rientro}: scegli un altro collega.')
         return refertatore
+
+    def clean(self):
+        # Caso urgente solo a chi accetta urgenze per quel tipo: la stessa
+        # regola (e la stessa frase) che ferma l'invio in consulti.regole.
+        from .regole import rifiuta_urgenza
+        dati = super().clean()
+        motivo = rifiuta_urgenza(dati.get('refertatore'), dati.get('tipo_esame'), dati.get('urgenza'))
+        if motivo:
+            self.add_error('refertatore', motivo)
+        return dati
 
 
 # ── Decisioni del refertatore ────────────────────────────────────────────────

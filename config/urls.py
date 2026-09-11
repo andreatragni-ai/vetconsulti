@@ -14,6 +14,7 @@ urlpatterns = [
     # Consegna protetta dei file: MAI static(MEDIA_URL) qui, nemmeno in DEBUG.
     path('allegati/<int:pk>/scarica/', views_media.scarica_allegato, name='scarica_allegato'),
     path('eco/riferimento/<int:pk>/', views_media.immagine_riferimento, name='immagine_riferimento'),
+    path('esperti/<int:pk>/foto/', views_media.foto_refertatore, name='foto_refertatore'),
 ]
 
 admin.site.site_header = 'VetWay Consulti — amministrazione'

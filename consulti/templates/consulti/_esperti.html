@@ -1,8 +1,13 @@
+{% comment %}
+Select degli esperti per girare un caso declinato (consulti/_esito_caso.html).
+Contesto: esperti da percorso.esperti_con_prezzo (con l'urgenza del caso),
+selezionato. Chi non accetta urgenze, per un caso urgente, e' spento.
+{% endcomment %}
 <select name="r-refertatore" id="id_r-refertatore" class="form-select">
   <option value="">— scegli l'esperto —</option>
   {% for e in esperti %}
-    <option value="{{ e.refertatore.pk }}" {% if selezionato == e.refertatore.pk|stringformat:"s" %}selected{% endif %}>
-      {{ e.refertatore }}{% if e.prezzo %} — € {{ e.prezzo.totale }} (imp. {{ e.prezzo.imponibile }}{% if e.prezzo.origine == 'REFERTATORE' %}, prezzo personale{% endif %}){% else %} — prezzo non disponibile{% endif %}{% if e.tempo %} — risposta in {{ e.tempo }} h{% endif %}{% if not e.refertatore.disponibile_oggi %} — assente{% if e.refertatore.assente_al %} fino al {{ e.refertatore.assente_al|date:"d/m" }}{% endif %}{% endif %}{% if e.refertatore.messaggio %} — {{ e.refertatore.messaggio }}{% endif %}
+    <option value="{{ e.refertatore.pk }}"{% if selezionato == e.refertatore.pk|stringformat:"s" %} selected{% endif %}{% if e.no_urgenze %} disabled{% endif %}>
+      {{ e.refertatore }}{% if e.prezzo %} — € {{ e.prezzo.totale }} (imp. {{ e.prezzo.imponibile }}{% if e.prezzo.origine == 'REFERTATORE' %}, prezzo personale{% endif %}){% else %} — prezzo non disponibile{% endif %}{% if e.tempo %} — risposta entro {{ e.tempo }} h{% endif %}{% if not e.refertatore.disponibile_oggi %} — assente{% if e.refertatore.assente_al %} fino al {{ e.refertatore.assente_al|date:"d/m" }}{% endif %}{% endif %}{% if e.refertatore.messaggio %} — {{ e.refertatore.messaggio }}{% endif %}{% if e.no_urgenze %} — non accetta urgenze{% endif %}
     </option>
   {% empty %}
     <option value="" disabled>Nessun referente per questo tipo di esame</option>

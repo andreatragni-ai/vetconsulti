@@ -265,9 +265,10 @@ class Richiesta(models.Model):
 
 
 class Specie(models.TextChoices):
+    """Solo cane e gatto (collaudo dell'11/09/2026): il portale e' di
+    cardiologia dei piccoli animali, «Altro» non serviva a nessuno."""
     CANE = 'CANE', 'Cane'
     GATTO = 'GATTO', 'Gatto'
-    ALTRO = 'ALTRO', 'Altro'
 
 
 class Sesso(models.TextChoices):
@@ -287,7 +288,6 @@ class Paziente(models.Model):
     richiesta = models.OneToOneField(Richiesta, on_delete=models.CASCADE, related_name='paziente')
     nome = models.CharField(max_length=100)
     specie = models.CharField(max_length=10, choices=Specie.choices, default=Specie.CANE)
-    specie_altro = models.CharField(max_length=50, blank=True)
     razza = models.CharField(max_length=100, blank=True)
     sesso = models.CharField(max_length=2, choices=Sesso.choices, default=Sesso.ND)
     data_nascita = models.DateField(null=True, blank=True)
@@ -300,8 +300,14 @@ class Paziente(models.Model):
         verbose_name_plural = 'Pazienti'
 
     def __str__(self):
-        specie = self.specie_altro if self.specie == Specie.ALTRO and self.specie_altro else self.get_specie_display()
-        return f'{self.nome} ({specie}{", " + self.razza if self.razza else ""})'
+        return f'{self.nome} ({self.get_specie_display()}{", " + self.razza if self.razza else ""})'
+
+    def save(self, *args, **kwargs):
+        # «luna» -> «Luna», «de simone» -> «De Simone»; «McDonald» resta com'e' (consulti/nomi.py).
+        from .nomi import maiuscole_nome
+        self.nome = maiuscole_nome(self.nome)
+        self.cognome_proprietario = maiuscole_nome(self.cognome_proprietario)
+        super().save(*args, **kwargs)
 
 
 class CategoriaAllegato(models.TextChoices):

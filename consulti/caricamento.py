@@ -22,7 +22,7 @@ liberi eco (righe `libera` del catalogo) vogliono in piu' la nota «cosa
 mostra / cosa chiedi», obbligatoria. Una riga di proiezione
 accetta cio' che il catalogo si aspetta (`tipo_media`): filmato, immagine o
 entrambi; un DICOM prende la categoria della riga. Le clip hanno un limite
-di peso (ECO_CLIP_MAX_BYTE): la durata (una decina di secondi) senza ffmpeg
+di peso (ECO_CLIP_MAX_BYTE): la durata (massimo 10 secondi) senza ffmpeg
 non si misura, quindi si scrive nelle istruzioni e si frena sul peso.
 
 ## Due strade, una regola
@@ -221,7 +221,7 @@ def _verifica_dimensione(categoria, dimensione):
     if categoria == CategoriaAllegato.ECO_CLIP and dimensione and dimensione > settings.ECO_CLIP_MAX_BYTE:
         raise CaricamentoNonValido(
             f'Il filmato pesa {_mb(dimensione)} MB: il limite per una clip e\' {_mb(settings.ECO_CLIP_MAX_BYTE)} MB. '
-            f'Esporta dall\'ecografo un filmato piu\' breve (una decina di secondi basta) o in MP4.')
+            f'Esporta dall\'ecografo un filmato piu\' breve (massimo 10 secondi) o in MP4.')
 
 
 def controlla(richiesta, slot, nome, mime='', *, proiezione_id=None, sostituisci_id=None, dimensione=None,

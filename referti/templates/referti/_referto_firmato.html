@@ -11,11 +11,11 @@ Mostra SOLO versioni firmate: la copia di lavoro non passa mai di qui.
   {% if ultima.e_rettifica %}
     <div class="rettifica-nota"><i class="bi bi-arrow-repeat me-1"></i><strong>Rettifica</strong> del {{ ultima.firmato_il|date:"d/m/Y H:i" }}: sostituisce le versioni precedenti.<br>Motivo: {{ ultima.motivo_rettifica }}</div>
   {% endif %}
-  {% include "vetway_ui/partials/_campo.html" with label="Descrizione" val=ultima.descrizione multiline=True %}
-  {% include "vetway_ui/partials/_campo.html" with label="Conclusioni" val=ultima.conclusioni multiline=True %}
-  {% include "vetway_ui/partials/_campo.html" with label="Raccomandazioni" val=ultima.raccomandazioni multiline=True %}
+  {% include "_dato.html" with label="Descrizione" val=ultima.descrizione multiline=True %}
+  {% include "_dato.html" with label="Conclusioni" val=ultima.conclusioni multiline=True %}
+  {% include "_dato.html" with label="Raccomandazioni" val=ultima.raccomandazioni multiline=True %}
   {% for etichetta, valore in classificazione_ultima %}
-    {% include "vetway_ui/partials/_campo.html" with label=etichetta val=valore %}
+    {% include "_dato.html" with label=etichetta val=valore %}
   {% endfor %}
   <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-2 barra-azioni-testata">
     <span class="firmato-da"><i class="bi bi-pen me-1"></i>Firmato da {{ richiesta.refertatore.nome_completo }} il {{ ultima.firmato_il|date:"d/m/Y" }} alle {{ ultima.firmato_il|date:"H:i" }}</span>

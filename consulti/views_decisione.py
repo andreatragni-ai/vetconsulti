@@ -5,8 +5,6 @@ decide e si referta e' `referti:refertazione`; qui ci sono le rotte POST e
 l'elenco. Solo il refertatore assegnato agisce: per tutti gli altri 404.
 """
 
-from datetime import timedelta
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Case, IntegerField, Value, When
@@ -24,12 +22,12 @@ STATI_DA_LAVORARE = (StatoRichiesta.INVIATA, StatoRichiesta.PRESA_IN_CARICO)
 
 
 def _riga(r, adesso):
-    ore = regole.ore_risposta_dichiarate(r)
-    scadenza = r.inviata_il + timedelta(hours=ore) if r.inviata_il else None
+    """Una riga dell'elenco: ore e scadenza da regole (4 ore se urgente)."""
+    scadenza = regole.scadenza(r)
     return {
         'richiesta': r,
         'eta': timesince(r.inviata_il, adesso, depth=1) if r.inviata_il else '—',
-        'ore_dichiarate': ore,
+        'ore_risposta': regole.ore_risposta(r),
         'scadenza': scadenza,
         'in_ritardo': bool(scadenza and adesso > scadenza and r.stato in STATI_DA_LAVORARE),
     }

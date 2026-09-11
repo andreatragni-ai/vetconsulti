@@ -620,3 +620,34 @@ a.riferimento:hover, a.riferimento:focus-visible { outline: 3px solid var(--ovic
 .consulti-footer a { color: var(--bs-white); opacity: .75; }
 .consulti-footer a:hover { opacity: 1; }
 .consulti-footer strong { color: var(--bs-white); opacity: .85; }
+
+/* ═══ Eco: protocollo stampabile delle proiezioni (eco/templates/eco/protocollo.html) ═══ */
+/* Protocollo stampabile (a video; la stampa e' nel template). */
+.protocollo-sottotitolo { font-size: .9rem; color: var(--bs-secondary-color); }
+.protocollo-consiglio {
+  padding: .6rem .9rem;
+  border: 1px solid var(--ovic-oro);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ovic-oro) 7%, var(--bs-body-bg));
+  font-weight: 600;
+}
+.protocollo-riga {
+  display: grid;
+  grid-template-columns: 2rem 14rem minmax(0, 1fr);
+  gap: .75rem;
+  padding: .75rem 0;
+  border-top: 1px solid var(--ovic-bordo);
+}
+.protocollo-riga:first-child { border-top: 0; padding-top: 0; }
+.protocollo-numero { font-size: 1.3rem; font-weight: 700; color: var(--ovic-blu); line-height: 1; }
+.protocollo-immagine img { width: 100%; max-height: 11rem; object-fit: contain; border: 1px solid var(--ovic-bordo); border-radius: 4px; background: var(--ovic-blu-dark); }
+.protocollo-senza { border: 1px dashed var(--ovic-bordo); border-radius: 4px; padding: 1.5rem .5rem; text-align: center; font-size: .8rem; color: var(--bs-secondary-color); }
+.protocollo-nome { font-weight: 700; color: var(--ovic-blu); }
+.protocollo-dati { font-size: .8rem; color: var(--bs-secondary-color); margin-bottom: .25rem; }
+.protocollo-testo p { margin: 0 0 .2rem; font-size: .88rem; line-height: 1.4; }
+.protocollo-testo strong { color: var(--ovic-blu); font-weight: 600; }
+@media (max-width: 767.98px) {
+  .protocollo-riga { grid-template-columns: 1.6rem minmax(0, 1fr); }
+  .protocollo-immagine { grid-column: 2; }
+  .protocollo-testo { grid-column: 2; }
+}

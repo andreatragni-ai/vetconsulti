@@ -1,0 +1,16 @@
+{% comment %}
+Una riga del protocollo stampabile (pagina e PDF: eco/views.py:contesto_protocollo).
+r = {numero, p (ProiezioneCatalogo), immagine (prima ImmagineRiferimento), src, icona, media}.
+{% endcomment %}
+<div class="protocollo-riga">
+  <div class="protocollo-numero">{{ r.numero }}</div>
+  <div class="protocollo-immagine">
+    {% if r.src %}<img src="{{ r.src }}" alt="{{ r.immagine.didascalia|default:'Riferimento' }}: {{ r.p.nome }}">{% else %}<div class="protocollo-senza">nessuna immagine</div>{% endif %}
+  </div>
+  <div class="protocollo-testo">
+    <div class="protocollo-nome">{{ r.p.nome }}</div>
+    <div class="protocollo-dati">{{ r.media }} · {% if r.p.obbligatoria %}obbligatoria{% elif r.p.libera %}facoltativo, con una nota{% else %}facoltativa{% endif %}{% if r.p.scheda_guida %} · scheda {{ r.p.scheda_guida }}{% endif %}</div>
+    {% if r.p.istruzioni %}<p><strong>Come:</strong> {{ r.p.istruzioni }}</p>{% endif %}
+    {% if r.p.deve_essere_visibile %}<p><strong>Deve vedersi:</strong> {{ r.p.deve_essere_visibile }}</p>{% endif %}
+  </div>
+</div>

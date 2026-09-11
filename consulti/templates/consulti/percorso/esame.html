@@ -28,6 +28,7 @@ tastiera = Avanti), «Indietro» viene mostrato a sinistra con order:-1.
     {% endfor %}
   </div>
   {% for e in form.tipo_esame.errors %}<div class="text-danger small mt-2">{{ e }}</div>{% endfor %}
+  <p class="small text-muted mt-2 mb-0"><i class="bi bi-printer me-1" aria-hidden="true"></i>Ecocardiografia: il <a href="{% url 'eco:protocollo' %}" target="_blank" rel="noopener">protocollo stampabile delle proiezioni</a>, da tenere accanto all'ecografo mentre acquisisci.</p>
 </div></div>
 
 <div class="ovic-card"><div class="card-header-ovic">A chi lo mandi</div><div class="card-body-ovic">

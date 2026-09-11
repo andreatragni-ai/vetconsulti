@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% comment %}
+Protocollo stampabile delle proiezioni eco (eco/views.py:protocollo): il
+catalogo attivo per finestra, nell'ordine di acquisizione, da tenere accanto
+all'ecografo. A video e' una pagina del portale; in stampa (A4) spariscono
+testata, navbar, pulsanti e pie' di pagina, e ogni finestra parte da una
+pagina nuova. «Scarica PDF» fa lo stesso con WeasyPrint (protocollo_pdf.html).
+{% endcomment %}
+{% block title %}Protocollo delle proiezioni eco — VetWay Consulti{% endblock %}
+{% block extra_head %}
+<style>
+  /* Solo stampa: niente colori, solo cosa si vede e dove vanno le pagine. */
+  @media print {
+    @page { size: A4; margin: 12mm 12mm 14mm; }
+    .consulti-avviso, .consulti-testata, .ovic-nav, nav.ovic-nav, .sessione-bar, #global-spinner, .ovic-footer,
+    .protocollo-azioni, .offcanvas, .alert { display: none !important; }
+    .ovic-main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+    .protocollo-finestra { break-before: page; box-shadow: none; border: 0; }
+    .protocollo-finestra:first-of-type { break-before: auto; }
+    .protocollo-riga { break-inside: avoid; }
+    .protocollo-immagine img { max-height: 42mm; }
+    a[href]::after { content: none; }
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div class="protocollo">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+    <div>
+      <h4 class="caso-titolo">Protocollo delle proiezioni eco</h4>
+      <p class="protocollo-sottotitolo mb-0">{{ obbligatorie }} proiezioni obbligatorie, nell'ordine in cui acquisirle. Sempre obbligatorio anche il referto dell'ecografo in PDF, con le misure.</p>
+    </div>
+    <div class="protocollo-azioni d-flex gap-2 flex-wrap">
+      <button type="button" class="btn-nuova" onclick="window.print()"><i class="bi bi-printer me-1" aria-hidden="true"></i>Stampa</button>
+      <a class="btn-testata-ghost" href="{% url 'eco:protocollo_pdf' %}"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i>Scarica PDF</a>
+    </div>
+  </div>
+  <p class="protocollo-consiglio"><i class="bi bi-lightbulb me-1" aria-hidden="true"></i>{{ consiglio }} Filmati di massimo 10 secondi; B-mode e color Doppler sono filmati separati.</p>
+
+  {% for g in gruppi %}
+  <section class="ovic-card protocollo-finestra">
+    <div class="card-header-ovic">{{ g.etichetta }}</div>
+    <div class="card-body-ovic">
+      {% for r in g.righe %}{% include "eco/_protocollo_riga.html" %}{% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+  {% if liberi %}
+  <section class="ovic-card protocollo-finestra">
+    <div class="card-header-ovic">Filmati liberi · facoltativi</div>
+    <div class="card-body-ovic">
+      <p class="protocollo-sottotitolo">Qualcosa che le righe sopra non coprono (un reperto, una finestra in piu'): al caricamento si scrive in breve cosa mostra.</p>
+      {% for r in liberi %}{% include "eco/_protocollo_riga.html" %}{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

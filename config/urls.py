@@ -15,6 +15,7 @@ urlpatterns = [
     path('allegati/<int:pk>/scarica/', views_media.scarica_allegato, name='scarica_allegato'),
     path('allegati/<int:pk>/anteprima/', views_media.anteprima_allegato, name='anteprima_allegato'),
     path('eco/riferimento/<int:pk>/', views_media.immagine_riferimento, name='immagine_riferimento'),
+    path('eco/', include('eco.urls')),
 ]
 
 admin.site.site_header = 'VetWay Consulti — amministrazione'

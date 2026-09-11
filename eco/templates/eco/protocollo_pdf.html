@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+{% comment %}
+PDF del protocollo delle proiezioni eco (WeasyPrint, eco/views.py:protocollo_pdf).
+Stesse righe della pagina (eco/_protocollo_riga.html), immagini come data URI.
+I colori letterali qui sono ammessi: e' carta, non UI (vetway-ui non arriva in un PDF).
+{% endcomment %}
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Protocollo delle proiezioni eco</title>
+<style>
+  @page { size: A4; margin: 12mm 12mm 14mm;
+    @bottom-center { content: "VetWay Consulti — protocollo delle proiezioni eco — pagina " counter(page) " di " counter(pages); font-size: 7.5pt; color: #666; } }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 9pt; color: #1e2a38; }
+  h1 { font-size: 15pt; color: #123c44; margin: 0 0 2pt; }
+  .sottotitolo { color: #555; margin: 0 0 4pt; }
+  .consiglio { border: 1px solid #2f9da3; background: #eef8f8; padding: 4pt 6pt; margin: 0 0 8pt; font-weight: bold; }
+  section { break-before: page; }
+  section.prima { break-before: auto; }
+  h2 { font-size: 10.5pt; text-transform: uppercase; letter-spacing: .05em; color: #2f9da3; border-bottom: 1.5px solid #123c44; margin: 0 0 4pt; padding-bottom: 2pt; }
+  .protocollo-riga { display: flex; gap: 6pt; padding: 4pt 0; border-bottom: 1px solid #dde2ea; break-inside: avoid; }
+  .protocollo-numero { flex: 0 0 16pt; font-size: 13pt; font-weight: bold; color: #123c44; }
+  .protocollo-immagine { flex: 0 0 48mm; }
+  .protocollo-immagine img { width: 48mm; max-height: 36mm; object-fit: contain; border: 1px solid #dde2ea; }
+  .protocollo-senza { width: 48mm; height: 20mm; border: 1px dashed #dde2ea; color: #999; font-size: 7.5pt; text-align: center; padding-top: 7mm; }
+  .protocollo-testo { flex: 1; }
+  .protocollo-nome { font-weight: bold; font-size: 10pt; color: #123c44; }
+  .protocollo-dati { color: #555; font-size: 8pt; margin-bottom: 2pt; }
+  .protocollo-testo p { margin: 1pt 0; line-height: 1.3; }
+  .protocollo-testo strong { color: #123c44; }
+</style>
+</head>
+<body>
+<h1>Protocollo delle proiezioni eco</h1>
+<p class="sottotitolo">{{ obbligatorie }} proiezioni obbligatorie, nell'ordine in cui acquisirle. Sempre obbligatorio anche il referto dell'ecografo in PDF, con le misure.</p>
+<p class="consiglio">{{ consiglio }} Filmati di massimo 10 secondi; B-mode e color Doppler sono filmati separati.</p>
+{% for g in gruppi %}
+<section{% if forloop.first %} class="prima"{% endif %}>
+  <h2>{{ g.etichetta }}</h2>
+  {% for r in g.righe %}{% include "eco/_protocollo_riga.html" %}{% endfor %}
+</section>
+{% endfor %}
+{% if liberi %}
+<section>
+  <h2>Filmati liberi · facoltativi</h2>
+  <p class="sottotitolo">Qualcosa che le righe sopra non coprono: al caricamento si scrive in breve cosa mostra.</p>
+  {% for r in liberi %}{% include "eco/_protocollo_riga.html" %}{% endfor %}
+</section>
+{% endif %}
+</body>
+</html>

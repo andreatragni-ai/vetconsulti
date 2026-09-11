@@ -39,14 +39,36 @@ spunta. Le idee grosse hanno un file loro in `docs/`.
   file da smistare a parte, spostamento per trascinamento o «Sposta in...»,
   e «Confermo lo smistamento» (nulla diventa ProiezioneCaricata prima);
   protocollo stampabile delle proiezioni (`/eco/protocollo/`, anche PDF).
-  Da confermare ad Andre: (a) il modello e la spesa per esame (Opus 5,
-  stima $ 0,2-0,4 per 26 miniature; `CONSULTI_MODELLO_SMISTAMENTO` per
-  cambiarlo); (b) il taglio della fascia alta della miniatura prima
-  dell'invio (`CONSULTI_SMISTAMENTO_TAGLIO_ALTO`, oggi 8 %) per non
-  mandare nome del paziente e codice; (c) la frase nell'informativa
-  privacy sul fornitore AI (da far validare al legale); (d) cosa deve
-  fare il portale con i filmati che il browser non decodifica (AVI, WMV)
-  se sul server non c'e' ffmpeg: oggi restano da smistare a mano.
+  **Misurato con l'API vera** sul banco (`manage.py valuta_smistamento`,
+  26 immagini ecografiche vere del catalogo, 17 «principale»; Opus 5,
+  effort medium, taglio 8 %):
+
+  | Giro | Riga giusta /17 | «sconosciuto» | Messi nella riga sbagliata | «Sicuri» (sbagliati) | Costo | Durata |
+  |---|---|---|---|---|---|---|
+  | base, ordine mescolato (3 semi) | 10,3 (61 %) | 3,3 | 2,7 | 5 (0) | $ 0,21-0,26 | 44-70 s |
+  | esemplari visivi, leave-one-out (3 semi) | 10,7 (63 %) | 1,0 | 5,0 | 5 (0) | $ 0,29 | 51-124 s |
+  | base, **ordine del protocollo** | **13 (76 %)** | 0 | **1** | 5 (0) | **$ 0,17** | 30 s |
+  | Sonnet 5, ordine mescolato | 10 (59 %) | 0 | 5 | 5 (**1 sbagliato**) | $ 0,13 | 55 s |
+
+  Tipo di tracciato (2D / M-mode / PW / CW / TDI): **17/17 in ogni giro**.
+  Confusioni tipiche: le quattro camere fra finestre diverse (asse lungo
+  destro ↔ apicale ↔ sottoxifoidea); le immagini «guida» bidimensionali
+  di righe Doppler finiscono su LA/Ao. Nessun «sicuro» sbagliato con
+  Opus 5 in cinque giri su cinque; uno con Sonnet 5.
+  Decisioni prese su questi numeri: esemplari visivi **spenti** di default
+  (`CONSULTI_SMISTAMENTO_ESEMPLARI`, il codice resta), modello **Opus 5**,
+  soglia di «sicuro» invariata (0,85).
+  Da confermare ad Andre: (a) tenere Opus 5 (~$ 0,2 a esame) o passare a
+  Sonnet 5 (~$ 0,13) accettando che un «sicuro» possa essere sbagliato;
+  (b) il taglio della fascia alta della miniatura prima dell'invio
+  (`CONSULTI_SMISTAMENTO_TAGLIO_ALTO`, oggi 8 %) per non mandare nome del
+  paziente e codice; (c) la frase nell'informativa privacy sul fornitore
+  AI (da far validare al legale); (d) cosa deve fare il portale con i
+  filmati che il browser non decodifica (AVI, WMV) se sul server non c'e'
+  ffmpeg: oggi restano da smistare a mano. E una cosa da dire ai colleghi:
+  **acquisire nell'ordine del protocollo** porta la riga giusta dal 61 %
+  al 76 % e gli errori da 2,7 a 1: e' il singolo miglioramento piu' grande,
+  e non costa niente.
 - [2026-09-11] **F3 — Andre conferma le scelte della refertazione**
   (branch `feat/refertazione`, da provare su `runserver` con `seed_demo`):
   (a) blocco per tipo minimo — ECG solo rischio anestesiologico con le voci
@@ -66,16 +88,15 @@ spunta. Le idee grosse hanno un file loro in `docs/`.
 
 ## Prossimo
 
-- [2026-09-12] **Misurare davvero lo smistamento**: `manage.py
-  valuta_smistamento` e' pronto (banco di 26 immagini ecografiche vere del
-  catalogo, verita' dal catalogo, niente file del kit che hanno il nome
-  scritto dentro) ma la chiave in `~/.zshrc` e' rifiutata dall'API
-  (401 «API key is invalid», 11/09/2026). Con una chiave valida:
-  `ANTHROPIC_API_KEY=... venv/bin/python manage.py valuta_smistamento
-  --taglio 0 --json a.json` e poi `--taglio 0.08` e `--ordine protocollo`,
-  per avere accuratezza, confusioni, «sicuri» sbagliati, token e costo per
-  esame. Finche' non c'e' quel numero, lo smistamento AI resta da provare
-  sul campo.
+- [2026-09-12] **Banco di prova migliore**: oggi le 26 immagini vengono
+  dalle stesse immagini di riferimento del catalogo, quindi per misurare
+  gli esemplari visivi bisogna toglierli (leave-one-out) e il giudizio su
+  di loro resta un limite inferiore. Con una manciata di esami veri e
+  anonimi (o con le immagini di un ecografo diverso) si rimisura: se gli
+  esemplari aiutano davvero, si riaccende
+  `CONSULTI_SMISTAMENTO_ESEMPLARI`. Da rifare anche il confronto
+  `--taglio 0` contro `--taglio 0.08` (quanto costa in accuratezza non
+  mandare l'intestazione con il nome del paziente).
 - [2026-09-11] Commenti con allegati sul caso (resto di F2).
 - [2026-09-11] vetway-ui 0.3.0: portare nel pacchetto i componenti nati
   in `static/consulti/css/consulti.css` per F2 (`.passi`, `.schede-scelta`,

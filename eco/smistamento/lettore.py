@@ -3,11 +3,19 @@ Grado 3 dello smistamento: la lettura AI delle miniature (API Anthropic).
 
 ## Cosa si manda
 
-Le miniature (JPEG, lato lungo 800 px), a gruppi di `per_richiesta` (8)
-immagini nella stessa richiesta, ciascuna preceduta da «Miniatura N: filmato
-o immagine, righe possibili: ...». Nel prompt di sistema (uguale per tutte
-le richieste, quindi in cache) c'e' il protocollo: codice, nome, finestra,
-filmato/immagine, tipo di tracciato, colore, cosa deve vedersi.
+Nel prompt di sistema (uguale per tutte le richieste, quindi in cache) c'e'
+il protocollo a parole: codice, nome, finestra, filmato/immagine, tipo di
+tracciato, colore, cosa deve vedersi.
+
+Poi, se ci sono, gli **esemplari** (esemplari.py): l'immagine di riferimento
+di ogni riga, ridotta, con il suo codice. Stanno in testa al messaggio, in un
+prefisso marcato `cache_control`: si pagano una volta e le richieste
+successive li leggono a un decimo del prezzo. Al modello si chiede a quale
+esemplare somiglia di piu' ogni miniatura, ammettendo «nessuno».
+
+In coda, le miniature (JPEG, lato lungo 800 px), a gruppi di `per_richiesta`
+(8) nella stessa richiesta, ciascuna preceduta da «Miniatura N: filmato o
+immagine, righe possibili: ...».
 
 La risposta e' JSON vincolato da uno schema (structured output): per ogni
 miniatura tipo di tracciato, codice della riga (o «sconosciuto»), seconda
@@ -73,6 +81,14 @@ Per ogni miniatura numerata:
 Il protocollo, nell'ordine in cui il collega dovrebbe acquisire:
 """
 
+# Si aggiunge alle istruzioni quando la richiesta porta gli esemplari.
+ISTRUZIONI_ESEMPLARI = """
+Prima delle miniature trovi gli ESEMPLARI: per molte righe, l'immagine di riferimento del protocollo, com'e' fatta quella proiezione. Confronta ogni miniatura con gli esemplari e scegli la riga il cui esemplare le somiglia di piu' per struttura anatomica e tipo di tracciato. Attenzione:
+- gli esemplari vengono da altri pazienti e da altri ecografi: cambiano guadagno, profondita', scritte e proporzioni. Conta cosa si vede, non come e' scritto lo schermo.
+- alcune righe NON hanno esemplare: restano solo descritte a parole nell'elenco del protocollo, e sono risposte valide come le altre.
+- se una miniatura non somiglia a nessun esemplare e non corrisponde a nessuna descrizione, rispondi "sconosciuto".
+"""
+
 
 def _descrivi_riga(r):
     media = {'CLIP': 'filmato', 'STATICA': 'immagine', 'ENTRAMBI': 'filmato o immagine'}.get(r.tipo_media, '')
@@ -86,8 +102,9 @@ def _descrivi_riga(r):
     return testo
 
 
-def prompt_sistema(righe):
-    return ISTRUZIONI + '\n'.join(_descrivi_riga(r) for r in righe)
+def prompt_sistema(righe, con_esemplari=False):
+    testo = ISTRUZIONI + '\n'.join(_descrivi_riga(r) for r in righe)
+    return testo + ISTRUZIONI_ESEMPLARI if con_esemplari else testo
 
 
 def schema(codici):
@@ -132,6 +149,22 @@ def prepara_immagine(dati_jpeg, taglio_alto=0.0):
         uscita = io.BytesIO()
         im.save(uscita, 'JPEG', quality=85)
         return uscita.getvalue()
+
+
+def blocchi_esemplari(esemplari):
+    """Il prefisso stabile: un blocco di testo e un'immagine per esemplare,
+    con `cache_control` sull'ultimo (tutto cio' che viene prima va in cache)."""
+    if not esemplari:
+        return []
+    blocchi = [{'type': 'text', 'text': f'ESEMPLARI: come sono fatte {len(esemplari)} delle righe del protocollo.'}]
+    for e in esemplari:
+        blocchi.append({'type': 'text', 'text': f'Esemplare {e.codice} — {e.nome} ({e.descrizione}):'})
+        blocchi.append({'type': 'image', 'source': {
+            'type': 'base64', 'media_type': 'image/jpeg',
+            'data': base64.standard_b64encode(e.dati).decode('ascii')}})
+    blocchi.append({'type': 'text', 'text': 'Fine degli esemplari. Ora le miniature dell\'esame da smistare.',
+                    'cache_control': {'type': 'ephemeral'}})
+    return blocchi
 
 
 def contenuto_gruppo(gruppo, taglio_alto=0.0):
@@ -182,7 +215,7 @@ class LettoreClaude:
     si crea `anthropic.Anthropic` con la chiave di ANTHROPIC_API_KEY."""
 
     def __init__(self, modello, *, chiave=None, effort='medium', timeout=180.0, taglio_alto=0.0, per_richiesta=8,
-                 paralleli=3, prezzi=None, client=None):
+                 paralleli=3, prezzi=None, client=None, esemplari=None):
         self.modello = modello
         self.chiave = chiave
         self.effort = effort
@@ -193,6 +226,9 @@ class LettoreClaude:
         self.prezzi = prezzi or {}
         self._client = client
         self.modello_senza_fallback = False
+        # Funzione righe -> [Esemplare] (esemplari.py), oppure None: senza
+        # esemplari il modello ha solo le descrizioni a parole.
+        self.esemplari = esemplari
 
     # ── client ──────────────────────────────────────────────────────────
     def _crea_client(self):
@@ -211,12 +247,14 @@ class LettoreClaude:
         return self._client
 
     # ── una richiesta ───────────────────────────────────────────────────
-    def _chiedi(self, client, sistema, formato, gruppo):
+    def _chiedi(self, client, sistema, formato, gruppo, esemplari=()):
+        # Prefisso stabile (esemplari, in cache) + miniature del gruppo.
+        contenuto = blocchi_esemplari(esemplari) + contenuto_gruppo(gruppo, self.taglio_alto)
         parametri = dict(
             model=self.modello, max_tokens=16000,
             system=[{'type': 'text', 'text': sistema, 'cache_control': {'type': 'ephemeral'}}],
             output_config={'effort': self.effort, 'format': {'type': 'json_schema', 'schema': formato}},
-            messages=[{'role': 'user', 'content': contenuto_gruppo(gruppo, self.taglio_alto)}],
+            messages=[{'role': 'user', 'content': contenuto}],
         )
         if self.modello in MODELLI_CON_FALLBACK and not self.modello_senza_fallback:
             parametri.update(betas=[BETA_FALLBACK], fallbacks='default')
@@ -240,14 +278,14 @@ class LettoreClaude:
         except (ValueError, TypeError) as e:
             return {}, consumo, f'risposta non leggibile ({getattr(risposta, "stop_reason", "")}): {e}'
 
-    def _gruppo_protetto(self, client, sistema, formato, gruppo):
+    def _gruppo_protetto(self, client, sistema, formato, gruppo, esemplari=()):
         """Una richiesta, con gli errori per gruppo trasformati in una voce di
         telemetria. Gli errori che valgono per tutti (chiave, permesso,
         modello) risalgono come LetturaNonDisponibile."""
         import anthropic
         try:
             try:
-                return self._chiedi(client, sistema, formato, gruppo)
+                return self._chiedi(client, sistema, formato, gruppo, esemplari)
             except anthropic.BadRequestError as e:
                 # Il fallback lato server e' in beta: se l'API non lo accetta
                 # insieme al resto, si riprova una volta senza.
@@ -255,7 +293,7 @@ class LettoreClaude:
                     raise
                 logger.warning('Smistamento: fallback rifiutato dall\'API, riprovo senza: %s', e)
                 self.modello_senza_fallback = True
-                return self._chiedi(client, sistema, formato, gruppo)
+                return self._chiedi(client, sistema, formato, gruppo, esemplari)
         except anthropic.AuthenticationError:
             raise LetturaNonDisponibile('La lettura automatica non e\' disponibile (chiave rifiutata): '
                                         'smista i file a mano.')
@@ -280,18 +318,41 @@ class LettoreClaude:
     # ── tutte ───────────────────────────────────────────────────────────
     def leggi(self, da_leggere, righe):
         client = self._crea_client()
-        sistema = prompt_sistema(righe)
+        tutti = list(self.esemplari(righe)) if self.esemplari else []
+        sistema = prompt_sistema(righe, con_esemplari=bool(tutti))
         formato = schema([r.codice for r in righe])
         gruppi = [da_leggere[i:i + self.per_richiesta] for i in range(0, len(da_leggere), self.per_richiesta)]
+
+        def per_gruppo(gruppo):
+            """Gli esemplari della richiesta: tutti, meno quelli che il banco
+            di prova chiede di togliere (leave-one-out)."""
+            fuori = {c for d in gruppo for c in d.escludi}
+            return [e for e in tutti if e.chiave not in fuori]
+
         inizio = time.monotonic()
         esiti = []
-        # Il primo gruppo da solo (scrive la cache del prompt di sistema), gli
-        # altri in parallelo (la leggono).
+        # Righe che HANNO un esemplare ma che in qualche richiesta non l'hanno
+        # visto (solo il leave-one-out del banco lo fa): la' sono descritte
+        # solo a parole, ed e' la condizione peggiore.
+        senza_esemplare = set()
+        mostrati_per_richiesta = []
+        # Il primo gruppo da solo (scrive la cache di sistema ed esemplari),
+        # gli altri in parallelo (la leggono).
         if gruppi:
-            esiti.append(self._gruppo_protetto(client, sistema, formato, gruppi[0]))
+            mostrati = per_gruppo(gruppi[0])
+            senza_esemplare |= {e.codice for e in tutti} - {e.codice for e in mostrati}
+            mostrati_per_richiesta.append(len(mostrati))
+            esiti.append(self._gruppo_protetto(client, sistema, formato, gruppi[0], mostrati))
         if len(gruppi) > 1:
+            def lavora(gruppo):
+                mostrati = per_gruppo(gruppo)
+                return self._gruppo_protetto(client, sistema, formato, gruppo, mostrati), \
+                    ({e.codice for e in tutti} - {e.codice for e in mostrati}, len(mostrati))
             with ThreadPoolExecutor(max_workers=self.paralleli) as pool:
-                esiti.extend(pool.map(lambda g: self._gruppo_protetto(client, sistema, formato, g), gruppi[1:]))
+                for esito, (mancanti, quanti) in pool.map(lavora, gruppi[1:]):
+                    esiti.append(esito)
+                    senza_esemplare |= mancanti
+                    mostrati_per_richiesta.append(quanti)
         letture, errori = {}, []
         totali = {'input': 0, 'output': 0, 'cache_scrittura': 0, 'cache_lettura': 0}
         modelli = set()
@@ -305,6 +366,8 @@ class LettoreClaude:
                 errori.append(errore)
         telemetria = {
             'modello': self.modello, 'modelli_risposta': sorted(modelli), 'effort': self.effort,
+            'esemplari': len(tutti), 'righe_senza_esemplare': sorted(senza_esemplare),
+            'esemplari_per_richiesta': mostrati_per_richiesta,
             'taglio_alto': self.taglio_alto, 'richieste': len(gruppi), 'immagini': len(da_leggere),
             'token_input': totali['input'], 'token_output': totali['output'],
             'token_cache_scrittura': totali['cache_scrittura'], 'token_cache_lettura': totali['cache_lettura'],
@@ -327,10 +390,12 @@ def da_settings():
     """Il lettore configurato in settings, o None se lo smistamento AI e'
     spento (CONSULTI_SMISTAMENTO_AI = False)."""
     from django.conf import settings
+    from . import esemplari as modulo_esemplari
     if not getattr(settings, 'CONSULTI_SMISTAMENTO_AI', True):
         return None
     return LettoreClaude(
         settings.CONSULTI_MODELLO_SMISTAMENTO,
+        esemplari=modulo_esemplari.da_settings,
         effort=getattr(settings, 'CONSULTI_SMISTAMENTO_EFFORT', 'medium'),
         timeout=getattr(settings, 'CONSULTI_SMISTAMENTO_TIMEOUT', 90.0),
         taglio_alto=getattr(settings, 'CONSULTI_SMISTAMENTO_TAGLIO_ALTO', 0.0),

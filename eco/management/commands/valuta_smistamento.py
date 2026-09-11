@@ -46,8 +46,9 @@ from django.core.management.base import BaseCommand
 
 from consulti.anteprime import jpeg_ridotto
 from eco.models import ProiezioneCatalogo, in_ordine
+from eco.smistamento import esemplari as modulo_esemplari
 from eco.smistamento import motore, righe as righe_catalogo
-from eco.smistamento.dati import NOMI_TRACCIATO, FileEsame
+from eco.smistamento.dati import NOMI_TRACCIATO, Esemplare, FileEsame
 from eco.smistamento.lettore import LettoreClaude
 
 CARTELLA = Path(__file__).resolve().parents[2] / 'catalogo'
@@ -86,6 +87,34 @@ BANCO = [
 RIGHE_2D_STATICHE = ('DX5_LAAO', 'DX_LAD')
 
 
+def _prima_immagine(riga_json):
+    """Il nome del file della prima immagine di riferimento (il JSON accetta
+    sia la stringa sia {file, didascalia})."""
+    for voce in riga_json.get('immagini_riferimento') or []:
+        nome = voce['file'] if isinstance(voce, dict) else voce
+        if nome:
+            return nome
+    return None
+
+
+def esemplari_dal_catalogo(righe, lato):
+    """Gli esemplari del banco: la prima immagine di riferimento di ogni riga,
+    letta da eco/catalogo/img/ (come fa il portale dal database). `chiave` e'
+    il nome del file: cosi' la valutazione puo' escluderlo (leave-one-out)."""
+    dati = json.loads((CARTELLA / 'catalogo_eco.json').read_text(encoding='utf-8'))['righe']
+    per_codice = {r.codice: r for r in righe}
+    esemplari = []
+    for riga_json in dati:
+        riga = per_codice.get(riga_json['codice'])
+        nome = _prima_immagine(riga_json)
+        if riga is None or riga.libera or not nome:
+            continue
+        esemplari.append(Esemplare(codice=riga.codice, nome=riga.nome,
+                                   descrizione=modulo_esemplari.descrizione(riga),
+                                   dati=jpeg_ridotto(CARTELLA / 'img' / nome, lato_max=lato), chiave=nome))
+    return esemplari
+
+
 def righe_dal_catalogo():
     """Le righe dal JSON del catalogo (nessun database), nell'ordine del passo 3."""
     dati = json.loads((CARTELLA / 'catalogo_eco.json').read_text(encoding='utf-8'))['righe']
@@ -111,6 +140,9 @@ class Command(BaseCommand):
         parser.add_argument('--ordine', choices=('mescolato', 'protocollo'), default='mescolato',
                             help='mescolato: ordine casuale (seme fisso); protocollo: nell\'ordine del protocollo.')
         parser.add_argument('--seme', type=int, default=11)
+        parser.add_argument('--esemplari', choices=('si', 'no'), default='si',
+                            help='si: manda anche le immagini di riferimento delle righe (prefisso in cache).')
+        parser.add_argument('--esemplari-px', type=int, default=modulo_esemplari.LATO_ESEMPLARE)
         parser.add_argument('--json', help='Salva qui i risultati per file (JSON).')
 
     def handle(self, *args, **opzioni):
@@ -121,14 +153,24 @@ class Command(BaseCommand):
             random.Random(opzioni['seme']).shuffle(banco)
         else:
             banco.sort(key=lambda b: min(per_codice[c].ordine for c in b[1]))
+        con_esemplari = opzioni['esemplari'] == 'si'
+        esemplari = esemplari_dal_catalogo(righe, opzioni['esemplari_px']) if con_esemplari else []
         files, verita = [], {}
         for i, (nome, giuste, genere, gruppo, scritte) in enumerate(banco, start=1):
             neutro = f'IMG_{i:04d}.{"mp4" if genere == "video" else "jpg"}'
             anteprima = jpeg_ridotto(CARTELLA / 'img' / nome)
-            files.append(FileEsame(id=i, nome=neutro, genere=genere, anteprima=anteprima, percorso=neutro))
+            # LEAVE-ONE-OUT: il banco e' fatto delle stesse immagini di
+            # riferimento. Per questo file si tolgono dagli esemplari la sua
+            # stessa immagine (ovunque compaia) e l'esemplare della sua riga
+            # vera: senza, il modello riconoscerebbe se stesso e il numero non
+            # varrebbe niente.
+            escludi = tuple({e.chiave for e in esemplari if e.chiave == nome or e.codice in giuste})
+            files.append(FileEsame(id=i, nome=neutro, genere=genere, anteprima=anteprima, percorso=neutro,
+                                   escludi_esemplari=escludi))
             verita[i] = {'file': nome, 'neutro': neutro, 'giuste': giuste, 'genere': genere, 'gruppo': gruppo,
-                         'scritte': scritte}
+                         'scritte': scritte, 'esemplari_esclusi': list(escludi)}
         lettore = LettoreClaude(opzioni['modello'], effort=opzioni['effort'], taglio_alto=opzioni['taglio'],
+                                esemplari=(lambda _righe: esemplari) if con_esemplari else None,
                                 timeout=getattr(settings, 'CONSULTI_SMISTAMENTO_TIMEOUT', 180.0),
                                 per_richiesta=getattr(settings, 'CONSULTI_SMISTAMENTO_PER_RICHIESTA', 8),
                                 prezzi=getattr(settings, 'CONSULTI_PREZZI_MODELLI', {}))
@@ -168,7 +210,18 @@ class Command(BaseCommand):
         t = risultato.telemetria
         o = self.stdout.write
         o(f'\nSmistamento sul banco — modello {opzioni["modello"]}, effort {opzioni["effort"]}, '
-          f'taglio in alto {opzioni["taglio"]:.0%}, ordine {opzioni["ordine"]}')
+          f'taglio in alto {opzioni["taglio"]:.0%}, ordine {opzioni["ordine"]}, '
+          f'esemplari {opzioni["esemplari"]} ({t.get("esemplari", 0)} a {opzioni["esemplari_px"]} px, '
+          f'leave-one-out)')
+        senza = t.get('righe_senza_esemplare') or []
+        if t.get('esemplari'):
+            per_richiesta = t.get('esemplari_per_richiesta') or []
+            media = sum(per_richiesta) / len(per_richiesta) if per_richiesta else 0
+            o(f'Esemplari mostrati: {media:.1f} su {t["esemplari"]} per richiesta ({per_richiesta}); righe rimaste '
+              f'senza esemplare in almeno una richiesta per colpa del leave-one-out: {len(senza)}'
+              + (f' — {", ".join(senza)}' if senza else ''))
+            o('  (per ogni file del banco l\'esemplare della SUA riga e\' sempre escluso: il guadagno misurato '
+              'qui e\' quindi un limite inferiore, in produzione l\'esemplare giusto c\'e\')')
         if risultato.messaggio:
             o(f'Messaggio: {risultato.messaggio}')
         o(f'Richieste {t.get("richieste")}, immagini lette {t.get("immagini")}, token in {t.get("token_input")} '
@@ -192,6 +245,7 @@ class Command(BaseCommand):
         if not risultato.lettura_ai:
             o(self.style.WARNING('\nLettura AI non eseguita (vedi il messaggio): serve ANTHROPIC_API_KEY valida. '
                                  'Qui sopra solo i gradi 1-2.'))
+            self._salva(opzioni, t, durata, risultato, esiti)
             return
         for nome_gruppo in ('principale', 'guida'):
             gruppo = [e for e in esiti if e['gruppo'] == nome_gruppo]
@@ -234,9 +288,14 @@ class Command(BaseCommand):
             o(f'  {e["neutro"]} {e["file"]:22s} {e["gruppo"]:10s} vero {"/".join(e["giuste"]):22s} '
               f'letto {str(e["lettura"]):12s} {str(e["confidenza"]):5s} {str(e["tracciato_letto"]):4s} '
               f'-> {str(e["proposta"]):12s} {"SICURO" if e["sicura"] else "      "} {e["fonte"]:6s} «{e["motivo"]}»')
-        if opzioni.get('json'):
-            Path(opzioni['json']).write_text(json.dumps(
-                {'opzioni': {k: opzioni[k] for k in ('modello', 'effort', 'taglio', 'ordine', 'seme')},
-                 'telemetria': t, 'durata_s': round(durata, 1), 'messaggio': risultato.messaggio, 'file': esiti},
-                ensure_ascii=False, indent=1), encoding='utf-8')
-            o(f'\nRisultati in {opzioni["json"]}')
+        self._salva(opzioni, t, durata, risultato, esiti)
+
+    def _salva(self, opzioni, t, durata, risultato, esiti):
+        if not opzioni.get('json'):
+            return
+        Path(opzioni['json']).write_text(json.dumps(
+            {'opzioni': {k: opzioni[k] for k in ('modello', 'effort', 'taglio', 'ordine', 'seme', 'esemplari',
+                                                 'esemplari_px')},
+             'telemetria': t, 'durata_s': round(durata, 1), 'messaggio': risultato.messaggio, 'file': esiti},
+            ensure_ascii=False, indent=1), encoding='utf-8')
+        self.stdout.write(f'\nRisultati in {opzioni["json"]}')

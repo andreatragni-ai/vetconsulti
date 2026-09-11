@@ -53,7 +53,10 @@ class Riga:
 class FileEsame:
     """Un file caricato. `genere`: pdf, immagine, video, dicom, altro.
     `anteprima`: i byte JPEG della miniatura (None se non c'e').
-    `percorso` e `modificato_il` (ms) servono all'ordine di acquisizione."""
+    `percorso` e `modificato_il` (ms) servono all'ordine di acquisizione.
+    `escludi_esemplari` serve SOLO al banco di prova: le chiavi degli
+    esemplari da non mostrare quando si legge questo file (leave-one-out,
+    perche' il banco e' fatto delle stesse immagini di riferimento)."""
 
     id: int
     nome: str
@@ -63,6 +66,7 @@ class FileEsame:
     modificato_il: int | None = None
     colore: str = ''
     frazione_colore: float | None = None
+    escludi_esemplari: tuple = ()
 
 
 @dataclass
@@ -79,15 +83,31 @@ class Lettura:
 
 
 @dataclass
+class Esemplare:
+    """L'immagine di riferimento di una riga, ridotta, da mostrare al modello
+    come esempio di come dev'essere quella proiezione. `chiave` identifica
+    l'immagine sorgente (serve al leave-one-out del banco: la stessa immagine
+    puo' essere esemplare di piu' righe)."""
+
+    codice: str
+    nome: str
+    descrizione: str
+    dati: bytes
+    chiave: str = ''
+
+
+@dataclass
 class DaLeggere:
     """Un file da mandare alla lettura AI con le sole righe possibili per
-    formato e pixel (codici)."""
+    formato e pixel (codici). `escludi`: chiavi di esemplari da non mostrare
+    nella richiesta che contiene questo file (solo per il banco di prova)."""
 
     file_id: int
     anteprima: bytes
     genere: str
     candidati: list = field(default_factory=list)
     colore: str = ''
+    escludi: tuple = ()
 
 
 @dataclass

@@ -185,6 +185,15 @@ CONSULTI_SMISTAMENTO_TIMEOUT = float(os.environ.get('CONSULTI_SMISTAMENTO_TIMEOU
 # (intestazione dell'ecografo: nome del paziente, codice). 0 = niente taglio.
 CONSULTI_SMISTAMENTO_TAGLIO_ALTO = float(os.environ.get('CONSULTI_SMISTAMENTO_TAGLIO_ALTO', '0.08'))
 CONSULTI_SMISTAMENTO_PER_RICHIESTA = 8          # miniature per richiesta all'API
+# Esemplari: l'immagine di riferimento di ogni riga viaggia con la richiesta
+# (prefisso in cache), cosi' il modello confronta invece di leggere solo la
+# descrizione. SPENTO: misurato sul banco (3 semi, 12/09/2026) non migliora la
+# riga giusta (10,3 -> 10,7 su 17, dentro il rumore), fa dire «sconosciuto» la
+# meta' delle volte ma sbaglia di piu' (2,7 -> 5,0 file messi nella riga
+# sbagliata) e costa il 30 % in piu'. Il codice resta: si riaccende qui e si
+# rimisura con `manage.py valuta_smistamento --esemplari si`.
+CONSULTI_SMISTAMENTO_ESEMPLARI = os.environ.get('CONSULTI_SMISTAMENTO_ESEMPLARI', 'False') == 'True'
+CONSULTI_SMISTAMENTO_ESEMPLARI_PX = int(os.environ.get('CONSULTI_SMISTAMENTO_ESEMPLARI_PX', '320'))
 CONSULTI_SMISTAMENTO_IN_THREAD = True           # i test lo spengono (conftest.py)
 # Prezzi in dollari per milione di token (ingresso, uscita), per la stima del
 # costo nella telemetria. Da aggiornare se cambiano i listini.

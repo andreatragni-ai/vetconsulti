@@ -426,3 +426,103 @@ def test_comando_valuta_smistamento_riporta_i_numeri(monkeypatch, tmp_path):
     assert 'riga giusta fra le possibili 26/26' in testo and 'Per un esame da 27 file' in testo
     assert json.loads((tmp_path / 'r.json').read_text())['file'][0]['neutro'].startswith('IMG_')
     assert not list(IMG.parent.glob('IMG_*'))            # nessuna copia delle immagini
+
+
+# ── Esemplari: le immagini di riferimento nel prompt ─────────────────────────
+
+def _esemplari(codici=('LAAO', 'AP_PW')):
+    from eco.smistamento.dati import Esemplare
+    righe_ = {r.codice: r for r in _righe()}
+    return [Esemplare(codice=c, nome=righe_[c].nome, descrizione='prova', dati=_fotogramma(seme=ord(c[0])),
+                      chiave=f'{c.lower()}.jpg') for c in codici]
+
+
+def _blocchi(parametri):
+    return parametri['messages'][0]['content']
+
+
+def test_esemplari_in_testa_alla_richiesta_con_cache_control():
+    """Gli esemplari stanno prima delle miniature, l'ultimo blocco del
+    prefisso porta cache_control: si pagano una volta sola."""
+    client = ClientFinto([_risposta([])])
+    esemplari = _esemplari()
+    lettore = LettoreClaude('claude-opus-5', client=client, esemplari=lambda righe: esemplari)
+    _letture, telemetria = lettore.leggi(_da_leggere(2), _righe()[:9])
+    blocchi = _blocchi(client.parametri[0])
+    testi = [b['text'] for b in blocchi if b['type'] == 'text']
+    assert testi[0].startswith('ESEMPLARI:')
+    assert any(t.startswith('Esemplare LAAO') for t in testi) and any(t.startswith('Esemplare AP_PW') for t in testi)
+    fine = next(i for i, b in enumerate(blocchi) if b.get('cache_control'))
+    prima_miniatura = next(i for i, b in enumerate(blocchi) if b['type'] == 'text' and b['text'].startswith('Miniatura 1'))
+    assert fine < prima_miniatura                      # il prefisso stabile viene prima
+    assert len([b for b in blocchi if b['type'] == 'image']) == 4     # 2 esemplari + 2 miniature
+    assert 'ESEMPLARI' in client.parametri[0]['system'][0]['text']
+    assert telemetria['esemplari'] == 2 and telemetria['righe_senza_esemplare'] == []   # niente esclusioni
+
+
+def test_senza_esemplari_la_richiesta_e_quella_di_prima():
+    client = ClientFinto([_risposta([])])
+    LettoreClaude('claude-opus-5', client=client).leggi(_da_leggere(1), _righe()[:9])
+    blocchi = _blocchi(client.parametri[0])
+    assert blocchi[0]['text'].startswith('Miniatura 1')
+    assert 'ESEMPLARI' not in client.parametri[0]['system'][0]['text']
+
+
+def test_leave_one_out_toglie_l_esemplare_indicato():
+    """Il banco e' fatto delle stesse immagini di riferimento: l'esemplare del
+    file che si sta leggendo non deve entrare nella richiesta."""
+    client = ClientFinto([_risposta([])])
+    esemplari = _esemplari()
+    lettore = LettoreClaude('claude-opus-5', client=client, esemplari=lambda righe: esemplari)
+    gruppo = _da_leggere(1)
+    gruppo[0].escludi = ('laao.jpg',)
+    _letture, telemetria = lettore.leggi(gruppo, _righe()[:9])
+    testi = [b['text'] for b in _blocchi(client.parametri[0]) if b['type'] == 'text']
+    assert not any(t.startswith('Esemplare LAAO') for t in testi)
+    assert any(t.startswith('Esemplare AP_PW') for t in testi)
+    assert 'LAAO' in telemetria['righe_senza_esemplare']
+
+
+def test_banco_esclude_l_immagine_del_file_e_la_riga_vera(monkeypatch):
+    """Nel comando di valutazione ogni file del banco toglie dagli esemplari
+    la propria immagine (ovunque sia esemplare) e l'esemplare della sua riga
+    vera: senza, il modello riconoscerebbe se stesso."""
+    import tempfile
+    from io import StringIO
+    from django.core.management import call_command
+    from eco.management.commands import valuta_smistamento as comando
+
+    ricevuti = []
+
+    class Finto:
+        def __init__(self, *a, **k):
+            self.esemplari = k.get('esemplari')
+
+        def leggi(self, da_leggere, righe_):
+            tutti = self.esemplari(righe_)
+            ricevuti.append((len(tutti), [d.escludi for d in da_leggere]))
+            return {}, {'esemplari': len(tutti), 'righe_senza_esemplare': [], 'errori': []}
+
+    monkeypatch.setattr(comando, 'LettoreClaude', Finto)
+    with tempfile.TemporaryDirectory() as tmp:
+        percorso = Path(tmp) / 'r.json'
+        call_command('valuta_smistamento', '--json', str(percorso), stdout=StringIO())
+        per_file = {v['file']: v for v in json.loads(percorso.read_text())['file']}
+    assert ricevuti and ricevuti[0][0] > 20                 # gli esemplari arrivano al lettore
+    righe = comando.righe_dal_catalogo()
+    per_chiave = {}
+    for e in comando.esemplari_dal_catalogo(righe, 64):
+        per_chiave.setdefault(e.chiave, []).append(e.codice)
+    # dx1_eco.jpg e' l'esemplare sia di DX1_B sia di DX1_C: escluderlo li toglie entrambi.
+    escluse = set(per_file['dx1_eco.jpg']['esemplari_esclusi'])
+    assert escluse == {'dx1_eco.jpg'} and {'DX1_B', 'DX1_C'} <= set(per_chiave['dx1_eco.jpg'])
+    # sx10_ao.jpg non e' esemplare di nessuna riga, ma la sua riga vera
+    # (SUB_LVOT_CW) ha un esemplare: quello si toglie.
+    escluse = set(per_file['sx10_ao.jpg']['esemplari_esclusi'])
+    assert 'sx10_ao.jpg' not in per_chiave
+    assert escluse and 'SUB_LVOT_CW' in {c for chiave in escluse for c in per_chiave[chiave]}
+    # Ogni file del banco esclude almeno l'esemplare della sua riga vera, se esiste.
+    for nome, giuste, _g, _gr, _s in comando.BANCO:
+        con_esemplare = [c for c in giuste if any(c in v for v in per_chiave.values())]
+        escluse = set(per_file[nome]['esemplari_esclusi'])
+        assert all(c in {x for chiave in escluse for x in per_chiave[chiave]} for c in con_esemplare), nome

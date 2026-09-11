@@ -142,7 +142,8 @@ def smista(files, righe, lettore=None, *, righe_occupate=frozenset(), referto_li
 
     # ── Grado 3: lettura AI ─────────────────────────────────────────────
     da_leggere = [DaLeggere(file_id=f.id, anteprima=f.anteprima, genere=f.genere,
-                            candidati=[r.codice for r in possibili[f.id]], colore=f.colore or '')
+                            candidati=[r.codice for r in possibili[f.id]], colore=f.colore or '',
+                            escludi=tuple(f.escludi_esemplari))
                   for f in ordinati if f.anteprima and possibili[f.id]]
     letture, telemetria, lettura_ai = {}, {}, False
     if da_leggere:

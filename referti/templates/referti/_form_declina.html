@@ -1,0 +1,18 @@
+{% comment %}
+Form «Declina» con le frasi rapide (consulti/motivi.py). Contesto: richiesta,
+form_declina, frasi_declina. Motivo obbligatorio: lo legge chi ha chiesto,
+che poi gira il caso a un altro esperto.
+{% endcomment %}
+<form method="post" action="{% url 'consulti:declina' richiesta.pk %}"
+      data-conferma="Declinare {{ richiesta.codice }}? Il caso torna al richiedente con il tuo motivo.">{% csrf_token %}
+  <label class="form-label" for="motivo-declina">Declina con un motivo <span class="text-danger">*</span></label>
+  <div class="frasi-rapide">
+    {% for frase in frasi_declina %}
+    <button type="button" class="btn btn-outline-secondary btn-sm" data-frase="{{ frase }}" data-per="motivo-declina">{{ frase }}</button>
+    {% endfor %}
+  </div>
+  <textarea name="motivo" id="motivo-declina" rows="3" class="form-control mb-2" maxlength="1000" required
+            placeholder="Es. non referto gatti; assente fino al 24/09.">{{ form_declina.motivo.value|default:'' }}</textarea>
+  <div class="form-text mb-2">{{ form_declina.motivo.help_text }}</div>
+  <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-arrow-return-left me-1"></i>Declina</button>
+</form>

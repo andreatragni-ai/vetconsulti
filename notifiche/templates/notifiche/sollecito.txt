@@ -1,9 +1,11 @@
 Gentile {{ refertatore.nome_completo }},
 
-il caso {{ richiesta.codice }} ({{ richiesta.get_tipo_esame_display }}, paziente {{ richiesta.paziente }}) era stato preso in carico ma non risulta ancora refertato. E' stato rimesso a disposizione: se vuoi ancora occupartene, riprendilo da qui:
+il caso {{ richiesta.codice }} ({{ richiesta.get_tipo_esame_display }}{% if richiesta.urgenza %}, URGENTE{% endif %}, paziente {{ richiesta.paziente }}) ti e' stato inviato il {{ richiesta.inviata_il|date:"d/m/Y" }} alle {{ richiesta.inviata_il|date:"H:i" }}{% if ore_dichiarate %} e il tempo di risposta indicato e' di {{ ore_dichiarate }} ore: siamo a meta'{% endif %}.
+
+{% if richiesta.stato == 'INVIATA' %}Non l'hai ancora preso in carico. {% endif %}Lo trovi qui:
 
   {{ link }}
 
-Se non puoi, va bene cosi': chi ha chiesto potra' girarlo a un altro collega.
+Se non riesci, declinalo con due righe di motivo: chi ha chiesto potra' girarlo subito a un altro collega.
 
 VetWay Consulti

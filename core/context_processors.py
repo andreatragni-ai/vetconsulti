@@ -53,11 +53,19 @@ def navigazione(request):
     richiedente = getattr(utente, 'richiedente', None)
     refertatore = getattr(utente, 'refertatore', None)
     voci = []
-    if richiedente or refertatore:
-        voci.append(voce('consulti:mie_richieste', 'Le mie richieste', 'inbox', ('mie_richieste', 'dettaglio')))
+    if refertatore:
+        # Il contatore dice quanti casi aspettano una decisione (INVIATA):
+        # la palla e' nel campo del refertatore.
+        from consulti.models import Richiesta, StatoRichiesta
+        da_decidere = Richiesta.objects.filter(refertatore=refertatore, stato=StatoRichiesta.INVIATA).count()
+        etichetta = f'Casi ricevuti ({da_decidere})' if da_decidere else 'Casi ricevuti'
+        voci.append(voce('consulti:casi_ricevuti', etichetta, 'clipboard2-pulse', ('casi_ricevuti', 'refertazione')))
     if richiedente:
+        voci.append(voce('consulti:mie_richieste', 'Le mie richieste', 'inbox', ('mie_richieste', 'dettaglio')))
         voci.append(voce('consulti:nuova', 'Nuova richiesta', 'plus-circle'))
         voci.append(voce('accounts:profilo_richiedente', 'Profilo', 'person'))
+    elif utente.is_staff:
+        voci.append(voce('consulti:mie_richieste', 'Richieste', 'inbox', ('mie_richieste', 'dettaglio')))
     if refertatore:
         voci.append(voce('accounts:profilo_refertatore', 'Profilo refertatore', 'person-badge'))
     if utente.is_staff:

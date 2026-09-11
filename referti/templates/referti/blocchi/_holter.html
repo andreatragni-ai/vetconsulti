@@ -1,0 +1,5 @@
+{% comment %}
+Blocco Holter del referto: per ora nessuna voce strutturata, bastano le tre
+caselle. PUNTO DI AGGANCIO: voci in referti/blocchi.py (tipo HOLTER).
+{% endcomment %}
+{% for campo in form.campi_blocco %}{% include "_campo_form.html" with campo=campo %}{% endfor %}

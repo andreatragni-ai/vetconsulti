@@ -1,0 +1,11 @@
+Gentile {{ richiedente.user.get_full_name }},
+
+{{ richiesta.refertatore.nome_completo }} ha esaminato il caso {{ richiesta.codice }} ({{ richiesta.get_tipo_esame_display }}, paziente {{ richiesta.paziente }}) e non e' in grado di refertarlo con il materiale inviato.
+
+Motivo: {{ richiesta.motivo_rifiuto }}
+
+Il consulto non ti viene addebitato. Se puoi ripetere l'esame, apri una nuova richiesta dal portale; il caso resta consultabile qui:
+
+  {{ link }}
+
+VetWay Consulti

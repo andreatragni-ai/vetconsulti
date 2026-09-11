@@ -1,0 +1,47 @@
+{% comment %}
+Form della copia di lavoro del referto (RefertoForm). Contesto: richiesta,
+form, referto, modo = "firma" (prima firma) | "rettifica" (dopo la firma).
+Il form salva SOLO la bozza (referti:salva_bozza, htmx con trigger
+"submit" e "salva-auto" ogni 30 s dal JS della pagina). Il bottone di firma
+apre la modale del pacchetto, che fa POST su una rotta separata:
+data-rotta-firma dice al JS quale, per salvare prima di confermare.
+{% endcomment %}
+{% url 'referti:salva_bozza' richiesta.pk as url_salva %}
+{% if modo == "rettifica" %}{% url 'referti:rettifica' richiesta.pk as url_firma %}{% else %}{% url 'referti:firma' richiesta.pk as url_firma %}{% endif %}
+<form id="form-referto" method="post" action="{{ url_salva }}"
+      hx-post="{{ url_salva }}" hx-trigger="submit, salva-auto" hx-target="#stato-salvataggio" hx-swap="innerHTML"
+      data-rotta-firma="{{ url_firma }}">{% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+  {% if modo == "rettifica" %}{% include "_campo_form.html" with campo=form.motivo_rettifica %}{% endif %}
+  {% include "_campo_form.html" with campo=form.descrizione %}
+  {% include "_campo_form.html" with campo=form.conclusioni %}
+  {% include "_campo_form.html" with campo=form.raccomandazioni %}
+  {% include form.blocco.partial %}
+
+  <div class="referto-barra barra-azioni-testata mt-2">
+    <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="bi bi-save me-1"></i>Salva bozza</button>
+    {% if modo == "rettifica" %}
+    <button type="button" id="btn-firma" class="btn-nuova"
+            data-bs-toggle="modal" data-bs-target="#modalConfermaElimina"
+            data-elimina-href="{{ url_firma }}"
+            data-elimina-titolo="Emettere la versione {{ referto.versione|add:1 }} del referto {{ richiesta.codice }}?"
+            data-elimina-dettaglio="Si firma il testo salvato con il motivo indicato. Il richiedente riceve l'email con il PDF nuovo; le versioni precedenti restano consultabili. La prestazione non cambia."
+            data-elimina-intestazione="Rettifica del referto" data-elimina-azione="Si', emetti la rettifica"
+            data-elimina-tono="primary" data-elimina-icona="pen">
+      <i class="bi bi-pen me-1"></i>Emetti rettifica
+    </button>
+    {% else %}
+    <button type="button" id="btn-firma" class="btn-nuova"
+            data-bs-toggle="modal" data-bs-target="#modalConfermaElimina"
+            data-elimina-href="{{ url_firma }}"
+            data-elimina-titolo="Firmare il referto {{ richiesta.codice }}?"
+            data-elimina-dettaglio="Si firma il testo salvato. Il caso si chiude, il richiedente riceve l'email con il PDF e la prestazione viene registrata. Per correggere dopo servira' una rettifica."
+            data-elimina-intestazione="Firma del referto" data-elimina-azione="Si', firma"
+            data-elimina-tono="primary" data-elimina-icona="pen">
+      <i class="bi bi-pen me-1"></i>Firma
+    </button>
+    {% endif %}
+    <a class="btn-testata-ghost" href="{% url 'referti:anteprima' richiesta.pk %}" target="_blank" rel="noopener"><i class="bi bi-eye"></i>Anteprima PDF</a>
+    <span id="stato-salvataggio" aria-live="polite">{% if referto.descrizione or referto.conclusioni or referto.raccomandazioni %}<span class="stato-salvataggio">Ultimo salvataggio {{ referto.aggiornato_il|date:"d/m H:i" }}</span>{% endif %}</span>
+  </div>
+</form>

@@ -1,0 +1,43 @@
+{% comment %}
+Referto firmato in lettura + storico delle versioni. Lo usano la pagina del
+caso (richiedente, staff) e la pagina di refertazione (refertatore).
+Contesto: richiesta, ultima (VersioneReferto), versioni (dalla piu' recente),
+classificazione_ultima [(etichetta, valore)].
+Mostra SOLO versioni firmate: la copia di lavoro non passa mai di qui.
+{% endcomment %}
+<div class="ovic-card referto-firmato"><div class="card-header-ovic d-flex justify-content-between align-items-center">
+  <span>Referto{% if ultima.e_rettifica %} — versione {{ ultima.numero }}{% endif %}</span>
+</div><div class="card-body-ovic">
+  {% if ultima.e_rettifica %}
+    <div class="rettifica-nota"><i class="bi bi-arrow-repeat me-1"></i><strong>Rettifica</strong> del {{ ultima.firmato_il|date:"d/m/Y H:i" }}: sostituisce le versioni precedenti.<br>Motivo: {{ ultima.motivo_rettifica }}</div>
+  {% endif %}
+  {% include "vetway_ui/partials/_campo.html" with label="Descrizione" val=ultima.descrizione multiline=True %}
+  {% include "vetway_ui/partials/_campo.html" with label="Conclusioni" val=ultima.conclusioni multiline=True %}
+  {% include "vetway_ui/partials/_campo.html" with label="Raccomandazioni" val=ultima.raccomandazioni multiline=True %}
+  {% for etichetta, valore in classificazione_ultima %}
+    {% include "vetway_ui/partials/_campo.html" with label=etichetta val=valore %}
+  {% endfor %}
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-2 barra-azioni-testata">
+    <span class="firmato-da"><i class="bi bi-pen me-1"></i>Firmato da {{ richiesta.refertatore.nome_completo }} il {{ ultima.firmato_il|date:"d/m/Y" }} alle {{ ultima.firmato_il|date:"H:i" }}</span>
+    <a class="btn-nuova text-decoration-none" href="{% url 'referti:stampa_versione' ultima.pk %}"><i class="bi bi-file-earmark-pdf me-1"></i>Scarica il PDF</a>
+  </div>
+  {% if versioni|length > 1 %}
+  <div class="sezione-sottotitolo mt-3">Versioni precedenti</div>
+  <div class="table-responsive">
+  <table class="tbl-risultati">
+    <thead><tr><th>Versione</th><th>Firmata il</th><th>Motivo della rettifica</th><th></th></tr></thead>
+    <tbody>
+    {% for v in versioni %}{% if not forloop.first %}
+      <tr>
+        <td class="num-tab">v{{ v.numero }}</td>
+        <td class="num-tab">{{ v.firmato_il|date:"d/m/Y H:i" }}</td>
+        <td>{{ v.motivo_rettifica|default:"prima firma" }}
+          <details class="small"><summary class="text-muted">Conclusioni di allora</summary><div class="mt-1 testo-a-capo">{{ v.conclusioni }}</div></details></td>
+        <td class="td-kebab"><a href="{% url 'referti:stampa_versione' v.pk %}"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a></td>
+      </tr>
+    {% endif %}{% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% endif %}
+</div></div>

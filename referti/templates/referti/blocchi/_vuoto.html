@@ -1,0 +1,5 @@
+{% comment %}
+Tipo di esame senza blocco: nessuna voce strutturata, bastano le tre
+caselle.
+{% endcomment %}
+{% for campo in form.campi_blocco %}{% include "_campo_form.html" with campo=campo %}{% endfor %}

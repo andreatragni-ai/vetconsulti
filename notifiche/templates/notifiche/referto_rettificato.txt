@@ -1,0 +1,11 @@
+Gentile {{ richiedente.user.get_full_name }},
+
+{{ richiesta.refertatore.nome_completo }} ha rettificato il referto del consulto {{ richiesta.codice }} ({{ richiesta.get_tipo_esame_display }}, paziente {{ richiesta.paziente }}). La versione {{ versione.numero }} sostituisce le precedenti.
+
+Motivo della rettifica: {{ versione.motivo_rettifica }}
+
+{% if con_allegato %}Il PDF della versione {{ versione.numero }} e' in allegato. {% endif %}Sulla pagina del caso trovi il referto aggiornato e, per confronto, le versioni precedenti con i loro PDF:
+
+  {{ link }}
+
+VetWay Consulti

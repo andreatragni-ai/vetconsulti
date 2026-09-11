@@ -1,0 +1,52 @@
+{% comment %}
+Visore degli allegati del caso (pagina di refertazione). Contesto:
+  voci_visore — [{allegato, genere: pdf|immagine|video|altro, proiezione}]
+  iniziale    — la voce aperta all'arrivo (il primo PDF, o il primo allegato)
+I file passano SEMPRE da scarica_allegato (mai statici): ?inline=1 li mostra
+nel browser, il PDF dentro un iframe della stessa origine. Solo la voce
+aperta carica il file (data-src -> src al primo clic): una clip da 200 MB
+non parte finche' non la si guarda.
+{% endcomment %}
+<div class="visore">
+  <div class="ovic-card"><div class="card-header-ovic">Allegati ({{ voci_visore|length }})</div><div class="card-body-ovic">
+    {% if voci_visore %}
+    <div class="visore-schede" role="tablist" aria-label="Allegati del caso">
+      {% for v in voci_visore %}
+      <button type="button" role="tab" data-visore="vis-{{ v.allegato.pk }}"
+              class="btn btn-sm btn-outline-secondary{% if v.allegato.pk == iniziale.allegato.pk %} attiva{% endif %}"
+              aria-selected="{% if v.allegato.pk == iniziale.allegato.pk %}true{% else %}false{% endif %}">
+        <i class="bi bi-{% if v.genere == 'pdf' %}file-earmark-pdf{% elif v.genere == 'immagine' %}image{% elif v.genere == 'video' %}camera-video{% else %}paperclip{% endif %} me-1"></i>{{ v.proiezione|default:v.allegato.get_categoria_display }}
+        {% if v.proiezione %}<span class="proiezione">{{ v.allegato.get_categoria_display }}</span>{% endif %}
+      </button>
+      {% endfor %}
+    </div>
+    <div class="visore-scena">
+      {% for v in voci_visore %}{% url 'scarica_allegato' v.allegato.pk as url_file %}
+      <div id="vis-{{ v.allegato.pk }}" class="w-100{% if v.allegato.pk == iniziale.allegato.pk %} attivo{% endif %}">
+        {% if v.genere == 'pdf' %}
+          <iframe {% if v.allegato.pk == iniziale.allegato.pk %}src{% else %}data-src{% endif %}="{{ url_file }}?inline=1" title="{{ v.allegato.nome_originale }}"></iframe>
+        {% elif v.genere == 'immagine' %}
+          <img {% if v.allegato.pk == iniziale.allegato.pk %}src{% else %}data-src{% endif %}="{{ url_file }}?inline=1" alt="{{ v.proiezione|default:v.allegato.get_categoria_display }}">
+        {% elif v.genere == 'video' %}
+          <video controls preload="metadata" playsinline {% if v.allegato.pk == iniziale.allegato.pk %}src{% else %}data-src{% endif %}="{{ url_file }}?inline=1"></video>
+        {% else %}
+          <div class="visore-altro"><i class="bi bi-file-earmark fs-2 d-block mb-2"></i>Questo formato non si apre nel browser.<br>
+            <a href="{{ url_file }}">Scarica «{{ v.allegato.nome_originale|default:'file' }}»</a> ({{ v.allegato.dimensione|filesizeformat }})</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="d-flex justify-content-between flex-wrap gap-2 small mt-2">
+      {% for v in voci_visore %}{% url 'scarica_allegato' v.allegato.pk as url_file %}
+      <span class="visore-didascalia{% if v.allegato.pk != iniziale.allegato.pk %} d-none{% endif %}" data-per="vis-{{ v.allegato.pk }}">
+        <span class="text-muted">{{ v.allegato.nome_originale|default:v.allegato.file.name }} · {{ v.allegato.dimensione|filesizeformat }}</span>
+        · <a href="{{ url_file }}?inline=1" target="_blank" rel="noopener">Apri in una scheda</a>
+        · <a href="{{ url_file }}">Scarica</a>
+      </span>
+      {% endfor %}
+    </div>
+    {% else %}
+      <p class="text-muted mb-0">Nessun allegato.</p>
+    {% endif %}
+  </div></div>
+</div>

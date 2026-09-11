@@ -25,21 +25,29 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404
+from django.utils.http import content_disposition_header
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 # Prefisso interno noto solo a nginx: non e' raggiungibile dall'esterno.
 PREFISSO_INTERNO = '/_media_interno/'
 
 
-def consegna(percorso_relativo, nome_scaricato=None):
-    """Risposta che consegna un file sotto MEDIA_ROOT."""
+def consegna(percorso_relativo, nome_scaricato=None, inline=False):
+    """Risposta che consegna un file sotto MEDIA_ROOT. Con `inline` il
+    browser lo mostra (PDF nell'iframe del visore, immagini, clip) invece di
+    scaricarlo."""
     assoluto = os.path.join(settings.MEDIA_ROOT, percorso_relativo)
+    disposizione = None
+    if nome_scaricato or inline:
+        # content_disposition_header: nomi con accenti o virgolette non rompono l'intestazione.
+        disposizione = content_disposition_header(not inline, nome_scaricato or os.path.basename(assoluto))
 
     if settings.DEBUG:
         if not os.path.isfile(assoluto):
             raise Http404
         risposta = FileResponse(open(assoluto, 'rb'))
-        if nome_scaricato:
-            risposta['Content-Disposition'] = f'attachment; filename="{nome_scaricato}"'
+        if disposizione:
+            risposta['Content-Disposition'] = disposizione
         return risposta
 
     risposta = HttpResponse()
@@ -50,8 +58,8 @@ def consegna(percorso_relativo, nome_scaricato=None):
     tipo, _ = mimetypes.guess_type(assoluto)
     if tipo:
         risposta['Content-Type'] = tipo
-    if nome_scaricato:
-        risposta['Content-Disposition'] = f'attachment; filename="{nome_scaricato}"'
+    if disposizione:
+        risposta['Content-Disposition'] = disposizione
     return risposta
 
 
@@ -65,6 +73,8 @@ def puo_vedere_allegato(utente, allegato):
     refertatore = getattr(utente, 'refertatore', None)
     if refertatore is None:
         return False
+    if richiesta.stato == 'BOZZA':
+        return False  # una bozza e' ancora di chi la scrive
     if richiesta.refertatore_id == refertatore.id:
         return True
     # Caso non ancora assegnato: chi e' referente per quel tipo puo' guardarlo
@@ -73,12 +83,18 @@ def puo_vedere_allegato(utente, allegato):
 
 
 @login_required
+@xframe_options_sameorigin
 def scarica_allegato(request, pk):
+    """`?inline=1` per il visore della pagina di refertazione (iframe della
+    stessa origine: per questo X-Frame-Options e' SAMEORIGIN e non DENY)."""
     from consulti.models import Allegato
+    from consulti.permessi import registra_accesso_staff
 
     allegato = get_object_or_404(Allegato.objects.select_related('richiesta__richiedente'), pk=pk)
     if not puo_vedere_allegato(request.user, allegato):
         raise Http404
     if not allegato.file:
         raise Http404
-    return consegna(allegato.file.name, nome_scaricato=allegato.nome_originale or None)
+    registra_accesso_staff(request.user, allegato.richiesta, f'allegato {allegato.pk}')
+    return consegna(allegato.file.name, nome_scaricato=allegato.nome_originale or None,
+                    inline=request.GET.get('inline') == '1')

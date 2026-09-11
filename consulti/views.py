@@ -1,7 +1,11 @@
 """
-Dashboard «Le mie richieste», creazione di una richiesta in bozza, upload
-degli allegati (semplice e a pezzi). Il flusso guidato per tipo di esame e
-la refertazione arrivano nelle fasi successive.
+Il lato del richiedente: «Le mie richieste», creazione di una richiesta in
+bozza, upload degli allegati (semplice e a pezzi), invio, annullamento,
+riassegnazione di un caso declinato, e la pagina del caso con il referto
+firmato e il racconto dell'audit. Il lato del refertatore sta in
+`views_decisione.py` e in `referti/views.py`.
+
+Lo staff vede tutto in lettura e non agisce (consulti/permessi.py).
 """
 
 import logging
@@ -21,13 +25,16 @@ from listino.prezzi import PrezzoNonDisponibile, prezzo_effettivo
 from . import regole, upload_chunk
 from .forms import AllegatoForm, NuovaRichiestaForm, PazienteForm
 from .models import Allegato, CategoriaAllegato, Richiesta, StatoRichiesta, TransizioneNonValida
+from .permessi import caso_del_richiedente, e_refertatore_assegnato, registra_accesso_staff
+from .racconto import racconta
 
 logger = logging.getLogger('consulti')
 
 
 def _richieste_visibili(utente):
     """Chi vede cosa. Staff tutto; richiedente le sue; refertatore quelle
-    assegnate a lui o non assegnate nei tipi in cui e' referente."""
+    assegnate a lui o non assegnate nei tipi in cui e' referente, mai le
+    bozze (una bozza e' ancora di chi la scrive)."""
     qs = Richiesta.objects.select_related('richiedente__user', 'clinica', 'refertatore__user', 'paziente')
     if utente.is_staff:
         return qs
@@ -38,8 +45,8 @@ def _richieste_visibili(utente):
     refertatore = getattr(utente, 'refertatore', None)
     if refertatore is not None:
         tipi = list(refertatore.competenze.filter(referente=True).values_list('tipo_esame', flat=True))
-        filtro |= Q(refertatore=refertatore) | (
-            Q(refertatore__isnull=True, tipo_esame__in=tipi) & ~Q(stato=StatoRichiesta.BOZZA))
+        filtro |= (Q(refertatore=refertatore) | Q(refertatore__isnull=True, tipo_esame__in=tipi)) & \
+            ~Q(stato=StatoRichiesta.BOZZA)
     return qs.filter(filtro)
 
 
@@ -52,8 +59,17 @@ def _richiesta_o_404(utente, pk):
 
 @login_required
 def mie_richieste(request):
-    richieste = _richieste_visibili(request.user)
+    """Le richieste di chi chiede (tutte per lo staff). Chi e' solo
+    refertatore ha la sua pagina: i casi ricevuti."""
     richiedente = getattr(request.user, 'richiedente', None)
+    if request.user.is_staff:
+        richieste = _richieste_visibili(request.user)
+    elif richiedente is not None:
+        richieste = _richieste_visibili(request.user).filter(richiedente=richiedente)
+    elif hasattr(request.user, 'refertatore'):
+        return redirect('consulti:casi_ricevuti')
+    else:
+        richieste = Richiesta.objects.none()
     return render(request, 'consulti/mie_richieste.html', {
         'richieste': richieste,
         'puo_richiedere': bool(richiedente and richiedente.puo_richiedere),
@@ -122,25 +138,43 @@ def nuova_richiesta(request):
 
 @login_required
 def dettaglio(request, pk):
+    """La pagina del caso per chi l'ha chiesto (e per lo staff, in lettura).
+    Il refertatore assegnato va alla sua pagina di refertazione."""
+    from referti.blocchi import classificazione_leggibile
+
     richiesta = _richiesta_o_404(request.user, pk)
     e_richiedente = richiesta.richiedente.user_id == request.user.id
+    if not e_richiedente and e_refertatore_assegnato(request.user, richiesta):
+        return redirect('referti:refertazione', pk=pk)
+    registra_accesso_staff(request.user, richiesta, 'caso')
     form_a = AllegatoForm(tipo_esame=richiesta.tipo_esame)
     intestatario = richiesta.intestatario()
     intestatario_label = intestatario.denominazione + ('' if richiesta.clinica_id else ' (libero professionista)')
+    referto = getattr(richiesta, 'referto', None)
+    # Chi ha chiesto vede SOLO le versioni firmate, mai la copia di lavoro.
+    versioni = list(referto.versioni.all()) if referto is not None else []
+    ultima = versioni[0] if versioni else None
     return render(request, 'consulti/dettaglio.html', {
         'richiesta': richiesta,
         'intestatario_label': intestatario_label,
         'allegati': richiesta.allegati.all(),
-        'audit': richiesta.audit.select_related('utente'),
+        'racconto': racconta(richiesta.audit.select_related('utente'), per_staff=request.user.is_staff),
         'form_a': form_a,
         'e_richiedente': e_richiedente,
         'motivo_blocco': regole.perche_non_puoi_inviare(richiesta) if richiesta.modificabile else None,
         'upload_max_byte': upload_chunk.max_byte(),
+        'ultima': ultima,
+        'versioni': versioni,
+        'classificazione_ultima': classificazione_leggibile(richiesta.tipo_esame, ultima.classificazione)
+        if ultima else [],
+        'esperti': (_esperti_con_prezzo(richiesta.tipo_esame, richiesta.urgenza)
+                    if e_richiedente and richiesta.stato == StatoRichiesta.DECLINATA else []),
+        'puo_annullare': e_richiedente and richiesta.stato in (StatoRichiesta.BOZZA, StatoRichiesta.INVIATA),
     })
 
 
 def _solo_richiedente_in_bozza(request, richiesta):
-    if richiesta.richiedente.user_id != request.user.id and not request.user.is_staff:
+    if richiesta.richiedente.user_id != request.user.id:
         raise Http404
     if not richiesta.modificabile:
         raise TransizioneNonValida('La richiesta non e\' piu\' in bozza: gli allegati non si toccano.')
@@ -191,9 +225,7 @@ def elimina_allegato(request, pk, allegato_pk):
 @login_required
 @require_POST
 def invia(request, pk):
-    richiesta = _richiesta_o_404(request.user, pk)
-    if richiesta.richiedente.user_id != request.user.id and not request.user.is_staff:
-        raise Http404
+    richiesta = caso_del_richiedente(request.user, pk)
     try:
         richiesta.invia(request.user)
     except TransizioneNonValida as e:
@@ -208,14 +240,32 @@ def invia(request, pk):
 @login_required
 @require_POST
 def annulla(request, pk):
-    richiesta = _richiesta_o_404(request.user, pk)
-    if richiesta.richiedente.user_id != request.user.id and not request.user.is_staff:
-        raise Http404
+    """Solo chi ha chiesto, e solo prima della presa in carico (la regola e'
+    in Richiesta.annulla)."""
+    richiesta = caso_del_richiedente(request.user, pk)
     try:
         richiesta.annulla(request.user)
         messages.success(request, f'Richiesta {richiesta.codice} annullata.')
     except TransizioneNonValida as e:
         messages.error(request, str(e))
+    return redirect('consulti:dettaglio', pk=pk)
+
+
+@login_required
+@require_POST
+def riassegna(request, pk):
+    """Un caso declinato torna al richiedente, che lo gira a un altro esperto
+    (il select e' lo stesso della nuova richiesta: `_esperti.html`)."""
+    richiesta = caso_del_richiedente(request.user, pk)
+    refertatore = Refertatore.objects.filter(pk=request.POST.get('r-refertatore') or None).first()
+    try:
+        richiesta.riassegna(refertatore, request.user)
+    except TransizioneNonValida as e:
+        messages.error(request, str(e))
+        return redirect('consulti:dettaglio', pk=pk)
+    from notifiche.servizi import avvisa_caso_arrivato
+    avvisa_caso_arrivato(richiesta)
+    messages.success(request, f'{richiesta.codice} girato a {refertatore}.')
     return redirect('consulti:dettaglio', pk=pk)
 
 

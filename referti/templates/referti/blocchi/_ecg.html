@@ -1,0 +1,11 @@
+{% comment %}
+Blocco ECG del referto (referti/blocchi.py, voce ECG). Oggi solo il rischio
+anestesiologico con le voci di VetCardio. PUNTO DI AGGANCIO: le misure ECG
+strutturate (lettore SEIVA di VetCardio) arriveranno come altre voci del
+blocco ECG in blocchi.py e, se serve un layout loro, qui sotto.
+Contesto: form (RefertoForm) con form.campi_blocco.
+{% endcomment %}
+<div class="blocco-form">
+  <div class="sezione-sottotitolo">Classificazione ECG</div>
+  {% for campo in form.campi_blocco %}{% include "_campo_form.html" with campo=campo %}{% endfor %}
+</div>

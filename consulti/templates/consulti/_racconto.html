@@ -1,0 +1,6 @@
+{# Racconto dell'audit (consulti/racconto.py). Contesto: racconto [{quando, chi, frase}]. #}
+<ul class="racconto">
+  {% for r in racconto %}
+  <li><span class="quando">{{ r.quando|date:"d/m/Y H:i" }}</span><span class="chi">{{ r.chi }}</span> {{ r.frase }}</li>
+  {% empty %}<li class="text-muted">—</li>{% endfor %}
+</ul>

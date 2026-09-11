@@ -10,7 +10,11 @@ from consulti.models import Richiesta
 class TipoInvio(models.TextChoices):
     CASO_ARRIVATO = 'CASO_ARRIVATO', 'Nuovo caso per il refertatore'
     REFERTO_PRONTO = 'REFERTO_PRONTO', 'Referto pronto per il richiedente'
-    SOLLECITO = 'SOLLECITO', 'Sollecito al refertatore'
+    REFERTO_RETTIFICATO = 'REFERTO_RETTIFICATO', 'Referto rettificato per il richiedente'
+    CASO_DECLINATO = 'CASO_DECLINATO', 'Caso declinato: il richiedente deve sceglierne un altro'
+    NON_REFERTABILE = 'NON_REFERTABILE', 'Caso non refertabile per il richiedente'
+    SOLLECITO = 'SOLLECITO', 'Sollecito al refertatore a meta\' tempo'
+    RILASCIO = 'RILASCIO', 'Presa in carico rilasciata per inattivita\''
     ALTRO = 'ALTRO', 'Altro'
 
 
@@ -28,6 +32,7 @@ class InvioEmail(models.Model):
     inviata_il = models.DateTimeField(auto_now_add=True)
     esito = models.CharField(max_length=10, choices=EsitoInvio.choices)
     errore = models.TextField(blank=True)
+    allegati = models.CharField(max_length=300, blank=True, help_text='Nomi dei file allegati, separati da virgola.')
 
     class Meta:
         verbose_name = 'Invio email'

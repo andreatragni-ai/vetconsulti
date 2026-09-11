@@ -55,10 +55,6 @@
   margin-bottom: .75rem;
 }
 
-/* ── Cronologia (audit) nel dettaglio richiesta ── */
-.cronologia { font-size: .8rem; }
-.cronologia .quando { color: var(--ovic-testo); opacity: .55; font-variant-numeric: tabular-nums; }
-
 /* ── Testi legali ── */
 .legale h5 { margin-top: 1.5rem; color: var(--ovic-blu); font-size: 1rem; }
 .legale p, .legale li { line-height: 1.55; font-size: .9rem; }
@@ -69,3 +65,80 @@
   border-radius: 3px;
   font-weight: 600;
 }
+
+/* ── Racconto dell'audit (pagina del caso e pagina di refertazione) ── */
+.racconto { list-style: none; padding: 0; margin: 0; font-size: .82rem; }
+.racconto li { padding: .3rem 0; border-bottom: 1px solid var(--ovic-bordo); }
+.racconto li:last-child { border-bottom: 0; }
+.racconto .quando { color: var(--bs-secondary-color); font-variant-numeric: tabular-nums; margin-right: .35rem; }
+.racconto .chi { font-weight: 600; }
+
+/* ── Pagina di refertazione: visore degli allegati a sinistra (sopra, su
+   mobile), caso e referto a destra (sotto). Breakpoint lg di Bootstrap. ── */
+@media (min-width: 992px) {
+  .visore { position: sticky; top: .75rem; }
+}
+.visore-schede { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .6rem; }
+.visore-schede .btn { font-size: .78rem; text-align: left; max-width: 16rem; }
+.visore-schede .btn .proiezione { display: block; font-size: .7rem; opacity: .75; }
+.visore-schede .btn.attiva { background: var(--ovic-blu); border-color: var(--ovic-blu); color: var(--bs-white); }
+.visore-scena {
+  background: var(--ovic-grigio);
+  border: 1px solid var(--ovic-bordo);
+  border-radius: 6px;
+  overflow: hidden;
+  min-height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.visore-scena > * { display: none; }
+.visore-scena > .attivo { display: block; }
+.visore-scena iframe { width: 100%; height: 78vh; border: 0; }
+.visore-scena img, .visore-scena video { max-width: 100%; max-height: 78vh; margin: 0 auto; }
+.visore-scena .visore-altro { padding: 2rem 1rem; text-align: center; }
+@media (max-width: 767.98px) {
+  .visore-scena iframe { height: 60vh; }
+  .visore-scena img, .visore-scena video { max-height: 60vh; }
+  /* Su mobile le schede scorrono in orizzontale invece di impilarsi. */
+  .visore-schede { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .25rem; }
+  .visore-schede .btn { min-height: 44px; flex: 0 0 auto; max-width: 70%; }
+}
+
+/* Barra delle azioni del referto: su mobile resta attaccata in basso,
+   cosi' «Salva» e «Firma» non scorrono via con i testi lunghi. */
+.referto-barra { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+@media (max-width: 767.98px) {
+  .referto-barra {
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
+    background: var(--bs-body-bg);
+    border-top: 1px solid var(--ovic-bordo);
+    padding: .5rem 0;
+  }
+  .referto-barra .btn, .referto-barra .btn-nuova { min-height: 44px; }
+}
+.stato-salvataggio { font-size: .78rem; color: var(--bs-secondary-color); }
+.stato-salvataggio.errore { color: var(--bs-danger-text-emphasis); font-weight: 600; }
+
+/* Frasi rapide per declinare: riempiono la casella, poi si completa. */
+.frasi-rapide { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .5rem; }
+.frasi-rapide .btn { font-size: .75rem; }
+@media (max-width: 767.98px) { .frasi-rapide .btn { min-height: 44px; } }
+
+/* Referto firmato in lettura e storico delle versioni. */
+.referto-firmato .firmato-da { font-size: .8rem; color: var(--bs-secondary-color); }
+.rettifica-nota {
+  background: var(--bs-warning-bg-subtle);
+  border: 1px solid var(--bs-warning-border-subtle);
+  color: var(--bs-warning-text-emphasis);
+  border-radius: 4px;
+  padding: .4rem .6rem;
+  font-size: .82rem;
+  margin-bottom: .6rem;
+}
+.caso-in-ritardo { color: var(--bs-danger-text-emphasis); font-weight: 600; }
+.azioni-secondarie > summary { cursor: pointer; font-size: .85rem; font-weight: 600; color: var(--ovic-blu); }
+.azioni-secondarie > summary + * { margin-top: .6rem; }
+.testo-a-capo { white-space: pre-wrap; }

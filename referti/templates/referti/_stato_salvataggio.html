@@ -1,0 +1,2 @@
+{# Frammento htmx della pagina di refertazione: esito del salvataggio della bozza. #}
+{% if errore %}<span class="stato-salvataggio errore"><i class="bi bi-exclamation-triangle me-1"></i>Non salvato: {{ errore }}</span>{% else %}<span class="stato-salvataggio"><i class="bi bi-check2 me-1"></i>Bozza salvata alle {{ salvato_il|date:"H:i:s" }}</span>{% endif %}

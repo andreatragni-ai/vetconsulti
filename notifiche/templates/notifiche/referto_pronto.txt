@@ -2,6 +2,8 @@ Gentile {{ richiedente.user.get_full_name }},
 
 il referto del consulto {{ richiesta.codice }} ({{ richiesta.get_tipo_esame_display }}, paziente {{ richiesta.paziente }}) e' pronto e firmato da {{ richiesta.refertatore.nome_completo }}.
 
-Lo trovi qui: {{ link }}
+{% if con_allegato %}Lo trovi in allegato in PDF e sul portale, insieme al caso:{% else %}Il PDF lo scarichi dal portale, dalla pagina del caso:{% endif %}
+
+  {{ link }}
 
 VetWay Consulti

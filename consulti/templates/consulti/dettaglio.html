@@ -7,6 +7,7 @@
     {% if richiesta.urgenza %}<span class="badge bg-danger ms-1">urgenza</span>{% endif %}</h4>
   <a class="btn-testata-ghost" href="{% url 'consulti:mie_richieste' %}"><i class="bi bi-arrow-left"></i> Elenco</a>
 </div>
+{% include "consulti/_esito_caso.html" %}
 <div class="row">
   <div class="col-lg-5">
     <div class="ovic-card"><div class="card-header-ovic">Paziente e richiesta</div><div class="card-body-ovic">
@@ -21,7 +22,6 @@
       {% include "vetway_ui/partials/_campo.html" with label="Quesito" val=richiesta.quesito multiline=True %}
       {% include "vetway_ui/partials/_campo.html" with label="Anamnesi" val=richiesta.anamnesi multiline=True %}
       {% include "vetway_ui/partials/_campo.html" with label="Terapia in corso" val=richiesta.terapia multiline=True %}
-      {% if richiesta.motivo_rifiuto %}{% include "vetway_ui/partials/_campo.html" with label="Motivo" val=richiesta.motivo_rifiuto multiline=True %}{% endif %}
     </div></div>
     {% if e_richiedente and richiesta.modificabile %}
       <div class="ovic-card"><div class="card-header-ovic">Invio</div><div class="card-body-ovic">
@@ -87,10 +87,8 @@
         </details>
       {% endif %}
     </div></div>
-    <div class="ovic-card"><div class="card-header-ovic">Cronologia</div><div class="card-body-ovic cronologia">
-      {% for e in audit %}
-        <div><span class="quando">{{ e.quando|date:"d/m/Y H:i" }}</span> · <strong>{{ e.azione }}</strong>{% if e.utente %} · {{ e.utente.get_full_name|default:e.utente.username }}{% endif %}{% if e.dettaglio.motivo %} · {{ e.dettaglio.motivo }}{% endif %}{% if e.dettaglio.nome %} · {{ e.dettaglio.nome }}{% endif %}</div>
-      {% empty %}<span class="text-muted">—</span>{% endfor %}
+    <div class="ovic-card"><div class="card-header-ovic">Cronologia</div><div class="card-body-ovic">
+      {% include "consulti/_racconto.html" %}
     </div></div>
   </div>
 </div>

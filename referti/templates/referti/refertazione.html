@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% comment %}
+Pagina di refertazione (referti/views.py:refertazione), solo per il
+refertatore assegnato. A sinistra (sopra, su mobile) il visore degli
+allegati; a destra (sotto) il caso in lettura e, a seconda dello stato:
+  INVIATA          decisione: prendi in carico / declina
+  PRESA_IN_CARICO  editor del referto (bozza + salvataggio automatico), firma,
+                   non refertabile, declina
+  REFERTATA        referto firmato, versioni, rettifica
+  altri            in lettura con il motivo
+Salvare (referti:salva_bozza) e firmare (referti:firma / referti:rettifica)
+sono rotte diverse: la firma passa dalla modale di conferma del pacchetto.
+{% endcomment %}
+{% block title %}{{ richiesta.codice }} — refertazione — VetWay Consulti{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2 barra-azioni-testata">
+  <h4 class="mb-0">{{ richiesta.codice }} <small class="text-muted">{{ richiesta.get_tipo_esame_display }}</small>
+    <span class="pill-stato{% if richiesta.tono_stato %} pill-stato--{{ richiesta.tono_stato }}{% endif %} ms-2">{{ richiesta.get_stato_display }}</span>
+    {% if richiesta.urgenza %}<span class="badge bg-danger ms-1">urgenza</span>{% endif %}</h4>
+  <a class="btn-testata-ghost" href="{% url 'consulti:casi_ricevuti' %}"><i class="bi bi-arrow-left"></i> Casi ricevuti</a>
+</div>
+<p class="ovic-meta mb-3">
+  Da <strong>{{ richiesta.richiedente.user.get_full_name }}</strong> ({{ richiesta.intestatario.denominazione }}{% if not richiesta.clinica_id %}, libero professionista{% endif %})
+  {% if richiesta.inviata_il %}· inviato il {{ richiesta.inviata_il|date:"d/m/Y H:i" }}{% endif %}
+  · risposta dichiarata {{ ore_dichiarate }} h{% if scadenza and richiesta.stato == 'INVIATA' or scadenza and richiesta.stato == 'PRESA_IN_CARICO' %}, entro il {{ scadenza|date:"d/m H:i" }}{% endif %}
+</p>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    {% include "referti/_visore.html" %}
+  </div>
+
+  <div class="col-lg-5">
+    <div class="ovic-card"><div class="card-header-ovic">Paziente e quesito</div><div class="card-body-ovic">
+      <div class="row">
+        <div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Paziente" val=richiesta.paziente %}</div>
+        <div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Proprietario" val=richiesta.paziente.cognome_proprietario %}</div>
+        <div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Sesso" val=richiesta.paziente.get_sesso_display %}</div>
+        <div class="col-6">{% if richiesta.paziente.data_nascita %}{% include "vetway_ui/partials/_campo.html" with label="Nato il" val=richiesta.paziente.data_nascita|date:"d/m/Y" %}{% else %}{% include "vetway_ui/partials/_campo.html" with label="Eta'" val=richiesta.paziente.eta_testo %}{% endif %}</div>
+        <div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Peso (kg)" val=richiesta.paziente.peso_kg %}</div>
+        <div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Motivo dell'esame" val=richiesta.motivo_esame %}</div>
+      </div>
+      {% include "vetway_ui/partials/_campo.html" with label="Quesito" val=richiesta.quesito multiline=True %}
+      {% include "vetway_ui/partials/_campo.html" with label="Anamnesi" val=richiesta.anamnesi multiline=True %}
+      {% include "vetway_ui/partials/_campo.html" with label="Terapia in corso" val=richiesta.terapia multiline=True %}
+    </div></div>
+
+    {% if richiesta.stato == 'INVIATA' %}
+    {# ── Decisione ─────────────────────────────────────────────────── #}
+    <div class="ovic-card"><div class="card-header-ovic">Decisione</div><div class="card-body-ovic">
+      <p class="small mb-2">Guarda gli allegati e decidi: prendendolo in carico il caso diventa tuo e il richiedente lo vede sulla sua pagina.</p>
+      <form method="post" action="{% url 'consulti:prendi_in_carico' richiesta.pk %}" class="mb-3 barra-azioni-testata">{% csrf_token %}
+        <button type="submit" class="btn-nuova"><i class="bi bi-check2-circle me-1"></i>Prendi in carico</button>
+      </form>
+      {% include "referti/_form_declina.html" %}
+    </div></div>
+
+    {% elif richiesta.stato == 'PRESA_IN_CARICO' %}
+    {# ── Editor del referto ───────────────────────────────────────── #}
+    <div class="ovic-card"><div class="card-header-ovic">Referto</div><div class="card-body-ovic">
+      {% include "referti/_editor.html" with modo="firma" %}
+    </div></div>
+    <div class="ovic-card"><div class="card-body-ovic">
+      <details class="azioni-secondarie">
+        <summary><i class="bi bi-slash-circle me-1"></i>Il caso non e' refertabile</summary>
+        <form method="post" action="{% url 'consulti:non_refertabile' richiesta.pk %}"
+              data-conferma="Chiudere {{ richiesta.codice }} come non refertabile? Il richiedente riceve l'email con il motivo e il consulto non viene addebitato.">{% csrf_token %}
+          {% include "_campo_form.html" with campo=form_nr.voce %}
+          {% include "_campo_form.html" with campo=form_nr.dettaglio %}
+          <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-slash-circle me-1"></i>Segna come non refertabile</button>
+        </form>
+      </details>
+      <hr>
+      <details class="azioni-secondarie">
+        <summary><i class="bi bi-arrow-return-left me-1"></i>Declina il caso</summary>
+        {% include "referti/_form_declina.html" %}
+      </details>
+    </div></div>
+
+    {% elif richiesta.stato == 'REFERTATA' %}
+    {# ── Referto firmato, versioni, rettifica ──────────────────────── #}
+    {% if ultima %}{% include "referti/_referto_firmato.html" %}{% endif %}
+    <div class="ovic-card"><div class="card-header-ovic">Rettifica</div><div class="card-body-ovic">
+      <details class="azioni-secondarie"{% if rettifica_in_corso or form.motivo_rettifica.value %} open{% endif %}>
+        <summary><i class="bi bi-arrow-repeat me-1"></i>{% if rettifica_in_corso %}Rettifica in preparazione (non ancora emessa){% else %}Prepara una rettifica{% endif %}</summary>
+        <div>
+          <p class="small text-muted">Correggi il testo e scrivi il motivo: la bozza si salva come prima della firma e il richiedente non la vede finche' non emetti la versione {{ referto.versione|add:1 }}. La prestazione non cambia.</p>
+          {% include "referti/_editor.html" with modo="rettifica" %}
+        </div>
+      </details>
+    </div></div>
+
+    {% else %}
+    <div class="alert {% if richiesta.stato == 'ANNULLATA' %}alert-secondary{% else %}alert-warning{% endif %}">
+      <strong>{{ richiesta.get_stato_display }}.</strong>
+      {% if richiesta.motivo_rifiuto %} Motivo: {{ richiesta.motivo_rifiuto }}{% endif %}
+    </div>
+    {% endif %}
+
+    <div class="ovic-card"><div class="card-body-ovic">
+      <details class="azioni-secondarie">
+        <summary><i class="bi bi-clock-history me-1"></i>Cronologia del caso</summary>
+        {% include "consulti/_racconto.html" %}
+      </details>
+    </div></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+(function () {
+  'use strict';
+
+  // ── Visore: una scheda per allegato, il file si carica al primo clic ──
+  document.querySelectorAll('[data-visore]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.getAttribute('data-visore');
+      document.querySelectorAll('[data-visore]').forEach(function (b) {
+        var attivo = b === btn;
+        b.classList.toggle('attiva', attivo);
+        b.setAttribute('aria-selected', attivo ? 'true' : 'false');
+      });
+      document.querySelectorAll('.visore-scena > div').forEach(function (d) {
+        var attivo = d.id === id;
+        d.classList.toggle('attivo', attivo);
+        if (!attivo) { d.querySelectorAll('video').forEach(function (v) { v.pause(); }); }
+      });
+      document.querySelectorAll('.visore-didascalia').forEach(function (s) {
+        s.classList.toggle('d-none', s.getAttribute('data-per') !== id);
+      });
+      var scena = document.getElementById(id);
+      scena.querySelectorAll('[data-src]').forEach(function (el) {
+        el.setAttribute('src', el.getAttribute('data-src'));
+        el.removeAttribute('data-src');
+      });
+    });
+  });
+
+  // ── Frasi rapide per declinare: riempiono la casella, poi si completa ──
+  document.querySelectorAll('[data-frase]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var area = document.getElementById(btn.getAttribute('data-per'));
+      var frase = btn.getAttribute('data-frase');
+      area.value = area.value.trim() ? area.value.trim() + ' ' + frase : frase;
+      area.focus();
+      area.setSelectionRange(area.value.length, area.value.length);
+    });
+  });
+
+  // ── Conferma per le decisioni che chiudono il caso ──
+  document.querySelectorAll('form[data-conferma]').forEach(function (f) {
+    f.addEventListener('submit', function (e) {
+      if (!window.confirm(f.getAttribute('data-conferma'))) { e.preventDefault(); }
+    });
+  });
+
+  // ── Bozza del referto: niente testo perso ──
+  // Salvataggio esplicito (bottone) e automatico ogni 30 s se ci sono
+  // modifiche, entrambi via htmx sulla rotta salva_bozza, che non firma mai.
+  // Prima della firma/rettifica si salva e la conferma della modale aspetta.
+  var form = document.getElementById('form-referto');
+  if (!form) return;
+  var stato = document.getElementById('stato-salvataggio');
+  var sporco = false, inVolo = false, inAttesa = [];
+
+  function salvaOra() { if (!inVolo) { htmx.trigger(form, 'salva-auto'); } }
+  function segnaSporco() {
+    sporco = true;
+    stato.innerHTML = '<span class="stato-salvataggio"><i class="bi bi-pencil me-1"></i>Modifiche non ancora salvate</span>';
+  }
+  form.addEventListener('input', segnaSporco);
+  // 'change' solo per i select: su una textarea arriva anche al blur, a
+  // testo gia' salvato, e la segnerebbe sporca per niente.
+  form.addEventListener('change', function (e) { if (e.target.tagName === 'SELECT') { segnaSporco(); } });
+
+  document.body.addEventListener('htmx:beforeRequest', function (e) {
+    if (e.detail.elt !== form) return;
+    sporco = false; inVolo = true;
+  });
+  document.body.addEventListener('htmx:beforeSwap', function (e) {
+    // Anche gli errori (400/409) portano un frammento da mostrare.
+    if (e.detail.requestConfig && e.detail.requestConfig.elt === form) { e.detail.shouldSwap = true; e.detail.isError = false; }
+  });
+  document.body.addEventListener('htmx:afterRequest', function (e) {
+    if (e.detail.elt !== form) return;
+    inVolo = false;
+    if (!e.detail.successful) {
+      sporco = true;
+      if (!e.detail.xhr || !e.detail.xhr.status) {
+        stato.innerHTML = '<span class="stato-salvataggio errore"><i class="bi bi-wifi-off me-1"></i>Non salvato: connessione assente. Riprovo tra poco.</span>';
+      }
+    }
+    var da = inAttesa; inAttesa = [];
+    da.forEach(function (fn) { fn(e.detail.successful); });
+  });
+
+  setInterval(function () { if (sporco) { salvaOra(); } }, 30000);
+  window.addEventListener('beforeunload', function (e) {
+    if (sporco || inVolo) { e.preventDefault(); e.returnValue = ''; }
+  });
+
+  var btnFirma = document.getElementById('btn-firma');
+  if (btnFirma) { btnFirma.addEventListener('click', function () { if (sporco) { salvaOra(); } }); }
+
+  // La modale del pacchetto e' inclusa da base.html DOPO questo script:
+  // ascolto delegato sul documento, non sul form (che qui non esiste ancora).
+  var rotta = form.getAttribute('data-rotta-firma');
+  document.addEventListener('submit', function (e) {
+    var formModale = e.target;
+    if (formModale.id !== 'formModalElimina' || formModale.getAttribute('action') !== rotta) return;
+    if (!sporco && !inVolo) return;  // testo gia' salvato: si firma quello
+    e.preventDefault();
+    inAttesa.push(function (ok) {
+      if (ok && !sporco) { formModale.submit(); }
+      else { stato.innerHTML = '<span class="stato-salvataggio errore">Salvataggio non riuscito: firma annullata.</span>'; }
+    });
+    if (!inVolo) { salvaOra(); }
+  }, true);
+})();
+</script>
+{% endblock %}

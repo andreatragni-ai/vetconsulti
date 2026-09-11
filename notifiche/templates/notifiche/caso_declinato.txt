@@ -1,0 +1,11 @@
+Gentile {{ richiedente.user.get_full_name }},
+
+{{ refertatore.nome_completo|default:"l'esperto scelto" }} non puo' occuparsi del caso {{ richiesta.codice }} ({{ richiesta.get_tipo_esame_display }}, paziente {{ richiesta.paziente }}).
+
+Motivo: {{ richiesta.motivo_rifiuto }}
+
+Il caso e' tornato a te con i suoi allegati: dalla pagina del caso puoi girarlo a un altro esperto senza ricaricare nulla.
+
+  {{ link }}
+
+VetWay Consulti

@@ -10,7 +10,7 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "DX-1",
-   "istruzioni": "Filmato di circa 10 secondi. Angolo sonda / torace 45° Cavo della sonda verso il gomito Marker verso la colonna Appoggio sulla giunzione costo-condrale Cane di piccola taglia o gatto: sonda sullo sterno",
+   "istruzioni": "Filmato di circa 10 secondi. Angolo sonda / torace 45°. Cavo della sonda verso il gomito. Marker verso la colonna. Appoggio sulla giunzione costo-condrale. Cane di piccola taglia o gatto: sonda sullo sterno.",
    "deve_essere_visibile": "Le quattro camere con apice non troncato, setto interventricolare e interatriale, entrambe le valvole atrio-ventricolari.",
    "serve_per": "Morfologia di mitrale e tricuspide, spessori parietali, rapporti fra le camere. IVS ≈ PLVsx parete VD ≈ ½ VS camera VD ≈ ⅓ VS",
    "immagini_riferimento": [
@@ -28,7 +28,7 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "DX-1",
-   "istruzioni": "Filmato di circa 10 secondi. Color Doppler su mitrale e tricuspide (filmato separato dal B-mode). Angolo sonda / torace 45° Cavo della sonda verso il gomito Marker verso la colonna Appoggio sulla giunzione costo-condrale Cane di piccola taglia o gatto: sonda sullo sterno",
+   "istruzioni": "Filmato di circa 10 secondi. Color Doppler su mitrale e tricuspide (filmato separato dal B-mode). Angolo sonda / torace 45°. Cavo della sonda verso il gomito. Marker verso la colonna. Appoggio sulla giunzione costo-condrale. Cane di piccola taglia o gatto: sonda sullo sterno.",
    "deve_essere_visibile": "Le quattro camere con apice non troncato, setto interventricolare e interatriale, entrambe le valvole atrio-ventricolari.",
    "serve_per": "Morfologia di mitrale e tricuspide, spessori parietali, rapporti fra le camere. IVS ≈ PLVsx parete VD ≈ ½ VS camera VD ≈ ⅓ VS",
    "immagini_riferimento": [
@@ -46,7 +46,7 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "DX-2",
-   "istruzioni": "Filmato di circa 10 secondi. Angolo sonda / torace 60° Punta della sonda verso le vertebre lombari Cavo della sonda verso il gomito Marker verso il collo",
+   "istruzioni": "Filmato di circa 10 secondi. Angolo sonda / torace 60°. Punta della sonda verso le vertebre lombari. Cavo della sonda verso il gomito. Marker verso il collo.",
    "deve_essere_visibile": "Tratto di efflusso sinistro con valvola aortica e radice aortica in continuità con il setto.",
    "serve_per": "Valutazione di setto ed efflusso, rapporti bidimensionali asse lungo (Strohm 2018). LV / Ao 1,8–2,5 AS / Ao 1,8–2,4",
    "immagini_riferimento": [
@@ -65,7 +65,7 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "DX-2",
-   "istruzioni": "Filmato di circa 10 secondi. Color sul tratto di efflusso e sulla valvola aortica (filmato separato dal B-mode). Angolo sonda / torace 60° Punta della sonda verso le vertebre lombari Cavo della sonda verso il gomito Marker verso il collo",
+   "istruzioni": "Filmato di circa 10 secondi. Color sul tratto di efflusso e sulla valvola aortica (filmato separato dal B-mode). Angolo sonda / torace 60°. Punta della sonda verso le vertebre lombari. Cavo della sonda verso il gomito. Marker verso il collo.",
    "deve_essere_visibile": "Tratto di efflusso sinistro con valvola aortica e radice aortica in continuità con il setto.",
    "serve_per": "Valutazione di setto ed efflusso, rapporti bidimensionali asse lungo (Strohm 2018). LV / Ao 1,8–2,5 AS / Ao 1,8–2,4",
    "immagini_riferimento": [
@@ -84,7 +84,7 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "DX-3",
-   "istruzioni": "Filmato di circa 10 secondi. Scansione a ventaglio continua dall'apice alla base del cuore. Dalle 4 camere ruotare il marker verso il gomito (rotazione antioraria) Mantenere l'angolo di 45° sonda-torace Sezioni a ventaglio dall'apice alla base",
+   "istruzioni": "Filmato di circa 10 secondi. Scansione a ventaglio continua dall'apice alla base del cuore. Dalle 4 camere ruotare il marker verso il gomito (rotazione antioraria). Mantenere l'angolo di 45° sonda-torace. Sezioni a ventaglio dall'apice alla base.",
    "deve_essere_visibile": "Il “fungo simmetrico”: ventricolo circolare con i due muscoli papillari simmetrici e ventricolo destro riconoscibile.",
    "serve_per": "Immagine di partenza per l'M-mode e per la valutazione della cinetica parietale.",
    "immagini_riferimento": [
@@ -102,7 +102,7 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "DX-3",
-   "istruzioni": "Filmato di circa 10 secondi. Stessa scansione dall'apice alla base, con il color attivo (filmato separato dal B-mode). Dalle 4 camere ruotare il marker verso il gomito (rotazione antioraria) Mantenere l'angolo di 45° sonda-torace Sezioni a ventaglio dall'apice alla base",
+   "istruzioni": "Filmato di circa 10 secondi. Stessa scansione dall'apice alla base, con il color attivo (filmato separato dal B-mode). Dalle 4 camere ruotare il marker verso il gomito (rotazione antioraria). Mantenere l'angolo di 45° sonda-torace. Sezioni a ventaglio dall'apice alla base.",
    "deve_essere_visibile": "Il “fungo simmetrico”: ventricolo circolare con i due muscoli papillari simmetrici e ventricolo destro riconoscibile.",
    "serve_per": "Immagine di partenza per l'M-mode e per la valutazione della cinetica parietale.",
    "immagini_riferimento": [
@@ -120,7 +120,7 @@
    "tipo_media": "STATICA",
    "obbligatoria": true,
    "scheda_guida": "DX-7",
-   "istruzioni": "M-mode con le misure del ventricolo sinistro. Partire da un asse corto dritto e centrato Cursore al centro del ventricolo sinistro, perpendicolare al setto Livello delle corde tendinee della mitrale Il ventricolo destro deve essere visibile",
+   "istruzioni": "M-mode con le misure del ventricolo sinistro. Partire da un asse corto dritto e centrato. Cursore al centro del ventricolo sinistro, perpendicolare al setto. Livello delle corde tendinee della mitrale. Il ventricolo destro deve essere visibile.",
    "deve_essere_visibile": "Setto, cavità e parete libera con endocardio netto su almeno 4–5 cicli; misurare a fine espirazione .",
    "serve_per": "Diametri telediastolico e telesistolico, FS%, indici normalizzati e volumi con Teichholz. Convenzione leading edge to leading edge . LVIDdN ≥ 1,7 = B2 ESVI < 30–40 ml/m²",
    "immagini_riferimento": [
@@ -138,7 +138,7 @@
    "tipo_media": "STATICA",
    "obbligatoria": true,
    "scheda_guida": "DX-1",
-   "istruzioni": "Asse lungo 4 camere in telesistole, con la misura del diametro dell'atrio sinistro. Angolo sonda / torace 45° Cavo della sonda verso il gomito Marker verso la colonna Appoggio sulla giunzione costo-condrale Cane di piccola taglia o gatto: sonda sullo sterno",
+   "istruzioni": "Asse lungo 4 camere in telesistole, con la misura del diametro dell'atrio sinistro. Angolo sonda / torace 45°. Cavo della sonda verso il gomito. Marker verso la colonna. Appoggio sulla giunzione costo-condrale. Cane di piccola taglia o gatto: sonda sullo sterno.",
    "deve_essere_visibile": "Le quattro camere con apice non troncato, setto interventricolare e interatriale, entrambe le valvole atrio-ventricolari.",
    "serve_per": "Morfologia di mitrale e tricuspide, spessori parietali, rapporti fra le camere. IVS ≈ PLVsx parete VD ≈ ½ VS camera VD ≈ ⅓ VS",
    "immagini_riferimento": [
@@ -156,7 +156,7 @@
    "obbligatoria": true,
    "scheda_guida": "DX-5",
    "istruzioni": "Immagine con la misura LA/Ao. Proseguendo il ventaglio verso la base: aorta al centro con le tre cuspidi (“segno della Mercedes”), atrio sinistro e auricola a sinistra dell'immagine.",
-   "deve_essere_visibile": "Aorta simmetrica e chiusa, non ovalizzata Atrio sinistro con l'auricola Tratto di efflusso e infundibolo destro",
+   "deve_essere_visibile": "Aorta simmetrica e chiusa, non ovalizzata. Atrio sinistro con l'auricola. Tratto di efflusso e infundibolo destro.",
    "serve_per": "Rapporto AS/Ao. Misura inner-edge to inner-edge sul primo frame utile dopo la chiusura della valvola aortica; non includere le vene polmonari . Metodo svedese (Hansson): misura in protodiastole, aorta fra cuspide coronarica destra e non coronarica. normale < 1,6 > 1,7 rischio Ao / Po 0,8–1,15",
    "immagini_riferimento": [
     "dx5_eco.jpg",
@@ -286,7 +286,7 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "SX-1",
-   "istruzioni": "Filmato di circa 10 secondi. Punta della sonda verso il collo Marker verso la colonna Angolo sonda / torace 30° Partire dal “fegato sottocostale” e risalire cranialmente",
+   "istruzioni": "Filmato di circa 10 secondi. Punta della sonda verso il collo. Marker verso la colonna. Angolo sonda / torace 30°. Partire dal “fegato sottocostale” e risalire cranialmente.",
    "deve_essere_visibile": "Apice del ventricolo in alto, quattro camere allineate, setto interatriale completo, sbocco delle vene polmonari.",
    "serve_per": "Misure area-lunghezza e Simpson, volumi atriali, allineamento per il Doppler degli afflussi.",
    "immagini_riferimento": [
@@ -304,7 +304,7 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "SX-1",
-   "istruzioni": "Filmato di circa 10 secondi. Color su mitrale e tricuspide (filmato separato dal B-mode). Punta della sonda verso il collo Marker verso la colonna Angolo sonda / torace 30° Partire dal “fegato sottocostale” e risalire cranialmente",
+   "istruzioni": "Filmato di circa 10 secondi. Color su mitrale e tricuspide (filmato separato dal B-mode). Punta della sonda verso il collo. Marker verso la colonna. Angolo sonda / torace 30°. Partire dal “fegato sottocostale” e risalire cranialmente.",
    "deve_essere_visibile": "Apice del ventricolo in alto, quattro camere allineate, setto interatriale completo, sbocco delle vene polmonari.",
    "serve_per": "Misure area-lunghezza e Simpson, volumi atriali, allineamento per il Doppler degli afflussi.",
    "immagini_riferimento": [
@@ -411,14 +411,14 @@
    "tipo_media": "STATICA",
    "obbligatoria": true,
    "scheda_guida": "D-1",
-   "istruzioni": "Doppler continuo sul flusso transmitralico, con le misure. Apicale 4 camere. Volume campione nel ventricolo sinistro, all'apice dei lembi valvolari mitralici , allineato al flusso.",
-   "deve_essere_visibile": "Onde E ed A separate e complete su più cicli; se fuse, ridurre la frequenza cardiaca o segnalarlo.",
+   "istruzioni": "Doppler continuo sul flusso transmitralico, con le misure. Apicale 4 camere, cursore allineato al flusso attraverso la valvola mitrale.",
+   "deve_essere_visibile": "Profilo del flusso transmitralico completo su piu' cicli.",
    "serve_per": "Pattern diastolico, tempo di decelerazione, rapporti E/A ed E/E′, IVRT. E > 1,2 m/s DecT < 80 ms E/E′ > 12 = CHF E′ > 6 cm/s",
    "immagini_riferimento": [
     "d1_pw.jpg",
     "d1_schema.jpg"
    ],
-   "nota_riferimento": "",
+   "nota_riferimento": "Testo scritto da Claude (la scheda D-1 della guida descrive il pulsato): da rivedere.",
    "ordine": 240
   },
   {
@@ -428,14 +428,14 @@
    "tipo_media": "STATICA",
    "obbligatoria": true,
    "scheda_guida": "D-1",
-   "istruzioni": "Doppler tissutale dell'anello mitralico, con le misure. Apicale 4 camere. Volume campione nel ventricolo sinistro, all'apice dei lembi valvolari mitralici , allineato al flusso.",
-   "deve_essere_visibile": "Onde E ed A separate e complete su più cicli; se fuse, ridurre la frequenza cardiaca o segnalarlo.",
+   "istruzioni": "Doppler tissutale dell'anello mitralico, con le misure. Apicale 4 camere, volume campione sull'anello mitralico, allineato al suo movimento.",
+   "deve_essere_visibile": "Onde E′ e A′ dell'anello ben definite su piu' cicli.",
    "serve_per": "Pattern diastolico, tempo di decelerazione, rapporti E/A ed E/E′, IVRT. E > 1,2 m/s DecT < 80 ms E/E′ > 12 = CHF E′ > 6 cm/s",
    "immagini_riferimento": [
     "d1_pw.jpg",
     "d1_schema.jpg"
    ],
-   "nota_riferimento": "",
+   "nota_riferimento": "Testo scritto da Claude (la scheda D-1 della guida descrive il pulsato): da rivedere; parete laterale o settale da decidere.",
    "ordine": 250
   },
   {

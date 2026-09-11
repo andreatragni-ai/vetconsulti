@@ -14,8 +14,11 @@ sessioni brevi: ogni sessione deve lasciare il repo in uno stato ripartibile.
 - Obiettivo: poche cliniche amiche entro 1-2 mesi (ottobre-novembre 2026).
   Priorita': F2 (caricamento per tipo) e F3 (refertazione). F4 (fatturazione)
   puo' aspettare. Il lavoro e' in `docs/BACKLOG.md`.
-- Il catalogo delle proiezioni eco (`eco/fixtures/proiezioni_bozza.json`) e'
-  una bozza: Andre deve ancora confermarlo.
+- Il catalogo delle proiezioni eco e' quello di Andre (11/09/2026): 27 righe,
+  25 obbligatorie + 2 filmati liberi, in `eco/catalogo/catalogo_eco.json` con le
+  immagini di riferimento in `eco/catalogo/img/` (dalla sua presentazione). Si
+  ricarica con `manage.py carica_catalogo_eco`. Le decisioni e i punti aperti
+  stanno nella sua nota Obsidian "Telemedicina" (vault Second brain).
 - F3 (refertazione) costruita sul branch `feat/refertazione` l'11/09/2026,
   non ancora in `main`: aspetta le conferme elencate in `docs/BACKLOG.md`.
 

@@ -28,6 +28,13 @@ def _bootstrap(form):
 
 ETA_IN_ANNI = re.compile(r'^\s*(\d{1,2})\s*ann[oi]\s*$')
 
+# Data di nascita scritta a mano: il campo e' di TESTO, non type="date",
+# perche' Safari (Mac e iPad) mostra la data di oggi in grigio nel campo
+# data vuoto e sembra gia' compilato. Si accettano 15/03/2019, 15-3-2019,
+# 15.03.19, 15032019 e il formato ISO (2019-03-15: dati in sessione di
+# prima e test). Il JS del passo 1 aggiunge le barre mentre si scrive.
+FORMATI_DATA = ['%d/%m/%Y', '%d/%m/%y', '%d-%m-%Y', '%d-%m-%y', '%d.%m.%Y', '%d.%m.%y', '%d%m%Y', '%Y-%m-%d']
+
 
 def _eta_testo(anni):
     return '1 anno' if anni == 1 else f'{anni} anni'
@@ -52,6 +59,12 @@ class PazienteForm(forms.ModelForm):
     eta_anni = forms.IntegerField(
         label='Eta\' in anni', required=False, min_value=0, max_value=40,
         widget=forms.NumberInput(attrs={'inputmode': 'numeric'}))
+    data_nascita = forms.DateField(
+        label='Data di nascita', required=False, input_formats=FORMATI_DATA,
+        error_messages={'invalid': 'Scrivi la data come giorno/mese/anno, es. 15/03/2019.'},
+        widget=forms.DateInput(format='%d/%m/%Y', attrs={
+            'placeholder': 'gg/mm/aaaa', 'inputmode': 'numeric', 'autocomplete': 'off', 'maxlength': '10',
+            'data-data-a-mano': ''}))
     peso_kg = forms.DecimalField(
         label='Peso (kg)', required=False, max_digits=5, decimal_places=2, min_value=Decimal('0.01'),
         localize=True, widget=forms.TextInput(attrs={'inputmode': 'decimal', 'placeholder': 'es. 12,5'}))
@@ -62,7 +75,6 @@ class PazienteForm(forms.ModelForm):
         labels = {
             'nome': 'Nome del paziente',
             'razza': 'Razza',
-            'data_nascita': 'Data di nascita',
             'cognome_proprietario': 'Cognome del proprietario',
         }
         help_texts = {
@@ -70,7 +82,6 @@ class PazienteForm(forms.ModelForm):
                                     'senza portare sul portale i dati del cliente.',
         }
         widgets = {
-            'data_nascita': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
             'nome': forms.TextInput(attrs={'autocomplete': 'off'}),
             # Combobox ARIA 1.2 (static/consulti/js/elenco_filtrato.js): l'elenco
             # e' quello della specie scelta, id dei dati e dei radio qui.

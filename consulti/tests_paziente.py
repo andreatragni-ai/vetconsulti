@@ -87,3 +87,39 @@ def test_in_sessione_prima_della_bozza_la_razza_e_gia_normalizzata(loggato):
     loggato.post(reverse('consulti:nuova'), {'nome': 'Micia', 'specie': 'GATTO', 'sesso': 'F',
                                              'razza': 'sacro di birmania'})
     assert loggato.session[percorso.SESSIONE_PAZIENTE]['razza'] == 'Sacro di Birmania'
+
+
+# ── Data di nascita: testo gg/mm/aaaa, non type="date" ───────────────────────
+
+def test_data_di_nascita_vuota_e_un_campo_di_testo_con_segnaposto(loggato):
+    pagina = loggato.get(reverse('consulti:nuova')).content.decode()
+    campo = re.search(r'<input[^>]*name="data_nascita"[^>]*>', pagina).group(0)
+    assert 'type="text"' in campo and 'type="date"' not in campo
+    assert 'placeholder="gg/mm/aaaa"' in campo and 'inputmode="numeric"' in campo
+    assert 'value=' not in campo   # vuoto e' vuoto: nessuna data proposta
+
+
+@pytest.mark.parametrize('scritta', ['15/03/2019', '15/3/2019', '15-03-2019', '15.03.19', '15032019', '2019-03-15'])
+def test_data_di_nascita_nei_modi_in_cui_si_scrive(loggato, mondo, crea_bozza, scritta):
+    from datetime import date
+    r = crea_bozza(loggato, 'ECG', mondo.ref, paziente={'data_nascita': scritta})
+    assert r.paziente.data_nascita == date(2019, 3, 15)
+
+
+def test_data_di_nascita_sbagliata_o_nel_futuro(loggato):
+    risposta = loggato.post(reverse('consulti:nuova'), {'nome': 'Fido', 'specie': 'CANE', 'sesso': 'M',
+                                                        'data_nascita': '31/02/2019'})
+    assert 'Scrivi la data come giorno/mese/anno, es. 15/03/2019.' in _t(risposta)
+    risposta = loggato.post(reverse('consulti:nuova'), {'nome': 'Fido', 'specie': 'CANE', 'sesso': 'M',
+                                                        'data_nascita': '01/01/2099'})
+    assert 'nel futuro' in _t(risposta)
+
+
+def test_data_di_nascita_si_rilegge_come_gg_mm_aaaa(loggato, mondo, crea_bozza):
+    r = crea_bozza(loggato, 'ECG', mondo.ref, paziente={'data_nascita': '15/03/2019'})
+    pagina = loggato.get(reverse('consulti:passo_paziente', args=[r.pk])).content.decode()
+    assert 'value="15/03/2019"' in pagina
+    # Anche tornando al passo 1 prima che la bozza esista (dati in sessione).
+    loggato.post(reverse('consulti:nuova'), {'nome': 'Birba', 'specie': 'CANE', 'sesso': 'F',
+                                             'data_nascita': '1/2/2020'})
+    assert 'value="01/02/2020"' in loggato.get(reverse('consulti:nuova')).content.decode()

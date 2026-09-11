@@ -1,0 +1,62 @@
+{% comment %}
+Una riga del catalogo eco nel passo 3 (consulti/views_percorso.py:
+_riga_proiezione). A sinistra le immagini di riferimento: la prima grande,
+le altre miniature (su telefono solo la prima, con «+N»); un clic le
+ingrandisce nella modale #modalRiferimento (carica.js), senza JS si aprono
+in una scheda. Senza immagini, un segnaposto sobrio col nome. A destra
+nome, obbligatoria/facoltativa, cosa si aspetta, «Come» e «Deve vedersi»
+sempre in vista, «A cosa serve» richiudibile (e' per il refertatore). Sotto,
+il file caricato o la zona: una riga = un file.
+{% endcomment %}
+{% with p=riga.proiezione %}
+<div class="riga-proiezione{% if riga.fatta %} fatta{% endif %}" id="proiezione_{{ p.pk }}">
+  <div class="riferimento-galleria" data-galleria="{{ p.nome }}">
+    {% if riga.prima %}
+      <a class="riferimento" href="{% url 'immagine_riferimento' riga.prima.pk %}" target="_blank" rel="noopener"
+         data-ingrandisci data-didascalia="{{ riga.prima.didascalia }}">
+        <img src="{% url 'immagine_riferimento' riga.prima.pk %}" alt="{{ riga.prima.didascalia|default:'Riferimento' }}: {{ p.nome }}" loading="lazy">
+        {% if riga.altre %}<span class="riferimento-conta" aria-hidden="true">+{{ riga.altre|length }}</span>{% endif %}
+      </a>
+      {% if riga.altre %}
+      <div class="miniature">
+        {% for im in riga.altre %}
+        <a href="{% url 'immagine_riferimento' im.pk %}" target="_blank" rel="noopener" data-ingrandisci data-didascalia="{{ im.didascalia }}">
+          <img src="{% url 'immagine_riferimento' im.pk %}" alt="{{ im.didascalia|default:'Riferimento' }}: {{ p.nome }}" loading="lazy">
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% else %}
+      <div class="riferimento"><div class="riferimento-segnaposto" aria-hidden="true"><i class="bi bi-image"></i><span class="testo-segnaposto">{{ p.nome }}</span></div></div>
+    {% endif %}
+  </div>
+  <div class="testa-riga">
+    <h6 class="nome-proiezione">{% if riga.fatta %}<i class="bi bi-check-circle-fill text-success me-1" aria-hidden="true"></i><span class="visually-hidden">Caricata: </span>{% endif %}{{ p.nome }}</h6>
+    <div class="dati">
+      {% if p.obbligatoria %}<span class="pill-stato pill-stato--corso">Obbligatoria</span>{% else %}<span class="pill-stato">Facoltativa</span>{% endif %}
+      <span><i class="bi bi-{{ riga.icona_atteso }} me-1" aria-hidden="true"></i>{{ riga.atteso }}</span>
+    </div>
+  </div>
+  <div class="testi-riga">
+    {# Riga gia' caricata: le istruzioni si ritirano in un richiudibile, la pagina si accorcia man mano. #}
+    {% if riga.fatta and p.istruzioni or riga.fatta and p.deve_essere_visibile %}<details class="istruzioni"><summary>Come si acquisisce</summary>{% endif %}
+    {% if p.istruzioni %}<p class="testo-riga"><strong>Come:</strong> {{ p.istruzioni }}</p>{% endif %}
+    {% if p.deve_essere_visibile %}<p class="testo-riga"><strong>Deve vedersi:</strong> {{ p.deve_essere_visibile }}</p>{% endif %}
+    {% if riga.fatta and p.istruzioni or riga.fatta and p.deve_essere_visibile %}</details>{% endif %}
+    {% if p.serve_per %}
+    <details class="istruzioni">
+      <summary>A cosa serve</summary>
+      <p>{{ p.serve_per }}</p>
+    </details>
+    {% endif %}
+  </div>
+  <div class="zona">
+    {% for pc in riga.caricate %}
+      {% include "consulti/percorso/_file.html" with a=pc.allegato slot="proiezione" proiezione=p nota=pc.nota accetta=riga.accetta a_pezzi=riga.filmato max_byte=max_clip %}
+    {% endfor %}
+    {% if riga.zona_aperta %}
+      {% include "consulti/percorso/_zona.html" with slot="proiezione" proiezione=p testo=riga.testo testo_tocco=riga.testo_tocco sottotesto=riga.sottotesto accetta=riga.accetta a_pezzi=riga.filmato nota=p.libera max_byte=max_clip compatta=True %}
+    {% endif %}
+  </div>
+</div>
+{% endwith %}

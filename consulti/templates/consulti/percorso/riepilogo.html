@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% comment %}
+Passo 4 della richiesta guidata: riepilogo e invio (consulti/views_percorso.py:
+passo_riepilogo). Ogni blocco ha «Modifica» che riporta al passo giusto. Il
+pulsante «Invia a <esperto>» e' spento se regole.perche_non_puoi_inviare dice
+qualcosa (la frase compare accanto, con il link per sistemare).
+{% endcomment %}
+{% block title %}{{ richiesta.titolo }} · invia — VetWay Consulti{% endblock %}
+{% block content %}
+{% include "consulti/percorso/_testata.html" %}
+{% url 'consulti:passo_paziente' richiesta.pk as url_1 %}{% url 'consulti:passo_esame' richiesta.pk as url_2 %}{% url 'consulti:passo_carica' richiesta.pk as url_3 %}
+{% with ref=richiesta.refertatore %}
+
+{% if motivo_blocco %}
+<div class="alert alert-warning d-flex gap-2 align-items-start">
+  <i class="bi bi-exclamation-triangle mt-1" aria-hidden="true"></i>
+  <div><strong>Non si puo' ancora inviare.</strong> {{ motivo_blocco }}
+    {% if url_correggi %}<a href="{{ url_correggi }}">Vai a sistemarlo</a>.{% elif not richiesta.richiedente.puo_richiedere %}<a href="{% url 'accounts:profilo_richiedente' %}">Vai al profilo</a>.{% endif %}</div>
+</div>
+{% endif %}
+{% if ref and not ref.disponibile_oggi %}
+<div class="alert alert-warning d-flex gap-2 align-items-start">
+  <i class="bi bi-calendar-x mt-1" aria-hidden="true"></i>
+  <div>{{ ref }} risulta assente{% if ref.assente_al %} fino al {{ ref.assente_al|date:"j F" }}{% endif %}: vedrebbe il caso al rientro. <a href="{{ url_2 }}">Scegli un altro esperto</a>.</div>
+</div>
+{% endif %}
+
+<div class="ovic-card"><div class="card-header-ovic">Controlla e invia</div><div class="card-body-ovic">
+
+  <section class="riepilogo-blocco" aria-labelledby="r-paziente">
+    <div class="testa"><h6 id="r-paziente">Paziente</h6><a class="modifica" href="{{ url_1 }}"><i class="bi bi-pencil" aria-hidden="true"></i>Modifica<span class="visually-hidden"> il paziente</span></a></div>
+    <dl>
+      <dt>Nome</dt><dd>{{ paziente.nome }}</dd>
+      <dt>Specie</dt><dd>{% if paziente.specie == 'ALTRO' and paziente.specie_altro %}{{ paziente.specie_altro }}{% else %}{{ paziente.get_specie_display }}{% endif %}{% if paziente.razza %}, {{ paziente.razza }}{% endif %}</dd>
+      <dt>Sesso</dt><dd>{{ paziente.get_sesso_display }}</dd>
+      {% if paziente.data_nascita %}<dt>Nato il</dt><dd>{{ paziente.data_nascita|date:"d/m/Y" }}</dd>{% elif paziente.eta_testo %}<dt>Eta'</dt><dd>{{ paziente.eta_testo }}</dd>{% endif %}
+      {% if paziente.peso_kg %}<dt>Peso</dt><dd>{{ paziente.peso_kg|floatformat:"-2" }} kg</dd>{% endif %}
+      {% if paziente.cognome_proprietario %}<dt>Proprietario</dt><dd>{{ paziente.cognome_proprietario }}</dd>{% endif %}
+    </dl>
+  </section>
+
+  <section class="riepilogo-blocco" aria-labelledby="r-esame">
+    <div class="testa"><h6 id="r-esame">Esame ed esperto</h6><a class="modifica" href="{{ url_2 }}"><i class="bi bi-pencil" aria-hidden="true"></i>Modifica<span class="visually-hidden"> esame ed esperto</span></a></div>
+    <div class="row g-3 align-items-end">
+      <div class="col-md-7">
+        <dl>
+          <dt>Esame</dt><dd>{{ richiesta.get_tipo_esame_display }}{% if richiesta.urgenza %} <span class="badge bg-danger ms-1">urgente</span>{% endif %}</dd>
+          <dt>Esperto</dt><dd>{% if ref %}{{ ref }}{% if ref.specializzazione %} <span class="fw-normal text-muted">· {{ ref.specializzazione }}</span>{% endif %}{% else %}—{% endif %}</dd>
+          {% if ore_risposta %}<dt>Risposta</dt><dd>entro {{ ore_risposta }} ore dall'invio{% if richiesta.urgenza %} (urgente){% endif %}</dd>{% endif %}
+        </dl>
+      </div>
+      <div class="col-md-5 text-md-end">
+        {% if prezzo %}
+          <div class="riepilogo-prezzo">€ {{ prezzo.totale }} <span class="fs-6 fw-normal">IVA inclusa</span>
+            <small>imponibile € {{ prezzo.imponibile }}{% if prezzo.supplementi %} + urgenza € {{ prezzo.supplementi }}{% endif %} + IVA {{ prezzo.aliquota_iva|floatformat:"-2" }}% € {{ prezzo.iva }}</small>
+            <small>Si paga solo il referto firmato.</small>
+          </div>
+        {% elif ref %}
+          <div class="riepilogo-prezzo">Prezzo da definire</div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <section class="riepilogo-blocco" aria-labelledby="r-collega">
+    <div class="testa"><h6 id="r-collega">Per il collega</h6><a class="modifica" href="{{ url_2 }}"><i class="bi bi-pencil" aria-hidden="true"></i>Modifica<span class="visually-hidden"> quesito e anamnesi</span></a></div>
+    <dl>
+      <dt>Quesito</dt><dd class="testo-a-capo">{{ richiesta.quesito|default:"—" }}</dd>
+      {% if richiesta.anamnesi %}<dt>Anamnesi</dt><dd class="testo-a-capo fw-normal">{{ richiesta.anamnesi }}</dd>{% endif %}
+      {% if richiesta.terapia %}<dt>Terapia in corso</dt><dd class="testo-a-capo fw-normal">{{ richiesta.terapia }}</dd>{% endif %}
+    </dl>
+  </section>
+
+  <section class="riepilogo-blocco" aria-labelledby="r-file">
+    <div class="testa"><h6 id="r-file">File caricati ({{ allegati|length }})</h6><a class="modifica" href="{{ url_3 }}"><i class="bi bi-pencil" aria-hidden="true"></i>Modifica<span class="visually-hidden"> i file</span></a></div>
+    {% if allegati|length > 6 %}<details class="istruzioni mb-1"><summary>Vedi l'elenco dei {{ allegati|length }} file</summary>{% endif %}
+    <ul class="lista-controllo">
+      {% for a in allegati %}
+      <li class="fatto"><i class="bi bi-file-earmark-check" aria-hidden="true"></i>
+        <span><a href="{% url 'scarica_allegato' a.pk %}?inline=1" target="_blank" rel="noopener">{{ a.nome_originale|default:a.file.name }}</a>
+          <span class="text-muted small">· {% for pc in a.proiezioni.all %}{{ pc.proiezione.nome }}{% if pc.nota %} («{{ pc.nota }}»){% endif %}{% if not forloop.last %}, {% endif %}{% empty %}{{ a.get_categoria_display }}{% endfor %} · {{ a.dimensione|filesizeformat }}</span></span>
+      </li>
+      {% empty %}<li class="da-fare"><i class="bi bi-square" aria-hidden="true"></i><span class="voce">Nessun file caricato.</span></li>{% endfor %}
+    </ul>
+    {% if allegati|length > 6 %}</details>{% endif %}
+  </section>
+</div></div>
+
+<form method="post" action="{% url 'consulti:invia' richiesta.pk %}" class="percorso-barra">{% csrf_token %}
+  <div class="principale">
+    <button type="submit" class="btn-nuova"{% if motivo_blocco %} disabled aria-describedby="perche-invio"{% endif %}><i class="bi bi-send" aria-hidden="true"></i> Invia a {{ ref|default:"..." }}</button>
+    {% if motivo_blocco %}<span class="perche" id="perche-invio">{{ motivo_blocco }}</span>
+    {% elif ref %}<span class="perche">{{ ref.user.get_full_name|default:ref.nome_completo }} ricevera' una email con il caso. Dopo l'invio i file non si modificano piu'.</span>{% endif %}
+  </div>
+  <a class="btn-indietro" href="{{ url_3 }}"><i class="bi bi-arrow-left"></i> Indietro</a>
+</form>
+{% endwith %}
+{% endblock %}

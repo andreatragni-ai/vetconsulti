@@ -1,0 +1,41 @@
+{% comment %}
+Testata dei passi della richiesta guidata: titolo (il paziente, o «Nuova
+richiesta»), codice piccolo, «Annulla richiesta» per una bozza gia' creata,
+indicatore dei passi (consulti/percorso.py:indicatore).
+Contesto: richiesta (o None), passi, nome_paziente (facoltativo, passo 2 nuovo).
+{% endcomment %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+  {% if richiesta %}
+    <h4 class="caso-titolo">{{ richiesta.titolo }} <span class="codice-caso ms-1">{{ richiesta.codice }} · bozza</span></h4>
+  {% elif nome_paziente %}
+    <h4 class="caso-titolo">{{ nome_paziente }} <span class="codice-caso ms-1">nuova richiesta</span></h4>
+  {% else %}
+    <h4 class="caso-titolo">Nuova richiesta di consulto</h4>
+  {% endif %}
+  <div class="barra-azioni-testata d-flex gap-2 flex-wrap">
+    {% if richiesta %}
+    <button type="button" class="btn btn-outline-danger btn-sm"
+            data-bs-toggle="modal" data-bs-target="#modalConfermaElimina"
+            data-elimina-href="{% url 'consulti:annulla' richiesta.pk %}"
+            data-elimina-titolo="Annullare la richiesta per {{ richiesta.titolo }}?"
+            data-elimina-dettaglio="La bozza e i file caricati non saranno piu' modificabili. Il codice {{ richiesta.codice }} resta nell'elenco come annullato."
+            data-elimina-intestazione="Conferma annullamento" data-elimina-azione="Si', annulla"
+            data-elimina-tono="warning" data-elimina-icona="x-circle">
+      <i class="bi bi-x-circle me-1"></i>Annulla richiesta
+    </button>
+    {% endif %}
+    <a class="btn-testata-ghost" href="{% url 'consulti:mie_richieste' %}"><i class="bi bi-inbox"></i> Le mie richieste</a>
+  </div>
+</div>
+<nav aria-label="Passi della richiesta">
+  <ol class="passi">
+    {% for p in passi %}
+    <li class="{{ p.stato }}">
+      {% if p.url %}<a class="passo" href="{{ p.url }}">{% else %}<span class="passo"{% if p.stato == 'attuale' %} aria-current="step"{% endif %}>{% endif %}
+        <span class="numero">{% if p.stato == 'fatto' %}<i class="bi bi-check-lg" aria-hidden="true"></i><span class="visually-hidden">Fatto: passo {{ p.numero }}</span>{% else %}{{ p.numero }}{% endif %}</span>
+        <span class="etichetta">{{ p.etichetta }}</span>
+      {% if p.url %}</a>{% else %}</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+</nav>

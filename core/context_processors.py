@@ -61,8 +61,10 @@ def navigazione(request):
         etichetta = f'Casi ricevuti ({da_decidere})' if da_decidere else 'Casi ricevuti'
         voci.append(voce('consulti:casi_ricevuti', etichetta, 'clipboard2-pulse', ('casi_ricevuti', 'refertazione')))
     if richiedente:
-        voci.append(voce('consulti:mie_richieste', 'Le mie richieste', 'inbox', ('mie_richieste', 'dettaglio')))
-        voci.append(voce('consulti:nuova', 'Nuova richiesta', 'plus-circle'))
+        voci.append(voce('consulti:mie_richieste', 'Le mie richieste', 'inbox',
+                         ('mie_richieste', 'dettaglio', 'passo_paziente', 'passo_esame', 'passo_carica',
+                          'passo_riepilogo')))
+        voci.append(voce('consulti:nuova', 'Nuova richiesta', 'plus-circle', ('nuova', 'nuova_esame')))
         voci.append(voce('accounts:profilo_richiedente', 'Profilo', 'person'))
     elif utente.is_staff:
         voci.append(voce('consulti:mie_richieste', 'Richieste', 'inbox', ('mie_richieste', 'dettaglio')))

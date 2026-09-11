@@ -1,0 +1,33 @@
+{% comment %}
+Zona di caricamento: un <form> con dentro un <label> che avvolge l'input
+file. Col mouse si trascina o si clicca; su telefono e tablet il tocco apre
+il selettore file. Con JavaScript (static/consulti/js/carica.js) il file
+parte subito (a pezzi se e' un filmato, il file Holter o e' grande); senza,
+il pulsante «Carica» fa una POST normale. La categoria la decide il server
+(consulti/caricamento.py) da zona + tipo di file.
+Parametri: slot, testo, testo_tocco, sottotesto, accetta, proiezione (riga
+del catalogo, facoltativa), compatta, a_pezzi, nota (True: casella «cosa
+mostra / cosa chiedi» del filmato libero), max_byte (limite lato client).
+{% endcomment %}
+<form class="zona-carica{% if compatta %} compatta{% endif %}" method="post" enctype="multipart/form-data"
+      action="{% url 'consulti:carica_allegato' richiesta.pk %}" data-zona
+      {% if a_pezzi %}data-a-pezzi="1"{% endif %} {% if max_byte %}data-max-byte="{{ max_byte }}"{% endif %}>
+  {% csrf_token %}
+  <input type="hidden" name="slot" value="{{ slot }}">
+  {% if proiezione %}<input type="hidden" name="proiezione" value="{{ proiezione.pk }}">{% endif %}
+  {% if nota %}
+  <label class="form-label small fw-semibold mb-1" for="nota-{{ proiezione.pk }}">Cosa mostra / cosa chiedi <span class="text-danger">*</span></label>
+  <input type="text" name="nota" id="nota-{{ proiezione.pk }}" class="form-control mb-2" maxlength="200" required
+         placeholder="es. «jet sospetto sulla valvola aortica, lo vedi anche tu?»">
+  {% endif %}
+  <label class="zona-carica-area">
+    <input type="file" name="file" class="visually-hidden"{% if accetta %} accept="{{ accetta }}"{% endif %}>
+    <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
+    <span class="testo"><span class="solo-mouse">{{ testo }}</span><span class="solo-tocco">{{ testo_tocco|default:"Tocca per scegliere il file" }}</span></span>
+    {% if sottotesto %}<span class="sottotesto">{{ sottotesto }}</span>{% endif %}
+    <span class="cta"><i class="bi bi-folder2-open" aria-hidden="true"></i>Scegli il file</span>
+  </label>
+  <noscript><button type="submit" class="btn btn-outline-secondary btn-sm mt-2">Carica</button></noscript>
+  <div class="progress" hidden><div class="progress-bar" role="progressbar"></div></div>
+  <div class="zona-carica-stato" aria-live="polite"></div>
+</form>

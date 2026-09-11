@@ -1,8 +1,14 @@
 {% extends "base.html" %}
-{% block title %}{{ richiesta.codice }} — VetWay Consulti{% endblock %}
+{% comment %}
+La pagina del caso (consulti/views.py:dettaglio) per chi l'ha chiesto dopo
+l'invio e per lo staff in lettura. Una bozza di chi chiede non passa di qui:
+la vista la rimanda al primo passo incompleto della richiesta guidata.
+Il titolo e' il paziente con l'esame; il codice sta accanto, piccolo.
+{% endcomment %}
+{% block title %}{{ richiesta.titolo }} — VetWay Consulti{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 barra-azioni-testata">
-  <h4 class="mb-0">{{ richiesta.codice }} <small class="text-muted">{{ richiesta.get_tipo_esame_display }}</small>
+  <h4 class="caso-titolo">{{ richiesta.titolo }} <span class="codice-caso ms-1">{{ richiesta.codice }}</span>
     <span class="pill-stato{% if richiesta.tono_stato %} pill-stato--{{ richiesta.tono_stato }}{% endif %} ms-2">{{ richiesta.get_stato_display }}</span>
     {% if richiesta.urgenza %}<span class="badge bg-danger ms-1">urgenza</span>{% endif %}</h4>
   <a class="btn-testata-ghost" href="{% url 'consulti:mie_richieste' %}"><i class="bi bi-arrow-left"></i> Elenco</a>
@@ -17,39 +23,18 @@
         <div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Intestatario" val=intestatario_label %}</div>
         <div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Richiedente" val=richiesta.richiedente.user.get_full_name %}</div>
         <div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Refertatore" val=richiesta.refertatore %}</div>
-        <div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Motivo dell'esame" val=richiesta.motivo_esame %}</div>
+        {# Il motivo dell'esame non si chiede piu' (lo copre il quesito): si mostra solo se c'e' (richieste vecchie, casi demo). #}
+        {% if richiesta.motivo_esame %}<div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Motivo dell'esame" val=richiesta.motivo_esame %}</div>{% endif %}
       </div>
       {% include "vetway_ui/partials/_campo.html" with label="Quesito" val=richiesta.quesito multiline=True %}
       {% include "vetway_ui/partials/_campo.html" with label="Anamnesi" val=richiesta.anamnesi multiline=True %}
       {% include "vetway_ui/partials/_campo.html" with label="Terapia in corso" val=richiesta.terapia multiline=True %}
     </div></div>
-    {% if e_richiedente and richiesta.modificabile %}
-      <div class="ovic-card"><div class="card-header-ovic">Invio</div><div class="card-body-ovic">
-        {% if motivo_blocco %}
-          <div class="alert alert-warning small py-2 mb-2"><i class="bi bi-exclamation-triangle me-1"></i>{{ motivo_blocco }}</div>
-        {% endif %}
-        <div class="barra-azioni-testata d-flex gap-2 flex-wrap">
-          <form method="post" action="{% url 'consulti:invia' richiesta.pk %}" class="d-inline">{% csrf_token %}
-            <button class="btn-nuova" {% if motivo_blocco %}disabled{% endif %}><i class="bi bi-send me-1"></i>Invia a {{ richiesta.refertatore|default:"…" }}</button>
-          </form>
-          {# Conferma con la modale del pacchetto: il form della modale fa POST sull'URL di annullamento #}
-          <button type="button" class="btn btn-outline-danger btn-sm"
-                  data-bs-toggle="modal" data-bs-target="#modalConfermaElimina"
-                  data-elimina-href="{% url 'consulti:annulla' richiesta.pk %}"
-                  data-elimina-titolo="Annullare la richiesta {{ richiesta.codice }}?"
-                  data-elimina-dettaglio="La bozza e i suoi allegati non saranno piu' modificabili."
-                  data-elimina-intestazione="Conferma annullamento" data-elimina-azione="Sì, annulla"
-                  data-elimina-tono="warning" data-elimina-icona="x-circle">
-            <i class="bi bi-x-circle me-1"></i>Annulla richiesta
-          </button>
-        </div>
-      </div></div>
-    {% endif %}
   </div>
   <div class="col-lg-7">
     <div class="ovic-card"><div class="card-header-ovic">Allegati</div><div class="card-body-ovic">
       <div class="table-responsive">
-      <table class="tbl-risultati mb-3">
+      <table class="tbl-risultati mb-0">
         <tbody>
         {% for a in allegati %}
           <tr>
@@ -57,85 +42,15 @@
             <td><a href="{% url 'scarica_allegato' a.pk %}">{{ a.nome_originale|default:a.file.name }}</a></td>
             <td class="text-muted num-tab">{{ a.dimensione|filesizeformat }}</td>
             <td class="text-muted">{{ a.get_stato_display }}</td>
-            <td class="td-kebab">{% if e_richiedente and richiesta.modificabile %}
-              <button type="button" class="btn btn-link btn-sm text-danger p-0" title="Elimina allegato"
-                      data-bs-toggle="modal" data-bs-target="#modalConfermaElimina"
-                      data-elimina-href="{% url 'consulti:elimina_allegato' richiesta.pk a.pk %}"
-                      data-elimina-titolo="Eliminare l'allegato «{{ a.nome_originale|default:a.file.name }}»?"
-                      data-elimina-dettaglio="Il file viene rimosso dalla richiesta; potrai ricaricarlo.">
-                <i class="bi bi-trash"></i></button>{% endif %}</td>
           </tr>
         {% empty %}<tr><td class="text-muted">Nessun allegato.</td></tr>{% endfor %}
         </tbody>
       </table>
       </div>
-      {% if e_richiedente and richiesta.modificabile %}
-        <form method="post" action="{% url 'consulti:carica_allegato' richiesta.pk %}" enctype="multipart/form-data" class="row g-2 align-items-end">{% csrf_token %}
-          <div class="col-md-5">{% include "_campo_form.html" with campo=form_a.categoria %}</div>
-          <div class="col-md-5">{% include "_campo_form.html" with campo=form_a.file %}</div>
-          <div class="col-md-2 mb-3"><button class="btn-nuova w-100"><i class="bi bi-upload me-1"></i>Carica</button></div>
-        </form>
-        <details class="small">
-          <summary class="text-muted">File grande (Holter grezzo, clip): caricamento a pezzi con ripresa</summary>
-          <div class="row g-2 align-items-end mt-1">
-            <div class="col-md-5"><select id="cat_pezzi" class="form-select form-select-sm">{% for v, l in form_a.fields.categoria.choices %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>
-            <div class="col-md-5"><input type="file" id="file_pezzi" class="form-control form-control-sm"></div>
-            <div class="col-md-2"><button type="button" id="btn_pezzi" class="btn btn-outline-secondary btn-sm w-100">Carica a pezzi</button></div>
-          </div>
-          <div class="progress mt-2" style="height:6px"><div id="prog_pezzi" class="progress-bar" style="width:0%"></div></div>
-          <div id="esito_pezzi" class="text-muted mt-1"></div>
-        </details>
-      {% endif %}
     </div></div>
     <div class="ovic-card"><div class="card-header-ovic">Cronologia</div><div class="card-body-ovic">
       {% include "consulti/_racconto.html" %}
     </div></div>
   </div>
 </div>
-{% endblock %}
-{% block js %}
-{% if e_richiedente and richiesta.modificabile %}
-<script>
-(function () {
-  // Upload a pezzi: SHA-256 del file intero (identita' del trasferimento),
-  // poi stato -> pezzi da 4 MB dall'offset ricevuto -> concludi.
-  var PEZZO = 4 * 1024 * 1024, MAX = {{ upload_max_byte }};
-  var csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
-  var base = '{% url "consulti:upload_stato" richiesta.pk %}'.replace('stato/', '');
-  var btn = document.getElementById('btn_pezzi'), esito = document.getElementById('esito_pezzi'), prog = document.getElementById('prog_pezzi');
-  async function sha256(file) {
-    var buf = await file.arrayBuffer();
-    var h = await crypto.subtle.digest('SHA-256', buf);
-    return Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-  btn.addEventListener('click', async function () {
-    var file = document.getElementById('file_pezzi').files[0];
-    if (!file) { esito.textContent = 'Scegli un file.'; return; }
-    if (file.size > MAX) { esito.textContent = 'Il file supera il limite.'; return; }
-    btn.disabled = true; esito.textContent = 'Calcolo impronta…';
-    try {
-      var impronta = await sha256(file);
-      var r = await fetch(base + 'stato/?impronta=' + impronta); var j = await r.json();
-      var offset = j.ricevuti || 0;
-      while (offset < file.size) {
-        var fd = new FormData();
-        fd.append('impronta', impronta); fd.append('offset', offset);
-        fd.append('pezzo', file.slice(offset, offset + PEZZO));
-        r = await fetch(base + 'pezzo/', {method: 'POST', headers: {'X-CSRFToken': csrf}, body: fd});
-        j = await r.json();
-        if (!r.ok) { if (j.ricevuti !== undefined) { offset = j.ricevuti; continue; } throw new Error(j.errore); }
-        offset = j.ricevuti; prog.style.width = Math.round(100 * offset / file.size) + '%';
-        esito.textContent = 'Caricati ' + Math.round(offset / 1048576) + ' di ' + Math.round(file.size / 1048576) + ' MB';
-      }
-      var fd2 = new FormData();
-      fd2.append('impronta', impronta); fd2.append('nome', file.name); fd2.append('categoria', document.getElementById('cat_pezzi').value);
-      r = await fetch(base + 'concludi/', {method: 'POST', headers: {'X-CSRFToken': csrf}, body: fd2});
-      j = await r.json();
-      if (!r.ok) throw new Error(j.errore);
-      esito.textContent = 'Fatto: ' + j.nome; location.reload();
-    } catch (e) { esito.textContent = 'Errore: ' + e.message; btn.disabled = false; }
-  });
-})();
-</script>
-{% endif %}
 {% endblock %}

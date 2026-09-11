@@ -1,13 +1,19 @@
 from django.urls import path
 
-from . import views, views_decisione
+from . import views, views_decisione, views_percorso
 
 app_name = 'consulti'
 
 urlpatterns = [
     path('', views.mie_richieste, name='mie_richieste'),
-    path('nuova/', views.nuova_richiesta, name='nuova'),
-    path('esperti/', views.esperti, name='esperti'),
+    # Richiesta guidata: passi 1-2 prima che la bozza esista, poi <pk>/<passo>/.
+    path('nuova/', views_percorso.nuova_paziente, name='nuova'),
+    path('nuova/esame/', views_percorso.nuova_esame, name='nuova_esame'),
+    path('esperti/', views_percorso.esperti, name='esperti'),
+    path('<int:pk>/paziente/', views_percorso.passo_paziente, name='passo_paziente'),
+    path('<int:pk>/esame/', views_percorso.passo_esame, name='passo_esame'),
+    path('<int:pk>/carica/', views_percorso.passo_carica, name='passo_carica'),
+    path('<int:pk>/riepilogo/', views_percorso.passo_riepilogo, name='passo_riepilogo'),
     path('<int:pk>/', views.dettaglio, name='dettaglio'),
     path('<int:pk>/allegato/', views.carica_allegato, name='carica_allegato'),
     path('<int:pk>/allegato/<int:allegato_pk>/elimina/', views.elimina_allegato, name='elimina_allegato'),

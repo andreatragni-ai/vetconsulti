@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% load static %}
+{% comment %}
+Passo 3 della richiesta guidata: carica gli esami, diverso per tipo
+(consulti/views_percorso.py:passo_carica + contesto_caricamento).
+In cima (a destra su desktop) il contatore e la lista con le caselle: vengono
+da regole.elementi_obbligatori, la stessa regola che blocca l'invio. Sotto,
+le zone: ECG un tracciato (anche piu' file); Holter referto PDF + file
+dell'apparecchio facoltativo; eco referto PDF + una riga per proiezione del
+catalogo, raggruppate per finestra acustica, e in fondo i filmati liberi.
+«Avanti» e' spento finche' manca qualcosa di obbligatorio, e dice cosa.
+{% endcomment %}
+{% block title %}{{ richiesta.titolo }} · carica gli esami — VetWay Consulti{% endblock %}
+{% block content %}
+{% include "consulti/percorso/_testata.html" %}
+
+<div class="row g-3" data-carica
+     data-url-carica="{% url 'consulti:carica_allegato' richiesta.pk %}"
+     data-url-pezzi="{% url 'consulti:upload_stato' richiesta.pk %}"
+     data-max-semplice="{{ max_semplice }}" data-max-pezzi="{{ max_pezzi }}">
+
+  <div class="col-lg-4 order-lg-2">
+    <div class="ovic-card"><div class="card-header-ovic">Cosa serve per inviare</div><div class="card-body-ovic">
+      <details class="elenco-controllo" open>
+        <summary class="contatore-obbligatori">
+          {{ fatti }} di {{ totale }} {% if totale == 1 %}elemento obbligatorio caricato{% else %}elementi obbligatori caricati{% endif %}
+          <div class="progress" role="progressbar" aria-label="Elementi obbligatori caricati" aria-valuemin="0" aria-valuemax="{{ totale }}" aria-valuenow="{{ fatti }}">
+            <div class="progress-bar bg-success" style="width: {% widthratio fatti totale 100 %}%"></div>
+          </div>
+        </summary>
+        {% for g in lista_a_gruppi %}
+        {% if g.etichetta %}<div class="lista-controllo-gruppo"><span>{{ g.etichetta }}</span><span>{{ g.fatti }}/{{ g.elementi|length }}</span></div>{% endif %}
+        <ul class="lista-controllo{% if forloop.first %} mt-2{% endif %}">
+          {% for e in g.elementi %}
+          <li class="{% if e.fatto %}fatto{% else %}da-fare{% endif %}">
+            <i class="bi {% if e.fatto %}bi-check-square-fill{% else %}bi-square{% endif %}" aria-hidden="true"></i>
+            <span class="voce"><span class="visually-hidden">{% if e.fatto %}Caricato: {% else %}Da caricare: {% endif %}</span><a href="#{{ e.chiave }}">{{ e.etichetta }}</a></span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% endfor %}
+      </details>
+    </div></div>
+  </div>
+
+  <div class="col-lg-8 order-lg-1">
+  {% if richiesta.tipo_esame == 'ECG' %}
+    <div class="ovic-card" id="ecg"><div class="card-header-ovic">Il tracciato</div><div class="card-body-ovic">
+      <p class="small text-muted">Il PDF esportato dall'elettrocardiografo, oppure una foto nitida del tracciato su carta: dritta, con tutta la striscia e la velocita' leggibile. Puoi aggiungere altri file (altre pagine, altre derivazioni).</p>
+      {% for a in zona_ecg.files %}{% include "consulti/percorso/_file.html" with a=a slot="ecg" accetta=zona_ecg.accetta %}{% endfor %}
+      {% if zona_ecg.files %}
+        {% include "consulti/percorso/_zona.html" with slot="ecg" testo="Aggiungi un altro file" testo_tocco="Tocca per aggiungere un altro file" sottotesto="PDF, JPG o PNG" accetta=zona_ecg.accetta compatta=True %}
+      {% else %}
+        {% include "consulti/percorso/_zona.html" with slot="ecg" testo="Trascina qui il PDF o la foto del tracciato" testo_tocco="Tocca per scegliere il PDF o fotografare il tracciato" sottotesto="PDF, JPG o PNG" accetta=zona_ecg.accetta %}
+      {% endif %}
+    </div></div>
+
+  {% elif richiesta.tipo_esame == 'HOLTER' %}
+    <div class="ovic-card" id="holter_referto"><div class="card-header-ovic">Referto del software Holter · obbligatorio</div><div class="card-body-ovic">
+      <p class="small text-muted">Il PDF che produce il software dell'Holter, con i conteggi e le strisce salienti.</p>
+      {% for a in zona_holter_referto.files %}{% include "consulti/percorso/_file.html" with a=a slot="holter_referto" accetta=zona_holter_referto.accetta %}{% endfor %}
+      {% if not zona_holter_referto.files %}
+        {% include "consulti/percorso/_zona.html" with slot="holter_referto" testo="Trascina qui il referto in PDF" testo_tocco="Tocca per scegliere il referto in PDF" sottotesto="Solo PDF" accetta=zona_holter_referto.accetta %}
+      {% endif %}
+    </div></div>
+    <div class="ovic-card" id="holter_file"><div class="card-header-ovic">File dell'apparecchio · facoltativo</div><div class="card-body-ovic">
+      <p class="small text-muted">La registrazione originale, se vuoi che il collega la riapra con il suo software. Puo' pesare centinaia di MB: si carica a pezzi e, se la linea cade, riparte da dove era arrivata.</p>
+      {% for a in zona_holter_file.files %}{% include "consulti/percorso/_file.html" with a=a slot="holter_file" a_pezzi=True %}{% endfor %}
+      {% if not zona_holter_file.files %}
+        {% include "consulti/percorso/_zona.html" with slot="holter_file" testo="Trascina qui il file dell'apparecchio" testo_tocco="Tocca per scegliere il file dell'apparecchio" sottotesto="Qualsiasi formato" a_pezzi=True %}
+      {% endif %}
+    </div></div>
+
+  {% elif richiesta.tipo_esame == 'ECO' %}
+    <div class="ovic-card" id="eco_referto"><div class="card-header-ovic">Referto dell'ecografo · obbligatorio</div><div class="card-body-ovic">
+      <p class="small text-muted">Il PDF con le misure che stampa l'ecografo.</p>
+      {% for a in zona_eco_referto.files %}{% include "consulti/percorso/_file.html" with a=a slot="eco_referto" accetta=zona_eco_referto.accetta %}{% endfor %}
+      {% if not zona_eco_referto.files %}
+        {% include "consulti/percorso/_zona.html" with slot="eco_referto" testo="Trascina qui il referto dell'ecografo" testo_tocco="Tocca per scegliere il referto in PDF" sottotesto="Solo PDF" accetta=zona_eco_referto.accetta %}
+      {% endif %}
+    </div></div>
+
+    {% for g in gruppi_eco %}
+    <details class="ovic-card gruppo-finestra" id="finestra-{{ g.finestra|lower }}"{% if not g.completa %} open{% endif %}>
+      <summary class="card-header-ovic">
+        <span>{{ g.etichetta }}</span>
+        <span class="conteggio">{% if g.totale %}{{ g.fatte }} di {{ g.totale }}{% if g.completa %} <i class="bi bi-check-circle-fill" aria-hidden="true"></i>{% endif %}{% else %}facoltative{% endif %}{% if g.facoltative_caricate %} · +{{ g.facoltative_caricate }} facoltativ{{ g.facoltative_caricate|pluralize:"a,e" }}{% endif %}</span>
+        <i class="bi bi-chevron-down" aria-hidden="true"></i>
+      </summary>
+      <div class="card-body-ovic">
+        {% for riga in g.obbligatorie %}{% include "consulti/percorso/_riga_proiezione.html" %}{% endfor %}
+        {% if g.facoltative %}
+          {% if g.obbligatorie %}
+          <details class="gruppo-facoltative"{% if g.facoltative_caricate %} open{% endif %}>
+            <summary><i class="bi bi-chevron-down" aria-hidden="true"></i>Altre proiezioni · facoltative ({{ g.facoltative|length }})</summary>
+            {% for riga in g.facoltative %}{% include "consulti/percorso/_riga_proiezione.html" %}{% endfor %}
+          </details>
+          {% else %}
+            {% for riga in g.facoltative %}{% include "consulti/percorso/_riga_proiezione.html" %}{% endfor %}
+          {% endif %}
+        {% endif %}
+      </div>
+    </details>
+    {% endfor %}
+
+    {% if righe_libere %}
+    <details class="ovic-card gruppo-finestra" id="filmati-liberi"{% if liberi_caricati %} open{% endif %}>
+      <summary class="card-header-ovic">
+        <span>{{ etichetta_liberi }} · facoltativi</span>
+        <span class="conteggio">{% if liberi_caricati %}{{ liberi_caricati }} caricat{{ liberi_caricati|pluralize:"o,i" }}{% endif %}</span>
+        <i class="bi bi-chevron-down" aria-hidden="true"></i>
+      </summary>
+      <div class="card-body-ovic">
+        <p class="small text-muted mb-1">Qualcosa che le righe sopra non coprono: un reperto da far vedere, una finestra in piu'. Scrivi in breve cosa mostra il filmato o cosa chiedi.</p>
+        {% for riga in righe_libere %}{% include "consulti/percorso/_riga_proiezione.html" %}{% endfor %}
+      </div>
+    </details>
+    {% endif %}
+  {% endif %}
+
+  {% if altri_file %}
+    <div class="ovic-card" id="altri-file"><div class="card-header-ovic">Altri file caricati</div><div class="card-body-ovic">
+      <p class="small text-muted">File che non stanno in nessuna zona di questa pagina (per esempio caricati prima di cambiare tipo di esame). Il collega li vede; se non servono, rimuovili.</p>
+      {% for a in altri_file %}{% include "consulti/percorso/_file.html" with a=a slot="" %}{% endfor %}
+    </div></div>
+  {% endif %}
+  </div>
+</div>
+
+<div class="percorso-barra">
+  <div class="principale">
+    {% if mancanti %}
+      <button type="button" class="btn-nuova" disabled aria-describedby="perche-fermo">Avanti <i class="bi bi-arrow-right"></i></button>
+      <span class="perche" id="perche-fermo"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>{{ perche_fermo }}</span>
+    {% else %}
+      <a class="btn-nuova" href="{% url 'consulti:passo_riepilogo' richiesta.pk %}">Avanti <i class="bi bi-arrow-right"></i></a>
+      <span class="perche">Tutto l'obbligatorio c'e': nel passo successivo rivedi e invii.</span>
+    {% endif %}
+  </div>
+  <a class="btn-indietro" href="{% url 'consulti:passo_esame' richiesta.pk %}"><i class="bi bi-arrow-left"></i> Indietro</a>
+</div>
+{% endblock %}
+{% block extra_body %}
+{# Immagini di riferimento ingrandite (carica.js): la cliccata grande, le altre della riga sotto. #}
+<div class="modal fade" id="modalRiferimento" tabindex="-1" aria-labelledby="modalRiferimentoTitolo" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-fullscreen-md-down">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h6 class="modal-title mb-0" id="modalRiferimentoTitolo">Riferimento</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+      </div>
+      <div class="modal-body riferimento-ingrandito">
+        <img src="" alt="" id="modalRiferimentoImmagine">
+        <p class="didascalia" id="modalRiferimentoDidascalia"></p>
+        <div class="miniature-modale" id="modalRiferimentoMiniature"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block js %}
+<script src="{% static 'consulti/js/carica.js' %}"></script>
+{% endblock %}

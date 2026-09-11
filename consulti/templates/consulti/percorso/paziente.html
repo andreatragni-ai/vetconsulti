@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% comment %}
+Passo 1 della richiesta guidata: il paziente (consulti/views_percorso.py:
+nuova_paziente per una richiesta nuova, passo_paziente per una bozza).
+Obbligatori solo nome, specie e sesso; l'eta' e' la data di nascita
+OPPURE gli anni. «Quale specie?» compare solo con Altro.
+{% endcomment %}
+{% block title %}{% if richiesta %}{{ richiesta.titolo }} · paziente{% else %}Nuova richiesta{% endif %} — VetWay Consulti{% endblock %}
+{% block content %}
+{% include "consulti/percorso/_testata.html" %}
+{% if not richiesta and not puo_richiedere %}<div class="alert alert-warning py-2"><i class="bi bi-exclamation-triangle me-1"></i>Puoi preparare la richiesta, ma per inviarla servono i dati di fatturazione: <a href="{% url 'accounts:profilo_richiedente' %}">completa il profilo</a>.</div>{% endif %}
+{% if ripreso %}<div class="alert alert-info py-2 small"><i class="bi bi-arrow-counterclockwise me-1"></i>Avevi gia' iniziato una richiesta: riparti da qui. <a href="{% url 'consulti:nuova' %}?ricomincia=1">Ricomincia da capo</a></div>{% endif %}
+
+<form method="post" id="form-paziente">{% csrf_token %}
+<div class="ovic-card"><div class="card-header-ovic">Il paziente</div><div class="card-body-ovic">
+  {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+  <div class="row">
+    <div class="col-md-6">{% include "_campo_form.html" with campo=form.nome %}</div>
+    <div class="col-md-6">
+      <fieldset class="mb-3">
+        <legend class="form-label fs-6 mb-2">{{ form.specie.label }} <span class="text-danger">*</span></legend>
+        <div class="scelta-rapida">
+          {% for radio in form.specie %}{{ radio.tag }}<label class="btn" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>{% endfor %}
+        </div>
+        {% for e in form.specie.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
+      </fieldset>
+      <div id="blocco-specie-altro"{% if form.specie.value != 'ALTRO' %} hidden{% endif %}>{% include "_campo_form.html" with campo=form.specie_altro %}</div>
+    </div>
+    <div class="col-md-4">{% include "_campo_form.html" with campo=form.razza %}</div>
+    <div class="col-md-4">{% include "_campo_form.html" with campo=form.sesso %}</div>
+    <div class="col-md-4">{% include "_campo_form.html" with campo=form.peso_kg %}</div>
+  </div>
+  <fieldset class="mb-1">
+    <legend class="form-label fs-6 mb-1">Eta'</legend>
+    <div class="row align-items-start">
+      <div class="col-md-5">{% include "_campo_form.html" with campo=form.data_nascita %}</div>
+      <div class="col-md-2 text-md-center small text-muted pt-md-4 pb-2">oppure</div>
+      <div class="col-md-5">
+        {% include "_campo_form.html" with campo=form.eta_anni %}
+      </div>
+    </div>
+    <p class="form-text mt-n2 mb-3">Non conosci la data? Scrivi l'eta' in anni. Basta una delle due.</p>
+  </fieldset>
+  <div class="row">
+    <div class="col-md-6">{% include "_campo_form.html" with campo=form.cognome_proprietario %}</div>
+  </div>
+</div></div>
+
+<div class="percorso-barra">
+  <div class="principale">
+    <button type="submit" class="btn-nuova">Avanti <i class="bi bi-arrow-right"></i></button>
+  </div>
+</div>
+</form>
+{% endblock %}
+{% block js %}
+<script>
+(function () {
+  // «Quale specie?» solo con Altro.
+  var blocco = document.getElementById('blocco-specie-altro');
+  document.getElementById('form-paziente').addEventListener('change', function (e) {
+    if (e.target.name === 'specie') blocco.hidden = e.target.value !== 'ALTRO';
+  });
+})();
+</script>
+{% endblock %}

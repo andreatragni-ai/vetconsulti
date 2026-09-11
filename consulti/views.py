@@ -1,30 +1,30 @@
 """
-Il lato del richiedente: «Le mie richieste», creazione di una richiesta in
-bozza, upload degli allegati (semplice e a pezzi), invio, annullamento,
+Il lato del richiedente: «Le mie richieste», upload degli allegati della
+richiesta guidata (semplice e a pezzi), rimozione, invio, annullamento,
 riassegnazione di un caso declinato, e la pagina del caso con il referto
-firmato e il racconto dell'audit. Il lato del refertatore sta in
+firmato e il racconto dell'audit. I quattro passi della richiesta guidata
+stanno in `views_percorso.py`; il lato del refertatore in
 `views_decisione.py` e in `referti/views.py`.
 
 Lo staff vede tutto in lettura e non agisce (consulti/permessi.py).
 """
 
 import logging
+import os
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.files import File
-from django.db import transaction
 from django.db.models import Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 
 from accounts.models import Refertatore
-from core.tipi import TipoEsame
-from listino.prezzi import PrezzoNonDisponibile, prezzo_effettivo
-from . import regole, upload_chunk
-from .forms import AllegatoForm, NuovaRichiestaForm, PazienteForm
-from .models import Allegato, CategoriaAllegato, Richiesta, StatoRichiesta, TransizioneNonValida
+from . import caricamento, percorso, upload_chunk
+from .models import Allegato, Richiesta, StatoRichiesta, TransizioneNonValida
 from .permessi import caso_del_richiedente, e_refertatore_assegnato, registra_accesso_staff
 from .racconto import racconta
 
@@ -76,78 +76,21 @@ def mie_richieste(request):
     })
 
 
-def _esperti_con_prezzo(tipo, urgenza=False):
-    """Refertatori referenti per il tipo, con prezzo e tempo accanto."""
-    righe = []
-    for r in Refertatore.referenti_per(tipo):
-        comp = r.competenza_per(tipo)
-        try:
-            prezzo = prezzo_effettivo(tipo, refertatore=r, urgenza=urgenza)
-        except PrezzoNonDisponibile:
-            prezzo = None
-        righe.append({'refertatore': r, 'prezzo': prezzo,
-                      'tempo': comp.tempo_risposta_ore if comp else None})
-    return righe
-
-
-@login_required
-@require_GET
-def esperti(request):
-    """Frammento htmx: il select degli esperti per il tipo scelto."""
-    tipo = request.GET.get('tipo_esame', TipoEsame.ECG)
-    if tipo not in TipoEsame.values:
-        raise Http404
-    urgenza = request.GET.get('urgenza') in ('on', 'true', '1')
-    return render(request, 'consulti/_esperti.html', {
-        'esperti': _esperti_con_prezzo(tipo, urgenza), 'selezionato': request.GET.get('refertatore')})
-
-
-@login_required
-def nuova_richiesta(request):
-    richiedente = getattr(request.user, 'richiedente', None)
-    if richiedente is None:
-        messages.error(request, 'Solo un richiedente puo\' aprire una richiesta.')
-        return redirect('consulti:mie_richieste')
-    if not richiedente.e_libero_professionista and richiedente.clinica_id is None:
-        messages.warning(request, 'Indica prima la tua clinica nel profilo.')
-        return redirect('accounts:profilo_richiedente')
-
-    form = NuovaRichiestaForm(request.POST or None, prefix='r')
-    form_p = PazienteForm(request.POST or None, prefix='p')
-    if request.method == 'POST' and form.is_valid() and form_p.is_valid():
-        with transaction.atomic():
-            richiesta = form.save(commit=False)
-            richiesta.richiedente = richiedente
-            richiesta.clinica = richiedente.clinica
-            richiesta.save()
-            paziente = form_p.save(commit=False)
-            paziente.richiesta = richiesta
-            paziente.save()
-            richiesta.registra('CREATA', request.user, tipo=richiesta.tipo_esame)
-        messages.success(request, f'Richiesta {richiesta.codice} creata in bozza: ora carica gli allegati.')
-        return redirect('consulti:dettaglio', pk=richiesta.pk)
-
-    tipo = form.data.get('r-tipo_esame') or TipoEsame.ECG
-    return render(request, 'consulti/nuova_richiesta.html', {
-        'form': form, 'form_p': form_p,
-        'esperti': _esperti_con_prezzo(tipo if tipo in TipoEsame.values else TipoEsame.ECG),
-        'puo_richiedere': richiedente.puo_richiedere,
-        'selezionato': form.data.get('r-refertatore', ''),
-    })
-
-
 @login_required
 def dettaglio(request, pk):
     """La pagina del caso per chi l'ha chiesto (e per lo staff, in lettura).
-    Il refertatore assegnato va alla sua pagina di refertazione."""
+    Il refertatore assegnato va alla sua pagina di refertazione; chi ha
+    chiesto, finche' il caso e' in bozza, riprende la richiesta guidata dal
+    primo passo incompleto."""
     from referti.blocchi import classificazione_leggibile
 
     richiesta = _richiesta_o_404(request.user, pk)
     e_richiedente = richiesta.richiedente.user_id == request.user.id
     if not e_richiedente and e_refertatore_assegnato(request.user, richiesta):
         return redirect('referti:refertazione', pk=pk)
+    if e_richiedente and richiesta.modificabile:
+        return redirect(percorso.url_passo(richiesta, percorso.passo_da_riprendere(richiesta)))
     registra_accesso_staff(request.user, richiesta, 'caso')
-    form_a = AllegatoForm(tipo_esame=richiesta.tipo_esame)
     intestatario = richiesta.intestatario()
     intestatario_label = intestatario.denominazione + ('' if richiesta.clinica_id else ' (libero professionista)')
     referto = getattr(richiesta, 'referto', None)
@@ -159,15 +102,12 @@ def dettaglio(request, pk):
         'intestatario_label': intestatario_label,
         'allegati': richiesta.allegati.all(),
         'racconto': racconta(richiesta.audit.select_related('utente'), per_staff=request.user.is_staff),
-        'form_a': form_a,
         'e_richiedente': e_richiedente,
-        'motivo_blocco': regole.perche_non_puoi_inviare(richiesta) if richiesta.modificabile else None,
-        'upload_max_byte': upload_chunk.max_byte(),
         'ultima': ultima,
         'versioni': versioni,
         'classificazione_ultima': classificazione_leggibile(richiesta.tipo_esame, ultima.classificazione)
         if ultima else [],
-        'esperti': (_esperti_con_prezzo(richiesta.tipo_esame, richiesta.urgenza)
+        'esperti': (percorso.esperti_con_prezzo(richiesta.tipo_esame, richiesta.urgenza)
                     if e_richiedente and richiesta.stato == StatoRichiesta.DECLINATA else []),
         'puo_annullare': e_richiedente and richiesta.stato in (StatoRichiesta.BOZZA, StatoRichiesta.INVIATA),
     })
@@ -180,31 +120,78 @@ def _solo_richiedente_in_bozza(request, richiesta):
         raise TransizioneNonValida('La richiesta non e\' piu\' in bozza: gli allegati non si toccano.')
 
 
+def _intero(valore):
+    try:
+        return int(valore)
+    except (TypeError, ValueError):
+        return None
+
+
+def _vuole_json(request):
+    """Il JS della pagina chiede JSON; senza JavaScript il modulo fa una POST
+    normale e si torna alla pagina con un messaggio."""
+    return 'application/json' in request.headers.get('Accept', '')
+
+
+def _torna_al_caricamento(richiesta, slot='', proiezione_id=None):
+    """Al passo 3, sulla zona appena usata (le zone hanno per id la chiave
+    dell'elemento: 'ecg', 'eco_referto', 'proiezione_12', ...)."""
+    ancora = f'#proiezione_{proiezione_id}' if slot == caricamento.SLOT_PROIEZIONE and proiezione_id else \
+        (f'#{slot}' if slot else '')
+    return redirect(reverse('consulti:passo_carica', args=[richiesta.pk]) + ancora)
+
+
 @login_required
 @require_POST
 def carica_allegato(request, pk):
+    """Un file in una zona del passo «Carica gli esami». La categoria la
+    decide `caricamento` da zona + tipo di file; in una riga di proiezione
+    nasce anche la ProiezioneCaricata. `sostituisci` = id del file che
+    questo prende il posto."""
     richiesta = _richiesta_o_404(request.user, pk)
+    json = _vuole_json(request)
+    slot = request.POST.get('slot', '')
     try:
         _solo_richiedente_in_bozza(request, richiesta)
     except TransizioneNonValida as e:
+        if json:
+            return _json_errore(str(e), status=403)
         messages.error(request, str(e))
         return redirect('consulti:dettaglio', pk=pk)
-    form = AllegatoForm(request.POST, request.FILES, tipo_esame=richiesta.tipo_esame)
-    if form.is_valid():
-        Allegato.da_upload(richiesta, form.cleaned_data['file'], form.cleaned_data['categoria'], request.user)
-        messages.success(request, 'Allegato caricato.')
+    file_caricato = request.FILES.get('file')
+    errore = None
+    allegato = None
+    if file_caricato is None:
+        errore = 'Scegli un file da caricare.'
+    elif file_caricato.size > settings.ALLEGATO_MAX_BYTE:
+        errore = (f'Il file supera {settings.ALLEGATO_MAX_BYTE // (1024 * 1024)} MB: '
+                  f'trascinalo nella zona con JavaScript attivo, parte il caricamento a pezzi.')
     else:
-        for errori in form.errors.values():
-            for e in errori:
-                messages.error(request, e)
-    return redirect('consulti:dettaglio', pk=pk)
+        try:
+            allegato = caricamento.allega(
+                richiesta, file_caricato, file_caricato.name, slot, request.user,
+                proiezione_id=_intero(request.POST.get('proiezione')),
+                sostituisci_id=_intero(request.POST.get('sostituisci')),
+                mime=getattr(file_caricato, 'content_type', ''), nota=request.POST.get('nota', ''))
+        except caricamento.CaricamentoNonValido as e:
+            errore = str(e)
+    if json:
+        if errore:
+            return _json_errore(errore)
+        return JsonResponse({'allegato': allegato.id, 'nome': allegato.nome_originale})
+    if errore:
+        messages.error(request, errore)
+    else:
+        messages.success(request, f'«{allegato.nome_originale}» caricato.')
+    return _torna_al_caricamento(richiesta, slot, _intero(request.POST.get('proiezione')))
 
 
 @login_required
 @require_POST
 def elimina_allegato(request, pk, allegato_pk):
     """Solo in bozza e solo chi ha aperto la richiesta: dopo l'invio gli
-    allegati sono cio' che il refertatore ha visto, e non si toccano."""
+    allegati sono cio' che il refertatore ha visto, e non si toccano. Con
+    l'allegato se ne va anche la sua ProiezioneCaricata."""
     richiesta = _richiesta_o_404(request.user, pk)
     try:
         _solo_richiedente_in_bozza(request, richiesta)
@@ -212,14 +199,9 @@ def elimina_allegato(request, pk, allegato_pk):
         messages.error(request, str(e))
         return redirect('consulti:dettaglio', pk=pk)
     allegato = get_object_or_404(Allegato, pk=allegato_pk, richiesta=richiesta)
-    nome = allegato.nome_originale
-    allegato.proiezioni.all().delete()
-    if allegato.file:
-        allegato.file.delete(save=False)
-    allegato.delete()
-    richiesta.registra('ALLEGATO_ELIMINATO', request.user, allegato=allegato_pk, nome=nome)
-    messages.success(request, f'Allegato «{nome}» eliminato.')
-    return redirect('consulti:dettaglio', pk=pk)
+    nome = caricamento.rimuovi(allegato, request.user)
+    messages.success(request, f'«{nome}» rimosso.')
+    return _torna_al_caricamento(richiesta)
 
 
 @login_required
@@ -230,10 +212,13 @@ def invia(request, pk):
         richiesta.invia(request.user)
     except TransizioneNonValida as e:
         messages.error(request, str(e))
+        if richiesta.modificabile:
+            return redirect(percorso.url_passo(richiesta, 4))
         return redirect('consulti:dettaglio', pk=pk)
     from notifiche.servizi import avvisa_caso_arrivato
     avvisa_caso_arrivato(richiesta)
-    messages.success(request, f'Richiesta {richiesta.codice} inviata a {richiesta.refertatore}.')
+    # Cosa succede adesso lo dice il riquadro della pagina del caso (_esito_caso.html).
+    messages.success(request, f'Richiesta inviata a {richiesta.refertatore}.')
     return redirect('consulti:dettaglio', pk=pk)
 
 
@@ -270,17 +255,35 @@ def riassegna(request, pk):
 
 
 # ── Upload a pezzi ───────────────────────────────────────────────────────────
-# Tre endpoint JSON: stato, pezzo, concludi. Il client (JS in dettaglio.html)
-# calcola l'impronta SHA-256, chiede lo stato e riparte da dove era.
+# Tre endpoint JSON: stato, pezzo, concludi. Il client (static/consulti/js/
+# carica.js) calcola l'impronta SHA-256, chiede lo stato e riparte da dove
+# era. Stato e concludi ricevono anche la zona (slot, proiezione,
+# sostituisci): lo stato la controlla PRIMA che partano centinaia di MB,
+# concludi la usa per creare l'allegato con la stessa regola della POST
+# semplice (consulti/caricamento.py).
 
 def _json_errore(messaggio, status=400, **extra):
     return JsonResponse({'errore': messaggio, **extra}, status=status)
+
+
+def _zona_dal_post(dati):
+    return {'slot': dati.get('slot', ''), 'proiezione_id': _intero(dati.get('proiezione')),
+            'sostituisci_id': _intero(dati.get('sostituisci')), 'nota': dati.get('nota', '')}
 
 
 @login_required
 @require_GET
 def upload_stato(request, pk):
     richiesta = _richiesta_o_404(request.user, pk)
+    if request.GET.get('slot'):
+        try:
+            _solo_richiedente_in_bozza(request, richiesta)
+            zona = _zona_dal_post(request.GET)
+            caricamento.controlla(richiesta, zona['slot'], request.GET.get('nome', ''), request.GET.get('mime', ''),
+                                  proiezione_id=zona['proiezione_id'], sostituisci_id=zona['sostituisci_id'],
+                                  dimensione=_intero(request.GET.get('dimensione')), nota=zona['nota'])
+        except (TransizioneNonValida, caricamento.CaricamentoNonValido) as e:
+            return _json_errore(str(e))
     try:
         return JsonResponse({'ricevuti': upload_chunk.quanto_ho(request.GET.get('impronta', ''))})
     except upload_chunk.UploadNonValido as e:
@@ -323,20 +326,23 @@ def upload_concludi(request, pk):
     except TransizioneNonValida as e:
         return _json_errore(str(e), status=403)
     impronta = request.POST.get('impronta', '')
-    categoria = request.POST.get('categoria', CategoriaAllegato.ALTRO)
-    if categoria not in CategoriaAllegato.values:
-        return _json_errore('Categoria non valida.')
-    nome = (request.POST.get('nome') or 'file')[:255]
+    nome = os.path.basename(request.POST.get('nome') or 'file')[:255]
+    mime = request.POST.get('mime', '')
+    zona = _zona_dal_post(request.POST)
     try:
-        percorso = upload_chunk.concludi(impronta)
-    except upload_chunk.UploadNonValido as e:
+        caricamento.controlla(richiesta, zona['slot'], nome, mime, proiezione_id=zona['proiezione_id'],
+                              sostituisci_id=zona['sostituisci_id'], nota=zona['nota'])
+        percorso_file = upload_chunk.concludi(impronta)
+    except (caricamento.CaricamentoNonValido, upload_chunk.UploadNonValido) as e:
         return _json_errore(str(e))
-    with open(percorso, 'rb') as f:
-        allegato = Allegato(richiesta=richiesta, categoria=categoria, nome_originale=nome,
-                            dimensione=percorso.stat().st_size, sha256=impronta,
-                            caricato_da=request.user)
-        allegato.file.save(nome, File(f), save=True)
+    try:
+        with open(percorso_file, 'rb') as f:
+            allegato = caricamento.allega(richiesta, File(f, name=nome), nome, zona['slot'], request.user,
+                                          proiezione_id=zona['proiezione_id'],
+                                          sostituisci_id=zona['sostituisci_id'], nota=zona['nota'],
+                                          mime=mime, impronta=impronta, a_pezzi=True)
+    except caricamento.CaricamentoNonValido as e:
+        upload_chunk.abbandona(impronta)
+        return _json_errore(str(e))
     upload_chunk.abbandona(impronta)
-    richiesta.registra('ALLEGATO_CARICATO', request.user, allegato=allegato.id, categoria=categoria,
-                       nome=nome, a_pezzi=True)
     return JsonResponse({'allegato': allegato.id, 'nome': allegato.nome_originale})

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% comment %}
+Passo 2 della richiesta guidata: tipo di esame (tre schede), esperto (schede
+dei soli referenti per quel tipo, gli assenti visibili ma non scegliibili),
+urgenza (aggiorna i prezzi via htmx), testi per il collega.
+Viste: consulti/views_percorso.py:nuova_esame (la bozza nasce qui) e
+passo_esame. «Avanti» e' il primo pulsante di invio del form (Invio da
+tastiera = Avanti), «Indietro» viene mostrato a sinistra con order:-1.
+{% endcomment %}
+{% block title %}{% if richiesta %}{{ richiesta.titolo }} · esame{% else %}Nuova richiesta · esame{% endif %} — VetWay Consulti{% endblock %}
+{% block content %}
+{% include "consulti/percorso/_testata.html" %}
+
+<form method="post" id="form-esame">{% csrf_token %}
+{% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+
+<div class="ovic-card"><div class="card-header-ovic">Che esame mandi</div><div class="card-body-ovic">
+  <div class="schede-scelta" role="radiogroup" aria-label="Tipo di esame">
+    {% for t in tipi %}
+    <div>
+      <input type="radio" class="btn-check" name="tipo_esame" id="tipo-{{ t.valore }}" value="{{ t.valore }}"{% if t.scelto %} checked{% endif %} required>
+      <label class="scheda-scelta" for="tipo-{{ t.valore }}">
+        <i class="bi bi-{{ t.icona }} icona" aria-hidden="true"></i>
+        <span><span class="titolo">{{ t.etichetta }}</span><span class="descrizione">Servira': {{ t.cosa }}</span></span>
+        <i class="bi bi-check-circle-fill spunta" aria-hidden="true"></i>
+      </label>
+    </div>
+    {% endfor %}
+  </div>
+  {% for e in form.tipo_esame.errors %}<div class="text-danger small mt-2">{{ e }}</div>{% endfor %}
+</div></div>
+
+<div class="ovic-card"><div class="card-header-ovic">A chi lo mandi</div><div class="card-body-ovic">
+  <div class="form-check form-switch mb-3">
+    {{ form.urgenza }}
+    <label class="form-check-label fw-semibold" for="{{ form.urgenza.id_for_label }}">{{ form.urgenza.label }}</label>
+    <div class="form-text">{{ form.urgenza.help_text }}</div>
+  </div>
+  <div id="esperti" aria-live="polite">{% include "consulti/percorso/_esperti.html" %}</div>
+  {% for e in form.refertatore.errors %}<div class="text-danger small mt-2">{{ e }}</div>{% endfor %}
+</div></div>
+
+<div class="ovic-card"><div class="card-header-ovic">Per il collega</div><div class="card-body-ovic">
+  {% include "_campo_form.html" with campo=form.quesito %}
+  <div class="row">
+    <div class="col-md-6">{% include "_campo_form.html" with campo=form.anamnesi %}</div>
+    <div class="col-md-6">{% include "_campo_form.html" with campo=form.terapia %}</div>
+  </div>
+</div></div>
+
+<div class="percorso-barra">
+  <div class="principale">
+    <button type="submit" name="azione" value="avanti" class="btn-nuova">Avanti <i class="bi bi-arrow-right"></i></button>
+  </div>
+  <button type="submit" name="azione" value="indietro" class="btn-indietro" formnovalidate><i class="bi bi-arrow-left"></i> Indietro</button>
+</div>
+</form>
+{% endblock %}
+{% block js %}
+<script>
+(function () {
+  // Tipo di esame o urgenza cambiati: htmx ricarica le schede degli esperti
+  // (solo i referenti per quel tipo, prezzi con o senza urgenza).
+  var form = document.getElementById('form-esame');
+  var url = '{% url "consulti:esperti" %}';
+  form.addEventListener('change', function (e) {
+    if (e.target.name !== 'tipo_esame' && e.target.name !== 'urgenza') return;
+    var tipo = form.querySelector('[name=tipo_esame]:checked');
+    if (!tipo || typeof htmx === 'undefined') return;
+    var scelto = form.querySelector('[name=refertatore]:checked');
+    var q = '?tipo_esame=' + encodeURIComponent(tipo.value) +
+            '&urgenza=' + (form.querySelector('[name=urgenza]').checked ? '1' : '0') +
+            (scelto ? '&refertatore=' + encodeURIComponent(scelto.value) : '');
+    htmx.ajax('GET', url + q, {target: '#esperti', swap: 'innerHTML'});
+  });
+})();
+</script>
+{% endblock %}

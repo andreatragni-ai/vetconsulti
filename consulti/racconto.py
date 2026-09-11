@@ -30,8 +30,10 @@ def _frase(evento, refertatori):
     motivo = f' — «{d["motivo"]}»' if d.get('motivo') else ''
     frasi = {
         'CREATA': 'ha creato la richiesta in bozza',
-        'ALLEGATO_CARICATO': f'ha caricato «{d.get("nome", "un allegato")}»',
-        'ALLEGATO_ELIMINATO': f'ha eliminato l\'allegato «{d.get("nome", "")}»',
+        'ALLEGATO_CARICATO': f'ha caricato «{d.get("nome", "un allegato")}»'
+                             + (f' ({d["proiezione"]})' if d.get('proiezione') else ''),
+        'ALLEGATO_ELIMINATO': (f'ha sostituito «{d.get("nome", "")}»' if d.get('sostituito_da')
+                               else f'ha eliminato l\'allegato «{d.get("nome", "")}»'),
         'ALLEGATO_TRANSCODIFICATO': 'clip convertita per la visione nel browser',
         'INVIATA': f'ha inviato il caso a {ref()}',
         'PRESA_IN_CARICO': 'ha preso in carico il caso',

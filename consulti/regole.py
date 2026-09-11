@@ -59,9 +59,10 @@ def elementi_obbligatori(richiesta):
         elementi.append(Elemento(
             'eco_referto', 'Referto dell\'ecografo (PDF)', 'il referto dell\'ecografo (PDF)',
             CategoriaAllegato.ECO_REFERTO_PDF in categorie))
-        from eco.models import ProiezioneCatalogo
+        from eco.models import ProiezioneCatalogo, in_ordine
         caricate = set(richiesta.proiezioni.values_list('proiezione_id', flat=True))
-        for p in ProiezioneCatalogo.objects.filter(obbligatoria=True, attiva=True).order_by('ordine'):
+        # Stesso ordine delle righe del passo 3: finestra, filmati prima delle immagini, `ordine`.
+        for p in in_ordine(ProiezioneCatalogo.objects.filter(obbligatoria=True, attiva=True)):
             elementi.append(Elemento(f'proiezione_{p.id}', p.nome, f'la proiezione «{p.nome}»',
                                      p.id in caricate, proiezione_id=p.id))
     return elementi
@@ -95,12 +96,17 @@ def perche_non_puoi_inviare(richiesta):
     if not richiesta.refertatore.referta(richiesta.tipo_esame):
         return (f'{richiesta.refertatore} non e\' referente per '
                 f'{richiesta.get_tipo_esame_display()}: scegli un altro collega.')
-    mancanti = allegati_mancanti(richiesta)
-    if mancanti:
-        if len(mancanti) == 1:
-            return f'Manca {mancanti[0]}.'
-        return 'Mancano: ' + '; '.join(mancanti) + '.'
-    return None
+    return frase_mancanti(allegati_mancanti(richiesta))
+
+
+def frase_mancanti(mancanti):
+    """«Manca X.» / «Mancano: X; Y.» / None. La usa anche il passo 3 per
+    dire perche' «Avanti» e' spento: stessa frase del blocco all'invio."""
+    if not mancanti:
+        return None
+    if len(mancanti) == 1:
+        return f'Manca {mancanti[0]}.'
+    return 'Mancano: ' + '; '.join(mancanti) + '.'
 
 
 def perche_non_puoi_riassegnare(richiesta, refertatore):

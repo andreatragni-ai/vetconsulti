@@ -107,3 +107,25 @@ def caso_inviato(mondo):
 def caso_in_carico(caso_inviato, mondo):
     caso_inviato.prendi_in_carico(mondo.ref, mondo.ref.user)
     return caso_inviato
+
+
+@pytest.fixture
+def crea_bozza():
+    """Percorre i passi 1 e 2 della richiesta guidata dal test client (utente
+    gia' loggato) e ritorna la Richiesta in BOZZA appena nata. `paziente` ed
+    `esame` sovrascrivono i campi di default dei due form."""
+    from django.urls import reverse
+
+    from consulti.models import Richiesta
+
+    def crea(client, tipo, esperto, paziente=None, esame=None):
+        dati_p = {'nome': 'Fido', 'specie': 'CANE', 'sesso': 'M', **(paziente or {})}
+        risposta = client.post(reverse('consulti:nuova'), dati_p)
+        assert risposta.status_code == 302, 'passo 1 non valido'
+        dati_e = {'tipo_esame': tipo, 'refertatore': esperto.pk, 'quesito': 'Cosa ne pensi?', 'azione': 'avanti',
+                  **(esame or {})}
+        risposta = client.post(reverse('consulti:nuova_esame'), dati_e)
+        assert risposta.status_code == 302, f'passo 2 non valido: {getattr(risposta, "context", None) and risposta.context["form"].errors}'
+        return Richiesta.objects.order_by('-pk').first()
+
+    return crea

@@ -35,12 +35,12 @@ esperti (per riassegnare un caso declinato), puo_annullare.
 
 {% elif richiesta.stato == 'INVIATA' %}
   <div class="alert alert-info py-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <span><i class="bi bi-send-check me-1"></i>Inviato a <strong>{{ richiesta.refertatore }}</strong> il {{ richiesta.inviata_il|date:"d/m/Y H:i" }}: in attesa che lo prenda in carico.</span>
+    <span><i class="bi bi-send-check me-1"></i>Inviato a <strong>{{ richiesta.refertatore }}</strong> il {{ richiesta.inviata_il|date:"d/m/Y" }} alle {{ richiesta.inviata_il|date:"H:i" }}. {% if e_richiedente %}{{ richiesta.refertatore.user.get_full_name|default:richiesta.refertatore.nome_completo }} ricevera' una email con il caso. Ti avviseremo quando il referto e' pronto.{% else %}In attesa che lo prenda in carico.{% endif %}</span>
     {% if puo_annullare %}
     <button type="button" class="btn btn-outline-danger btn-sm"
             data-bs-toggle="modal" data-bs-target="#modalConfermaElimina"
             data-elimina-href="{% url 'consulti:annulla' richiesta.pk %}"
-            data-elimina-titolo="Annullare la richiesta {{ richiesta.codice }}?"
+            data-elimina-titolo="Annullare la richiesta per {{ richiesta.titolo }} ({{ richiesta.codice }})?"
             data-elimina-dettaglio="L'esperto non l'ha ancora presa in carico: dopo l'annullamento non potra' piu' farlo."
             data-elimina-intestazione="Conferma annullamento" data-elimina-azione="Si', annulla"
             data-elimina-tono="warning" data-elimina-icona="x-circle">

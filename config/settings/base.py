@@ -162,6 +162,10 @@ FFMPEG_BIN = os.environ.get('FFMPEG_BIN', 'ffmpeg')
 UPLOAD_MAX_BYTE = int(os.environ.get('UPLOAD_MAX_BYTE', 300 * 1024 * 1024))
 # Limite per un allegato caricato in una POST singola (PDF, immagini).
 ALLEGATO_MAX_BYTE = int(os.environ.get('ALLEGATO_MAX_BYTE', 50 * 1024 * 1024))
+# Limite per una clip eco (filmato di una proiezione). Si chiedono filmati di
+# una decina di secondi; senza ffmpeg la durata non si misura, quindi il
+# freno e' il peso: 100 MB bastano per 10 s anche in DICOM poco compresso.
+ECO_CLIP_MAX_BYTE = int(os.environ.get('ECO_CLIP_MAX_BYTE', 100 * 1024 * 1024))
 
 # Django usa il tag 'error', Bootstrap la classe 'danger': senza questa
 # mappatura il messaggio di errore e' invisibile.

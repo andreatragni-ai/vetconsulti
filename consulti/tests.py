@@ -221,12 +221,9 @@ def test_invio_libero_professionista(libero_professionista, refertatore):
 
 
 @pytest.mark.django_db
-def test_libero_professionista_crea_bozza_e_invia(client, libero_professionista, refertatore):
+def test_libero_professionista_crea_bozza_e_invia(client, libero_professionista, refertatore, crea_bozza):
     client.force_login(libero_professionista.user)
-    risp = client.post(reverse('consulti:nuova'), {
-        'r-tipo_esame': 'ECG', 'r-refertatore': refertatore.pk, 'p-nome': 'Micio', 'p-specie': 'GATTO', 'p-sesso': 'F'})
-    assert risp.status_code == 302
-    r = Richiesta.objects.get()
+    r = crea_bozza(client, 'ECG', refertatore, paziente={'nome': 'Micio', 'specie': 'GATTO', 'sesso': 'F'})
     assert r.clinica is None and r.richiedente == libero_professionista
     _allega(r, CategoriaAllegato.ECG_PDF)
     assert client.post(reverse('consulti:invia', args=[r.pk])).status_code == 302
@@ -345,7 +342,7 @@ class TestUploadAPezzi:
         assert self._pezzo(client, r, 0, self.contenuto[:meta]).json()['ricevuti'] == meta
         assert self._pezzo(client, r, meta, self.contenuto[meta:]).json()['ricevuti'] == len(self.contenuto)
         risp = client.post(reverse('consulti:upload_concludi', args=[r.pk]),
-                           {'impronta': self.impronta, 'nome': 'paziente.ecg', 'categoria': 'HOLTER_FILE'})
+                           {'impronta': self.impronta, 'nome': 'paziente.ecg', 'slot': 'holter_file'})
         assert risp.status_code == 200
         a = r.allegati.get()
         assert a.nome_originale == 'paziente.ecg'
@@ -374,7 +371,7 @@ class TestUploadAPezzi:
         r = bozza_con_login
         self._pezzo(client, r, 0, b'non e il file giusto')
         risp = client.post(reverse('consulti:upload_concludi', args=[r.pk]),
-                           {'impronta': self.impronta, 'nome': 'x.dat', 'categoria': 'HOLTER_FILE'})
+                           {'impronta': self.impronta, 'nome': 'x.dat', 'slot': 'holter_file'})
         assert risp.status_code == 400
         assert not r.allegati.exists()
 
@@ -393,7 +390,7 @@ class TestUploadAPezzi:
         r = bozza_con_login
         self._pezzo(client, r, 0, self.contenuto)
         client.post(reverse('consulti:upload_concludi', args=[r.pk]),
-                    {'impronta': self.impronta, 'nome': 'x.dat', 'categoria': 'HOLTER_FILE'})
+                    {'impronta': self.impronta, 'nome': 'x.dat', 'slot': 'holter_file'})
         a = r.allegati.get()
         assert client.get(reverse('scarica_allegato', args=[a.pk])).status_code == 200
         estraneo = User.objects.create_user('estraneo', 'e@x.it', 'pw')
@@ -413,16 +410,14 @@ def test_pagine_base_rispondono(client, richiedente, refertatore):
 
 
 @pytest.mark.django_db
-def test_creazione_bozza_da_form(client, richiedente, refertatore):
+def test_creazione_bozza_dai_passi(client, richiedente, refertatore, crea_bozza):
     client.force_login(richiedente.user)
-    risp = client.post(reverse('consulti:nuova'), {
-        'r-tipo_esame': 'ECG', 'r-refertatore': refertatore.pk, 'r-quesito': 'Aritmia?',
-        'p-nome': 'Fido', 'p-specie': 'CANE', 'p-sesso': 'M',
-    })
-    assert risp.status_code == 302
-    r = Richiesta.objects.get()
+    r = crea_bozza(client, 'ECG', refertatore, esame={'quesito': 'Aritmia?'})
     assert r.stato == StatoRichiesta.BOZZA and r.paziente.nome == 'Fido' and r.refertatore == refertatore
-    assert client.get(reverse('consulti:dettaglio', args=[r.pk])).status_code == 200
+    assert r.quesito == 'Aritmia?' and r.audit.filter(azione='CREATA').exists()
+    # La pagina del caso di una bozza riprende la richiesta guidata.
+    risp = client.get(reverse('consulti:dettaglio', args=[r.pk]))
+    assert risp.status_code == 302 and risp.url == reverse('consulti:passo_carica', args=[r.pk])
 
 
 @pytest.mark.django_db
@@ -461,17 +456,18 @@ def esperto_eco(db):
 
 
 def _crea_dal_form(client, tipo, esperto):
-    return client.post(reverse('consulti:nuova'), {
-        'r-tipo_esame': tipo, 'r-refertatore': esperto.pk, 'r-quesito': 'Soffio da valutare',
-        'p-nome': 'Luna', 'p-specie': 'GATTO', 'p-sesso': 'ND'})
+    """Passo 1 poi passo 2: la risposta del passo 2 (302 se la bozza e' nata)."""
+    client.post(reverse('consulti:nuova'), {'nome': 'Luna', 'specie': 'GATTO', 'sesso': 'ND'})
+    return client.post(reverse('consulti:nuova_esame'), {
+        'tipo_esame': tipo, 'refertatore': esperto.pk, 'quesito': 'Soffio da valutare', 'azione': 'avanti'})
 
 
 @pytest.mark.django_db
 @pytest.mark.parametrize('tipo', [TipoEsame.ECO, TipoEsame.HOLTER, TipoEsame.ECG])
 def test_nuova_richiesta_accetta_l_esperto_del_tipo_scelto(client, richiedente, refertatore, esperto_eco, tipo):
-    """Il form ha il prefisso 'r': il tipo va letto da 'r-tipo_esame'. Prima si
-    leggeva 'tipo_esame', il tipo risultava sempre ECG e chiedere un'eco a un
-    referente solo eco dava 'Scegli un'opzione valida'."""
+    """Il vecchio form unico aveva il prefisso 'r' e leggeva 'tipo_esame': il
+    tipo risultava sempre ECG e chiedere un'eco a un referente solo eco dava
+    'Scegli un'opzione valida'. Il passo 2 non ha prefissi."""
     esperto = esperto_eco if tipo == TipoEsame.ECO else refertatore
     client.force_login(richiedente.user)
     risposta = _crea_dal_form(client, tipo, esperto)
@@ -486,4 +482,5 @@ def test_nuova_richiesta_rifiuta_un_esperto_non_referente_per_quel_tipo(client, 
     client.force_login(richiedente.user)
     risposta = _crea_dal_form(client, TipoEsame.ECO, refertatore)
     assert risposta.status_code == 200
+    assert 'non referta il tipo di esame scelto' in risposta.content.decode()
     assert not Richiesta.objects.exists()

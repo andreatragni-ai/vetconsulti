@@ -1,0 +1,40 @@
+{% comment %}
+Un file gia' caricato in una zona: spunta verde, nome (apre il file),
+categoria e peso, «Sostituisci» (stesso slot, sostituisci=<id>) e «Rimuovi»
+(modale di conferma del pacchetto; con l'allegato se ne va anche la sua
+ProiezioneCaricata). Parametri: a (Allegato), slot, proiezione (facoltativa),
+nota (testo del filmato libero, facoltativo), accetta, a_pezzi, max_byte.
+{% endcomment %}
+{% with nome=a.nome_originale|default:a.file.name %}
+<div class="file-caricato">
+  <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+  <span class="nome">
+    <a href="{% url 'scarica_allegato' a.pk %}?inline=1" target="_blank" rel="noopener">{{ nome }}</a>
+    <span class="meta">{{ a.get_categoria_display }} · {{ a.dimensione|filesizeformat }}{% if nota %} · «{{ nota }}»{% endif %}</span>
+  </span>
+  <span class="azioni">
+    <form method="post" enctype="multipart/form-data" action="{% url 'consulti:carica_allegato' richiesta.pk %}" data-zona
+          {% if a_pezzi %}data-a-pezzi="1"{% endif %} {% if max_byte %}data-max-byte="{{ max_byte }}"{% endif %}>
+      {% csrf_token %}
+      <input type="hidden" name="slot" value="{{ slot }}">
+      {% if proiezione %}<input type="hidden" name="proiezione" value="{{ proiezione.pk }}">{% endif %}
+      <input type="hidden" name="sostituisci" value="{{ a.pk }}">
+      <label class="btn btn-outline-secondary btn-sm mb-0">
+        <input type="file" name="file" class="visually-hidden"{% if accetta %} accept="{{ accetta }}"{% endif %}>
+        <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>Sostituisci<span class="visually-hidden"> {{ nome }}</span>
+      </label>
+      <noscript><button type="submit" class="btn btn-link btn-sm">Carica</button></noscript>
+      <div class="progress" hidden><div class="progress-bar" role="progressbar"></div></div>
+      <div class="zona-carica-stato" aria-live="polite"></div>
+    </form>
+    <button type="button" class="btn btn-outline-danger btn-sm"
+            data-bs-toggle="modal" data-bs-target="#modalConfermaElimina"
+            data-elimina-href="{% url 'consulti:elimina_allegato' richiesta.pk a.pk %}"
+            data-elimina-titolo="Rimuovere «{{ nome }}»?"
+            data-elimina-dettaglio="{% if proiezione %}La riga «{{ proiezione.nome }}» torna da caricare.{% else %}Il file viene tolto dalla richiesta; potrai caricarlo di nuovo.{% endif %}"
+            data-elimina-intestazione="Conferma rimozione" data-elimina-azione="Si', rimuovi">
+      <i class="bi bi-trash me-1" aria-hidden="true"></i>Rimuovi<span class="visually-hidden"> {{ nome }}</span>
+    </button>
+  </span>
+</div>
+{% endwith %}

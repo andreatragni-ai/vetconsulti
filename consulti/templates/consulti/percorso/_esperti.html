@@ -1,0 +1,35 @@
+{% comment %}
+Schede degli esperti per il tipo scelto (passo 2; frammento htmx di
+consulti/views_percorso.py:esperti). Contesto: esperti [{refertatore,
+prezzo, disponibile, rientro, tempo}], selezionato (pk come stringa),
+tipo_scelto, tipo_label. Chi e' assente si vede, con il rientro, ma non si
+sceglie (e il form lo rifiuta comunque: EsameForm.clean_refertatore).
+{% endcomment %}
+{% if not tipo_scelto %}
+  <p class="text-muted mb-0"><i class="bi bi-arrow-up me-1"></i>Scegli prima il tipo di esame: qui compaiono gli esperti che lo refertano, con prezzo e tempi.</p>
+{% elif not esperti %}
+  <div class="alert alert-warning mb-0"><i class="bi bi-person-x me-1"></i>Per {{ tipo_label }} non c'e' ancora nessun esperto sul portale. Scegli un altro tipo di esame, oppure riprova piu' avanti.</div>
+{% else %}
+  <p class="small text-muted mb-2">Solo chi referta {{ tipo_label }}. Prezzi IVA inclusa: si paga solo il referto firmato.</p>
+  <div class="schede-scelta" role="radiogroup" aria-label="Esperto">
+    {% for e in esperti %}{% with r=e.refertatore %}
+    <div>
+      <input type="radio" class="btn-check" name="refertatore" id="esperto-{{ r.pk }}" value="{{ r.pk }}"{% if e.disponibile and selezionato == r.pk|stringformat:"s" %} checked{% endif %}{% if not e.disponibile %} disabled{% endif %} required>
+      <label class="scheda-scelta scheda-esperto" for="esperto-{{ r.pk }}">
+        <span class="titolo">{{ r.nome_completo }}</span>
+        {% if r.specializzazione %}<span class="specializzazione">{{ r.specializzazione }}</span>{% endif %}
+        {% if e.prezzo %}
+          <span class="prezzo">€ {{ e.prezzo.totale }} <small class="fw-normal">IVA inclusa</small></span>
+          <span class="imponibile">imponibile € {{ e.prezzo.imponibile_totale }}{% if e.prezzo.supplementi %}, compreso il supplemento urgenza di € {{ e.prezzo.supplementi }}{% endif %}</span>
+        {% else %}
+          <span class="prezzo">Prezzo da definire</span>
+        {% endif %}
+        <span class="tempo"><i class="bi bi-stopwatch me-1" aria-hidden="true"></i>{% if e.tempo %}Risposta in {{ e.tempo }} ore{% else %}Tempo di risposta non indicato{% endif %}</span>
+        {% if r.messaggio %}<span class="nota">«{{ r.messaggio }}»</span>{% endif %}
+        {% if not e.disponibile %}<span class="assente"><i class="bi bi-calendar-x" aria-hidden="true"></i>Assente{% if e.rientro %}: rientra il {{ e.rientro|date:"j F" }}{% endif %}</span>{% endif %}
+        <i class="bi bi-check-circle-fill spunta" aria-hidden="true"></i>
+      </label>
+    </div>
+    {% endwith %}{% endfor %}
+  </div>
+{% endif %}

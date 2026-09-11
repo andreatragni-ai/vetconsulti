@@ -1,5 +1,5 @@
 {
- "versione": "2026-09-11c",
+ "versione": "2026-09-11d",
  "fonte": "dettato di Andre (nota Obsidian Telemedicina) + guida proiezioni-eco dalla sua presentazione",
  "sempre_obbligatorio": "Referto dell'ecografo in PDF, con le misure",
  "righe": [
@@ -474,7 +474,10 @@
    "deve_essere_visibile": "Profilo del flusso transmitralico completo su piu' cicli.",
    "serve_per": "Pattern diastolico, tempo di decelerazione, rapporti E/A ed E/E′, IVRT. E > 1,2 m/s DecT < 80 ms E/E′ > 12 = CHF E′ > 6 cm/s",
    "immagini_riferimento": [
-    "d1_pw.jpg",
+    {
+     "file": "d1_pw.jpg",
+     "didascalia": "Profilo transmitralico (registrato in pulsato)"
+    },
     "d1_schema.jpg"
    ],
    "nota_riferimento": "Testo scritto da Claude (la scheda D-1 della guida descrive il pulsato): da rivedere.",
@@ -487,14 +490,16 @@
    "tipo_media": "STATICA",
    "obbligatoria": true,
    "scheda_guida": "D-1",
-   "istruzioni": "Doppler tissutale dell'anello mitralico, con le misure. Apicale 4 camere, volume campione sull'anello mitralico, allineato al suo movimento.",
+   "istruzioni": "Doppler tissutale dell'anello mitralico, con le misure. Apicale 4 camere, volume campione sull'anello mitralico laterale, allineato al suo movimento.",
    "deve_essere_visibile": "Onde E′ e A′ dell'anello ben definite su piu' cicli.",
    "serve_per": "Pattern diastolico, tempo di decelerazione, rapporti E/A ed E/E′, IVRT. E > 1,2 m/s DecT < 80 ms E/E′ > 12 = CHF E′ > 6 cm/s",
    "immagini_riferimento": [
-    "d1_pw.jpg",
-    "d1_schema.jpg"
+    {
+     "file": "rif_tdi.jpg",
+     "didascalia": "TDI dell'anello mitralico laterale, con la misura di e′"
+    }
    ],
-   "nota_riferimento": "Testo scritto da Claude (la scheda D-1 della guida descrive il pulsato): da rivedere; parete laterale o settale da decidere.",
+   "nota_riferimento": "Immagine dalla relazione Elanco (diapositiva 71 del pptx), intestazione con il nome del paziente tagliata. Testi scritti da Claude: da rivedere.",
    "ordine": 250
   },
   {

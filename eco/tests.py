@@ -49,7 +49,7 @@ def test_carica_catalogo_eco_dal_repo_e_idempotente():
         'LIBERO_1', 'LIBERO_2']
     # 74 dall'11/09 sera: sottoxifoidea, misura LAD, vasi polmonari in M-mode e
     # polmonare da sinistra hanno avuto le loro immagini (tutte le obbligatorie ne hanno).
-    assert ImmagineRiferimento.objects.count() == collegamenti == 74
+    assert ImmagineRiferimento.objects.count() == collegamenti == 73
     assert not ProiezioneCatalogo.objects.filter(attiva=True, obbligatoria=True, immagini__isnull=True).exists()
     # La voce che nel file non c'e' piu' si disattiva, non si cancella.
     assert not ProiezioneCatalogo.objects.get(codice='VECCHIA').attiva
@@ -61,7 +61,7 @@ def test_carica_catalogo_eco_dal_repo_e_idempotente():
     assert [i.didascalia for i in sub.immagini.all()] == [
         'Scansione sottoxifoidea', 'Posizione della sonda: dietro lo sterno']
     call_command('carica_catalogo_eco', stdout=StringIO())
-    assert ProiezioneCatalogo.objects.count() == 28 and ImmagineRiferimento.objects.count() == 74
+    assert ProiezioneCatalogo.objects.count() == 28 and ImmagineRiferimento.objects.count() == 73
 
 
 @pytest.mark.django_db

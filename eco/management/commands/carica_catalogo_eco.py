@@ -44,6 +44,20 @@ def didascalia(nome_file):
     return DIDASCALIE.get(suffisso, '')
 
 
+def voci_immagini(riga):
+    """Le immagini di una riga come (file, didascalia).
+
+    Una voce e' il nome del file (la didascalia si ricava dal suffisso) oppure
+    {"file": ..., "didascalia": ...}: serve quando la didascalia deve dire
+    qualcosa che il nome non puo', per esempio la fonte di una figura presa da
+    un articolo."""
+    for voce in riga.get('immagini_riferimento') or []:
+        if isinstance(voce, dict):
+            yield voce['file'], (voce.get('didascalia') or didascalia(voce['file']))[:120]
+        else:
+            yield voce, didascalia(voce)
+
+
 class Command(BaseCommand):
     help = 'Carica o aggiorna il catalogo delle proiezioni eco da un file JSON (con le immagini di riferimento).'
 
@@ -78,8 +92,8 @@ class Command(BaseCommand):
                 for vecchia in proiezione.immagini.all():
                     vecchi_file.append(vecchia.immagine.name)
                     vecchia.delete()
-                for ordine, nome in enumerate(riga.get('immagini_riferimento') or [], start=1):
-                    immagine = ImmagineRiferimento(proiezione=proiezione, ordine=ordine, didascalia=didascalia(nome))
+                for ordine, (nome, testo) in enumerate(voci_immagini(riga), start=1):
+                    immagine = ImmagineRiferimento(proiezione=proiezione, ordine=ordine, didascalia=testo)
                     with open(cartella / nome, 'rb') as f:
                         immagine.immagine.save(nome, File(f), save=True)
                     n_immagini += 1
@@ -116,7 +130,7 @@ class Command(BaseCommand):
                 errori.append(f'{codice}: tipo_media sconosciuto «{riga.get("tipo_media")}».')
             if riga.get('libera') and riga.get('obbligatoria'):
                 errori.append(f'{codice}: un filmato libero non puo\' essere obbligatorio.')
-            for nome in riga.get('immagini_riferimento') or []:
+            for nome, _ in voci_immagini(riga):
                 if not (cartella / nome).is_file():
                     errori.append(f'{codice}: immagine {nome} non trovata in {cartella}.')
         if errori:

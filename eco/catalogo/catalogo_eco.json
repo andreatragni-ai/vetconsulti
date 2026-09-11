@@ -1,5 +1,5 @@
 {
- "versione": "2026-09-11b",
+ "versione": "2026-09-11c",
  "fonte": "dettato di Andre (nota Obsidian Telemedicina) + guida proiezioni-eco dalla sua presentazione",
  "sempre_obbligatorio": "Referto dell'ecografo in PDF, con le misure",
  "righe": [
@@ -142,10 +142,14 @@
    "deve_essere_visibile": "Le quattro camere con apice non troncato, setto interventricolare e interatriale, entrambe le valvole atrio-ventricolari.",
    "serve_per": "Morfologia di mitrale e tricuspide, spessori parietali, rapporti fra le camere. IVS ≈ PLVsx parete VD ≈ ½ VS camera VD ≈ ⅓ VS",
    "immagini_riferimento": [
+    {
+     "file": "rif_lad_misura.jpg",
+     "didascalia": "Misura della LAD in asse lungo 4 camere"
+    },
     "dx1_eco.jpg",
     "dx1_schema.jpg"
    ],
-   "nota_riferimento": "Nella guida non c'e' un'immagine della misura LAD: si usa l'asse lungo 4 camere.",
+   "nota_riferimento": "Misura LAD dalla relazione Elanco (diapositiva 79 del pptx), intestazione con i dati del paziente tagliata.",
    "ordine": 80
   },
   {
@@ -212,11 +216,18 @@
    "deve_essere_visibile": "Entrambi i vasi affiancati, con calibro misurabile nello stesso momento del ciclo.",
    "serve_per": "Congestione venosa polmonare e sospetto di ipertensione post-capillare.",
    "immagini_riferimento": [
+    {
+     "file": "rif_pvpa_mmode.jpg",
+     "didascalia": "M-mode di arteria e vena polmonare (* e +). Birettoni et al., J Vet Cardiol 2016"
+    },
+    {
+     "file": "rif_pvpa_bmode.jpg",
+     "didascalia": "Posizione del cursore M-mode. Birettoni et al., J Vet Cardiol 2016"
+    },
     "d2_lungo.jpg",
-    "d2_corto.jpg",
-    "d2_3d.jpg"
+    "d2_corto.jpg"
    ],
-   "nota_riferimento": "Le immagini della guida mostrano il confronto in B-mode; l'acquisizione richiesta e' in M-mode.",
+   "nota_riferimento": "Figure da Birettoni et al., J Vet Cardiol 2016 (Canine pulmonary vein-to-pulmonary artery ratio), via relazione Elanco pag. 77: da sostituire con immagini proprie prima di aprire il portale a molti colleghi.",
    "ordine": 120
   },
   {
@@ -226,11 +237,20 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "",
-   "istruzioni": "Filmato di circa 10 secondi. Tratto di efflusso sinistro dalla finestra sottoxifoidea.",
+   "istruzioni": "Filmato di circa 10 secondi. Tratto di efflusso sinistro dalla finestra sottoxifoidea. Dietro lo sterno. Cursore verso la colonna. Sonda parallela alla colonna.",
    "deve_essere_visibile": "",
    "serve_per": "",
-   "immagini_riferimento": [],
-   "nota_riferimento": "Immagine di riferimento mancante: nella guida non c'e' la sottoxifoidea.",
+   "immagini_riferimento": [
+    {
+     "file": "rif_sub_eco.jpg",
+     "didascalia": "Scansione sottoxifoidea"
+    },
+    {
+     "file": "rif_sub_sonda.jpg",
+     "didascalia": "Posizione della sonda: dietro lo sterno"
+    }
+   ],
+   "nota_riferimento": "Presentazione CARDIEC, diapositive 57-58 (intestazione con i dati del paziente coperta).",
    "ordine": 130
   },
   {
@@ -240,11 +260,20 @@
    "tipo_media": "CLIP",
    "obbligatoria": true,
    "scheda_guida": "",
-   "istruzioni": "Filmato di circa 10 secondi. Stessa finestra con il color sul tratto di efflusso (filmato separato dal B-mode).",
+   "istruzioni": "Filmato di circa 10 secondi. Stessa finestra con il color sul tratto di efflusso (filmato separato dal B-mode). Dietro lo sterno. Cursore verso la colonna. Sonda parallela alla colonna.",
    "deve_essere_visibile": "",
    "serve_per": "",
-   "immagini_riferimento": [],
-   "nota_riferimento": "Immagine di riferimento mancante.",
+   "immagini_riferimento": [
+    {
+     "file": "rif_sub_eco.jpg",
+     "didascalia": "Scansione sottoxifoidea"
+    },
+    {
+     "file": "rif_sub_sonda.jpg",
+     "didascalia": "Posizione della sonda: dietro lo sterno"
+    }
+   ],
+   "nota_riferimento": "Presentazione CARDIEC, diapositive 57-58 (intestazione con i dati del paziente coperta).",
    "ordine": 140
   },
   {
@@ -254,13 +283,24 @@
    "tipo_media": "STATICA",
    "obbligatoria": true,
    "scheda_guida": "",
-   "istruzioni": "Dalla sottoxifoidea, Doppler pulsato nel tratto di efflusso sinistro, allineato al flusso, con le misure.",
+   "istruzioni": "Dalla sottoxifoidea, Doppler pulsato nel tratto di efflusso sinistro, allineato al flusso, con le misure. Dietro lo sterno. Cursore verso la colonna. Sonda parallela alla colonna.",
    "deve_essere_visibile": "",
    "serve_per": "",
    "immagini_riferimento": [
-    "sx10_ao.jpg"
+    {
+     "file": "rif_sub_eco.jpg",
+     "didascalia": "Scansione sottoxifoidea"
+    },
+    {
+     "file": "rif_sub_sonda.jpg",
+     "didascalia": "Posizione della sonda: dietro lo sterno"
+    },
+    {
+     "file": "sx10_ao.jpg",
+     "didascalia": "Doppler aortico (da apicale 5 camere)"
+    }
    ],
-   "nota_riferimento": "Riferimento parziale: e' il Doppler aortico dall'apicale 5 camere.",
+   "nota_riferimento": "Finestra: CARDIEC diap. 57-58. Il Doppler di riferimento e' quello aortico dall'apicale 5 camere: manca un tracciato LVOT dalla sottoxifoidea.",
    "ordine": 150
   },
   {
@@ -270,13 +310,24 @@
    "tipo_media": "STATICA",
    "obbligatoria": true,
    "scheda_guida": "",
-   "istruzioni": "Dalla sottoxifoidea, Doppler continuo attraverso la valvola aortica, con le misure.",
+   "istruzioni": "Dalla sottoxifoidea, Doppler continuo attraverso la valvola aortica, con le misure. Dietro lo sterno. Cursore verso la colonna. Sonda parallela alla colonna.",
    "deve_essere_visibile": "",
    "serve_per": "",
    "immagini_riferimento": [
-    "sx10_ao.jpg"
+    {
+     "file": "rif_sub_eco.jpg",
+     "didascalia": "Scansione sottoxifoidea"
+    },
+    {
+     "file": "rif_sub_sonda.jpg",
+     "didascalia": "Posizione della sonda: dietro lo sterno"
+    },
+    {
+     "file": "sx10_ao.jpg",
+     "didascalia": "Doppler aortico (da apicale 5 camere)"
+    }
    ],
-   "nota_riferimento": "Riferimento parziale: e' il Doppler aortico dall'apicale 5 camere.",
+   "nota_riferimento": "Finestra: CARDIEC diap. 57-58. Il Doppler di riferimento e' quello aortico dall'apicale 5 camere: manca un tracciato LVOT dalla sottoxifoidea.",
    "ordine": 160
   },
   {
@@ -362,11 +413,15 @@
    "deve_essere_visibile": "Efflusso destro in continuità con la polmonare; aorta in sezione trasversale al centro.",
    "serve_per": "Valvola polmonare, rigurgito polmonare, ricerca del dotto arterioso pervio.",
    "immagini_riferimento": [
+    {
+     "file": "rif_sx_polmonare.jpg",
+     "didascalia": "Asse lungo sinistro: valvola e arteria polmonare"
+    },
     "sx4_eco.jpg",
     "sx4_schema.jpg",
     "sx4_eco2.jpg"
    ],
-   "nota_riferimento": "",
+   "nota_riferimento": "Immagine etichettata dalla relazione Elanco (pagina 99 del pdf).",
    "ordine": 210
   },
   {
@@ -380,11 +435,15 @@
    "deve_essere_visibile": "Efflusso destro in continuità con la polmonare; aorta in sezione trasversale al centro.",
    "serve_per": "Valvola polmonare, rigurgito polmonare, ricerca del dotto arterioso pervio.",
    "immagini_riferimento": [
+    {
+     "file": "rif_sx_polmonare.jpg",
+     "didascalia": "Asse lungo sinistro: valvola e arteria polmonare"
+    },
     "sx4_eco.jpg",
     "sx4_schema.jpg",
     "sx4_eco2.jpg"
    ],
-   "nota_riferimento": "",
+   "nota_riferimento": "Immagine etichettata dalla relazione Elanco (pagina 99 del pdf).",
    "ordine": 220
   },
   {

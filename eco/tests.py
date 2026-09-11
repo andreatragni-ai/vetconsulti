@@ -47,16 +47,21 @@ def test_carica_catalogo_eco_dal_repo_e_idempotente():
     assert ProiezioneCatalogo.objects.filter(attiva=True, obbligatoria=True).count() == 25
     assert list(ProiezioneCatalogo.objects.filter(libera=True).values_list('codice', flat=True)) == [
         'LIBERO_1', 'LIBERO_2']
-    assert ImmagineRiferimento.objects.count() == collegamenti == 62
+    # 74 dall'11/09 sera: sottoxifoidea, misura LAD, vasi polmonari in M-mode e
+    # polmonare da sinistra hanno avuto le loro immagini (tutte le obbligatorie ne hanno).
+    assert ImmagineRiferimento.objects.count() == collegamenti == 74
+    assert not ProiezioneCatalogo.objects.filter(attiva=True, obbligatoria=True, immagini__isnull=True).exists()
     # La voce che nel file non c'e' piu' si disattiva, non si cancella.
     assert not ProiezioneCatalogo.objects.get(codice='VECCHIA').attiva
     assert 'Disattivate' in out.getvalue() and 'VECCHIA' in out.getvalue()
     dx1 = ProiezioneCatalogo.objects.get(codice='DX1_B')
     assert [i.didascalia for i in dx1.immagini.all()] == ['Immagine ecografica', 'Posizione della sonda', 'Schema']
     assert dx1.istruzioni and dx1.deve_essere_visibile and dx1.serve_per
-    assert not ProiezioneCatalogo.objects.get(codice='SUB_B').immagini.exists()
+    sub = ProiezioneCatalogo.objects.get(codice='SUB_B')
+    assert [i.didascalia for i in sub.immagini.all()] == [
+        'Scansione sottoxifoidea', 'Posizione della sonda: dietro lo sterno']
     call_command('carica_catalogo_eco', stdout=StringIO())
-    assert ProiezioneCatalogo.objects.count() == 28 and ImmagineRiferimento.objects.count() == 62
+    assert ProiezioneCatalogo.objects.count() == 28 and ImmagineRiferimento.objects.count() == 74
 
 
 @pytest.mark.django_db
@@ -76,3 +81,24 @@ def test_carica_catalogo_eco_rifiuta_un_file_sbagliato(tmp_path):
     assert 'finestra sconosciuta' in messaggio and 'non puo\' essere obbligatorio' in messaggio
     assert 'no.jpg non trovata' in messaggio
     assert not ProiezioneCatalogo.objects.exists()
+
+
+@pytest.mark.django_db
+def test_carica_catalogo_eco_accetta_una_didascalia_esplicita(tmp_path):
+    """Una voce puo' essere {"file", "didascalia"}: serve a citare la fonte di
+    una figura presa da un articolo. La forma con il solo nome resta valida."""
+    import json
+    from PIL import Image
+    from django.core.management import call_command
+    from eco.models import ProiezioneCatalogo
+    cartella = tmp_path / 'img'; cartella.mkdir()
+    for nome in ('fig_mmode.jpg', 'fig_schema.jpg'):
+        Image.new('RGB', (8, 8)).save(cartella / nome)
+    file = tmp_path / 'catalogo.json'
+    file.write_text(json.dumps({'righe': [{
+        'codice': 'PVPA', 'nome': 'Vasi polmonari', 'finestra': 'PARASTERNALE_DESTRA', 'tipo_media': 'STATICA',
+        'immagini_riferimento': [{'file': 'fig_mmode.jpg', 'didascalia': 'Birettoni et al., JVC 2016'}, 'fig_schema.jpg'],
+    }]}))
+    call_command('carica_catalogo_eco', str(file), '--immagini', str(cartella))
+    immagini = list(ProiezioneCatalogo.objects.get(codice='PVPA').immagini.order_by('ordine'))
+    assert [i.didascalia for i in immagini] == ['Birettoni et al., JVC 2016', 'Schema']

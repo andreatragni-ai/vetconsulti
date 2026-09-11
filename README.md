@@ -127,7 +127,7 @@ WeasyPrint su macOS vuole le librerie Homebrew (`brew install pango`);
 | `accounts/` | Refertatore + competenze, Clinica, DatiFatturazione (validazioni in `fiscale.py`; un solo soggetto fra clinica e richiedente), Richiedente (CLINICA / LIBERO_PROFESSIONISTA), Consenso; login, registrazione a due passi con conferma email, reset password, profili, area staff (refertatori, richiedenti da approvare) |
 | `listino/` | VoceListino, Supplemento, `prezzi.prezzo_effettivo()` |
 | `consulti/` | Richiesta (codice `TC-AAAA-NNNN`, `titolo` «Luna · Ecocardiografia», transizioni con audit, `riassegna` dopo un declino), Paziente, Allegato, Commento, EventoAudit append-only; richiesta guidata in quattro passi (`percorso.py`, `views_percorso.py`, template `percorso/`, `static/consulti/js/carica.js`), `caricamento.py` (zona + tipo di file -> categoria, ProiezioneCaricata, sostituzione), `regole.py` (invio con `elementi_obbligatori`, riassegnazione, tempo di risposta), `permessi.py` (chi agisce), `motivi.py` (frasi per declinare / non refertabile), `racconto.py` (audit leggibile), `views_decisione.py` (casi ricevuti, prendi in carico, declina, non refertabile), `upload_chunk.py`, comando `sorveglia_consulti` (rilascio + sollecito a meta' tempo) |
-| `eco/` | catalogo proiezioni (`catalogo/catalogo_eco.json` + `catalogo/img/`, comando `carica_catalogo_eco`; finestre acustiche, filmati liberi, ImmagineRiferimento), ProiezioneCaricata, `transcodifica.py` |
+| `eco/` | catalogo proiezioni (`catalogo/catalogo_eco.json` + `catalogo/img/`, comando `carica_catalogo_eco`; finestre acustiche, filmati liberi, ImmagineRiferimento), ProiezioneCaricata, `transcodifica.py`, **smistamento automatico** dei file dell'eco (`smistamento/`: formato, colore dai pixel, lettura AI delle miniature, ordine di acquisizione, assegnazione; `tavolo.py` proposte e conferma; comando `valuta_smistamento` per misurarlo sul banco), protocollo stampabile delle proiezioni (`views.py`, `/eco/protocollo/` e `.pdf`) |
 | `referti/` | Referto (copia di lavoro) con `firma()` e `rettifica()`, VersioneReferto (istantanea firmata + PDF), `blocchi.py` (voci per tipo: il punto di aggancio delle misure ECG), pagina di refertazione con visore allegati e bozza automatica, PDF WeasyPrint, stampa protetta delle versioni |
 | `registro/` | Prestazione immutabile (`clinica` nulla per il libero professionista, `intestatario()`), StatoFatturazione, `registra_prestazione()`, comando `esporta_prestazioni` (colonne `intestatario`, `tipo_richiedente`) |
 | `notifiche/` | InvioEmail e le email quando la palla cambia mano: caso arrivato, sollecito, rilascio (al refertatore); referto pronto e rettificato con il PDF allegato, caso declinato, non refertabile (al richiedente). Testi in `templates/notifiche/*.txt` |
@@ -135,7 +135,15 @@ WeasyPrint su macOS vuole le librerie Homebrew (`brew install pango`);
 
 I file caricati non sono mai serviti come statici: passano da
 `/allegati/<id>/scarica/` (FileResponse in dev, `X-Accel-Redirect` verso
-`/_media_interno/` in produzione).
+`/_media_interno/` in produzione); le miniature da
+`/allegati/<id>/anteprima/`, con gli stessi permessi.
+
+L'eco si carica tutta insieme (zona unica del passo 3) e lo smistamento
+automatico propone la riga di ogni file: la lettura AI delle miniature usa
+l'API Anthropic con `ANTHROPIC_API_KEY` nell'ambiente (mai nel repo) e il
+modello di `CONSULTI_MODELLO_SMISTAMENTO`; senza chiave si ferma a formato e
+colore e le righe le sceglie chi carica. Nulla diventa `ProiezioneCaricata`
+senza «Confermo lo smistamento».
 
 ## Cosa manca (fasi successive)
 

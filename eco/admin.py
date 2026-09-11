@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from .models import ImmagineRiferimento, ProiezioneCaricata, ProiezioneCatalogo
+from .models import (ImmagineRiferimento, ProiezioneCaricata, ProiezioneCatalogo, PropostaSmistamento,
+                     Smistamento)
 
 
 class ImmagineRiferimentoInline(admin.TabularInline):
@@ -36,3 +37,22 @@ class ProiezioneCatalogoAdmin(admin.ModelAdmin):
 class ProiezioneCaricataAdmin(admin.ModelAdmin):
     list_display = ('richiesta', 'proiezione', 'allegato', 'nota')
     list_select_related = ('richiesta', 'proiezione', 'allegato')
+
+
+@admin.register(Smistamento)
+class SmistamentoAdmin(admin.ModelAdmin):
+    """Per guardare com'e' andato uno smistamento: stato, messaggio e
+    telemetria (token, costo, errori). Sola lettura: lo scrive il portale."""
+
+    list_display = ('richiesta', 'stato', 'avviato_il', 'finito_il', 'n_file', 'modello', 'lettura_ai')
+    list_filter = ('stato', 'lettura_ai', 'modello')
+    search_fields = ('richiesta__codice',)
+    readonly_fields = [c.name for c in Smistamento._meta.fields]
+
+
+@admin.register(PropostaSmistamento)
+class PropostaSmistamentoAdmin(admin.ModelAdmin):
+    list_display = ('richiesta', 'allegato', 'proiezione', 'referto', 'fonte', 'confidenza', 'sicura', 'colore')
+    list_filter = ('fonte', 'sicura', 'colore')
+    list_select_related = ('richiesta', 'proiezione', 'allegato')
+    search_fields = ('richiesta__codice', 'allegato__nome_originale')

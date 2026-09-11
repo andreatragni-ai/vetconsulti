@@ -106,10 +106,11 @@ non confermate (consulti/views_smistamento.py).
           {% if n_sicure %}<span class="bollino bollino--sicuro"><i class="bi bi-patch-check-fill" aria-hidden="true"></i>{{ n_sicure }} sicur{{ n_sicure|pluralize:"o,i" }}</span>{% endif %}
           {% if n_da_verificare %}<span class="bollino bollino--verifica"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>{{ n_da_verificare }} da verificare</span>{% endif %}
           {% if da_smistare %}<span class="bollino"><i class="bi bi-inbox" aria-hidden="true"></i>{{ da_smistare|length }} da smistare</span>{% endif %}
+          {% if not modifiche_da_confermare %}<span class="bollino bollino--ok"><i class="bi bi-check-circle-fill" aria-hidden="true"></i>tutto confermato</span>{% endif %}
           {% if righe_vuote_obbligatorie %}<span class="bollino bollino--vuota"><i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>{{ righe_vuote_obbligatorie }} rig{{ righe_vuote_obbligatorie|pluralize:"a,he" }} obbligatori{{ righe_vuote_obbligatorie|pluralize:"a,e" }} vuot{{ righe_vuote_obbligatorie|pluralize:"a,e" }}</span>{% endif %}
         </span>
         {% if smistamento.messaggio %}<p class="small mb-0 mt-1">{{ smistamento.messaggio }}</p>{% endif %}
-        <p class="small text-muted mb-0 mt-1">Controlla ogni riga confrontando la miniatura con l'immagine di riferimento: «Sicuro» vuol dire che formato, colori e lettura automatica sono d'accordo; «Da verificare» va guardato. Nulla arriva al collega finche' non confermi.</p>
+        {% if modifiche_da_confermare %}<p class="small text-muted mb-0 mt-1">Controlla ogni riga confrontando la miniatura con l'immagine di riferimento: «Sicuro» vuol dire che formato, colori e lettura automatica sono d'accordo; «Da verificare» va guardato. Nulla arriva al collega finche' non confermi.</p>{% endif %}
       </div>
       <form method="post" action="{% url 'consulti:smistamento_avvia' richiesta.pk %}">{% csrf_token %}
         <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>Rifai lo smistamento</button>

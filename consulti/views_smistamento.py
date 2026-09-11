@@ -162,17 +162,17 @@ def contesto_tavolo(richiesta, ctx):
                          key=lambda p: (chiave_naturale(p.percorso_originale or p.allegato.nome_originale), p.pk))
     referto = next((p for p in proposte if p.referto), None)
     ultimo = richiesta.smistamenti.first()
-    sicure = sum(1 for p in proposte if p.sicura and not p.da_smistare)
+    # I bollini contano solo cio' che aspetta la conferma: dopo, sono tutti confermati.
+    da_confermare = [p for p in proposte if not tavolo.e_confermata(p, confermate, referti)]
     return {
         'tavolo': True,
         'posto_referto': posto(referto) if referto else None,
         'da_smistare': [posto(p) for p in da_smistare],
         'n_file_eco': len(proposte),
-        'n_sicure': sicure,
-        'n_da_verificare': sum(1 for p in proposte if not p.da_smistare and not p.sicura
-                               and not tavolo.e_confermata(p, confermate, referti)),
+        'n_sicure': sum(1 for p in da_confermare if p.sicura and not p.da_smistare),
+        'n_da_verificare': sum(1 for p in da_confermare if not p.da_smistare and not p.sicura),
         'righe_vuote_obbligatorie': vuote,
         'smistamento': ultimo,
         'smistamento_in_corso': esecuzione.in_corso(richiesta),
-        'modifiche_da_confermare': sum(1 for p in proposte if not tavolo.e_confermata(p, confermate, referti)),
+        'modifiche_da_confermare': len(da_confermare),
     }

@@ -296,3 +296,14 @@ def test_pagine_legali_pubbliche(client):
         risp = client.get(reverse(nome))
         assert risp.status_code == 200
         assert 'Bozza da far validare a un legale' in risp.content.decode()
+
+
+@pytest.mark.django_db
+def test_privacy_dice_dello_smistamento_automatico(client):
+    """Le miniature dei file dell'eco vanno a un fornitore di intelligenza
+    artificiale: l'informativa lo dice, e la frase e' segnata da validare."""
+    from django.urls import reverse
+    testo = client.get(reverse('core:privacy')).content.decode()
+    assert "Smistamento automatico dei file dell'ecocardiografia" in testo
+    assert 'intelligenza artificiale' in testo and 'ritaglia' in testo
+    assert 'da validare dal legale' in testo

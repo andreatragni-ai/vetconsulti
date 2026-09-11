@@ -151,7 +151,7 @@ CONSULTI_ORE_PRESA_IN_CARICO = int(os.environ.get('CONSULTI_ORE_PRESA_IN_CARICO'
 # Versione dei testi legali (core/templates/core/privacy.html e termini.html).
 # E' il valore che finisce in Consenso.versione: cambiare il testo vuol dire
 # cambiare la data qui, e da quel momento il consenso va richiesto di nuovo.
-VERSIONE_PRIVACY = '2026-09-02'
+VERSIONE_PRIVACY = '2026-09-12'
 VERSIONE_TERMINI = '2026-09-02'
 
 # Binario ffmpeg per la transcodifica delle clip eco. Se manca, eco.transcodifica

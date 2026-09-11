@@ -28,6 +28,25 @@ spunta. Le idee grosse hanno un file loro in `docs/`.
   dopo il passo 2 non blocca l'invio: il riepilogo lo segnala.
   Restano fuori: commenti con allegati; la pagina del refertatore con il
   visore piu' grande (passo successivo).
+  **Smistamento automatico dell'eco** (branch `feat/smistamento`, dal
+  collaudo dell'11/09: caricare riga per riga costava ~10 minuti). Fatto:
+  zona unica che prende la cartella intera dell'esame (o i file, su
+  iPad/iPhone), miniature fatte dal browser, smistamento per gradi
+  (formato; B-mode/color dai pixel; lettura AI delle miniature con Claude
+  Opus 5, structured output, «sconosciuto» invece di indovinare; ordine di
+  acquisizione; assegnazione una riga = un file) in un thread dopo il
+  commit, «tavolo di smistamento» con bollino sicuro / da verificare, i
+  file da smistare a parte, spostamento per trascinamento o «Sposta in...»,
+  e «Confermo lo smistamento» (nulla diventa ProiezioneCaricata prima);
+  protocollo stampabile delle proiezioni (`/eco/protocollo/`, anche PDF).
+  Da confermare ad Andre: (a) il modello e la spesa per esame (Opus 5,
+  stima $ 0,2-0,4 per 26 miniature; `CONSULTI_MODELLO_SMISTAMENTO` per
+  cambiarlo); (b) il taglio della fascia alta della miniatura prima
+  dell'invio (`CONSULTI_SMISTAMENTO_TAGLIO_ALTO`, oggi 8 %) per non
+  mandare nome del paziente e codice; (c) la frase nell'informativa
+  privacy sul fornitore AI (da far validare al legale); (d) cosa deve
+  fare il portale con i filmati che il browser non decodifica (AVI, WMV)
+  se sul server non c'e' ffmpeg: oggi restano da smistare a mano.
 - [2026-09-11] **F3 — Andre conferma le scelte della refertazione**
   (branch `feat/refertazione`, da provare su `runserver` con `seed_demo`):
   (a) blocco per tipo minimo — ECG solo rischio anestesiologico con le voci
@@ -47,6 +66,16 @@ spunta. Le idee grosse hanno un file loro in `docs/`.
 
 ## Prossimo
 
+- [2026-09-12] **Misurare davvero lo smistamento**: `manage.py
+  valuta_smistamento` e' pronto (banco di 26 immagini ecografiche vere del
+  catalogo, verita' dal catalogo, niente file del kit che hanno il nome
+  scritto dentro) ma la chiave in `~/.zshrc` e' rifiutata dall'API
+  (401 «API key is invalid», 11/09/2026). Con una chiave valida:
+  `ANTHROPIC_API_KEY=... venv/bin/python manage.py valuta_smistamento
+  --taglio 0 --json a.json` e poi `--taglio 0.08` e `--ordine protocollo`,
+  per avere accuratezza, confusioni, «sicuri» sbagliati, token e costo per
+  esame. Finche' non c'e' quel numero, lo smistamento AI resta da provare
+  sul campo.
 - [2026-09-11] Commenti con allegati sul caso (resto di F2).
 - [2026-09-11] vetway-ui 0.3.0: portare nel pacchetto i componenti nati
   in `static/consulti/css/consulti.css` per F2 (`.passi`, `.schede-scelta`,

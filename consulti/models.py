@@ -195,6 +195,30 @@ class Richiesta(models.Model):
         self.save(update_fields=['stato', 'motivo_rifiuto', 'chiusa_il'])
         self.registra('DECLINATA', utente, motivo=self.motivo_rifiuto)
 
+    def riassegna(self, refertatore, utente=None):
+        """Un caso declinato torna a chi l'ha chiesto, che lo gira a un altro
+        esperto: stesso codice, stessi allegati, di nuovo INVIATA. Il motivo
+        del rifiuto resta nell'audit. Una bozza di referto non firmata del
+        collega che ha declinato si butta: il nuovo esperto parte da zero."""
+        from . import regole
+        self._pretendi_stato(StatoRichiesta.DECLINATA)
+        motivo = regole.perche_non_puoi_riassegnare(self, refertatore)
+        if motivo:
+            raise TransizioneNonValida(motivo)
+        precedente = self.refertatore_id
+        bozza = getattr(self, 'referto', None)
+        if bozza is not None and not bozza.firmato:
+            bozza.delete()
+        self.refertatore = refertatore
+        self.stato = StatoRichiesta.INVIATA
+        self.inviata_il = timezone.now()
+        self.presa_in_carico_il = None
+        self.chiusa_il = None
+        self.motivo_rifiuto = ''
+        self.save(update_fields=['refertatore', 'stato', 'inviata_il', 'presa_in_carico_il', 'chiusa_il',
+                                 'motivo_rifiuto'])
+        self.registra('RIASSEGNATA', utente, da=precedente, refertatore=refertatore.id)
+
     def segna_non_refertabile(self, motivo, utente=None):
         self._pretendi_stato(StatoRichiesta.PRESA_IN_CARICO)
         if not (motivo or '').strip():
@@ -317,6 +341,22 @@ class Allegato(models.Model):
 
     def __str__(self):
         return f'{self.richiesta.codice} — {self.get_categoria_display()} — {self.nome_originale or self.file.name}'
+
+    @property
+    def genere(self):
+        """Come lo mostra il visore: 'pdf', 'immagine', 'video' o 'altro'
+        (quest'ultimo solo da scaricare). Prima il MIME dichiarato, poi
+        l'estensione del file salvato (la transcodifica cambia in .mp4)."""
+        mime = (self.mime or '').lower()
+        if not mime or mime == 'application/octet-stream':
+            mime = (mimetypes.guess_type(self.file.name or self.nome_originale or '')[0] or '').lower()
+        if mime == 'application/pdf':
+            return 'pdf'
+        if mime.startswith('image/') and mime not in ('image/tiff', 'image/x-tiff'):
+            return 'immagine'
+        if mime in ('video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'):
+            return 'video'
+        return 'altro'
 
     @classmethod
     def da_upload(cls, richiesta, file_caricato, categoria, utente=None):

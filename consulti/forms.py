@@ -75,3 +75,44 @@ class AllegatoForm(forms.Form):
                 f'Il file supera {settings.ALLEGATO_MAX_BYTE // (1024 * 1024)} MB: '
                 f'usa il caricamento a pezzi.')
         return f
+
+
+# ── Decisioni del refertatore ────────────────────────────────────────────────
+
+class DeclinaForm(forms.Form):
+    motivo = forms.CharField(
+        label='Motivo', widget=forms.Textarea(attrs={'rows': 3}), max_length=1000,
+        help_text='Lo legge il collega che ha chiesto: deve bastare per scegliere un altro esperto.')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _bootstrap(self)
+
+    def clean_motivo(self):
+        motivo = self.cleaned_data['motivo'].strip()
+        if len(motivo) < 3:
+            raise forms.ValidationError('Scrivi il motivo: lo legge chi ha chiesto.')
+        return motivo
+
+
+class NonRefertabileForm(forms.Form):
+    voce = forms.ChoiceField(label='Perche\' non e\' refertabile')
+    dettaglio = forms.CharField(
+        label='Dettaglio', required=False, widget=forms.Textarea(attrs={'rows': 3}), max_length=1000,
+        help_text='Cosa manca o cosa rifare: aiuta il collega a ripetere l\'esame.')
+
+    def __init__(self, *args, tipo_esame=None, **kwargs):
+        from .motivi import voci_non_refertabile
+        super().__init__(*args, **kwargs)
+        self.fields['voce'].choices = [('', '— scegli —')] + [(v, v) for v in voci_non_refertabile(tipo_esame)]
+        _bootstrap(self)
+
+    def clean(self):
+        from .motivi import ALTRO, motivo_non_refertabile
+        dati = super().clean()
+        voce = dati.get('voce')
+        if voce == ALTRO and not (dati.get('dettaglio') or '').strip():
+            self.add_error('dettaglio', 'Con «Altro» serve una frase di spiegazione.')
+        if voce:
+            dati['motivo'] = motivo_non_refertabile(voce, dati.get('dettaglio'))
+        return dati

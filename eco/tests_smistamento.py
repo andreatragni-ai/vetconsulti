@@ -526,3 +526,35 @@ def test_banco_esclude_l_immagine_del_file_e_la_riga_vera(monkeypatch):
         con_esemplare = [c for c in giuste if any(c in v for v in per_chiave.values())]
         escluse = set(per_file[nome]['esemplari_esclusi'])
         assert all(c in {x for chiave in escluse for x in per_chiave[chiave]} for c in con_esemplare), nome
+
+
+@pytest.mark.django_db
+def test_esemplari_dal_database_solo_se_accesi(settings, tmp_path):
+    """La funzione che il portale passa al lettore: prende la prima immagine
+    di riferimento di ogni riga attiva, e non fa nulla se sono spenti."""
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from eco.models import ImmagineRiferimento, ProiezioneCatalogo
+    from eco.smistamento import esemplari as modulo
+    from eco.smistamento.righe import da_catalogo
+
+    modulo._cache.clear()
+    p = ProiezioneCatalogo.objects.create(codice='DX1_B', nome='Asse lungo 4 camere — B-mode',
+                                          finestra='PARASTERNALE_DESTRA', tipo_media='CLIP', obbligatoria=True)
+    libera = ProiezioneCatalogo.objects.create(codice='LIBERO_1', nome='Filmato libero 1', tipo_media='CLIP',
+                                               libera=True)
+    ImmagineRiferimento.objects.create(proiezione=p, ordine=0, immagine=SimpleUploadedFile(
+        'rif.jpg', _fotogramma(), 'image/jpeg'))
+    ImmagineRiferimento.objects.create(proiezione=libera, ordine=0, immagine=SimpleUploadedFile(
+        'lib.jpg', _fotogramma(seme=3), 'image/jpeg'))
+    righe = da_catalogo([p, libera])
+
+    settings.CONSULTI_SMISTAMENTO_ESEMPLARI = False
+    assert modulo.da_settings(righe) == []
+
+    settings.CONSULTI_SMISTAMENTO_ESEMPLARI = True
+    settings.CONSULTI_SMISTAMENTO_ESEMPLARI_PX = 160
+    esemplari = modulo.da_settings(righe)
+    assert [e.codice for e in esemplari] == ['DX1_B']          # la riga libera non ha esemplare
+    assert esemplari[0].chiave.startswith('riferimento:') and 'B-mode' in esemplari[0].nome
+    assert max(Image.open(io.BytesIO(esemplari[0].dati)).size) == 160
+    assert 'senza colore' in esemplari[0].descrizione

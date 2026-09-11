@@ -102,3 +102,22 @@ def test_carica_catalogo_eco_accetta_una_didascalia_esplicita(tmp_path):
     call_command('carica_catalogo_eco', str(file), '--immagini', str(cartella))
     immagini = list(ProiezioneCatalogo.objects.get(codice='PVPA').immagini.order_by('ordine'))
     assert [i.didascalia for i in immagini] == ['Birettoni et al., JVC 2016', 'Schema']
+
+
+def test_filmati_del_catalogo_massimo_10_secondi():
+    """Un limite solo, ovunque compaia (collaudo dell'11/09/2026): ogni riga
+    CLIP del catalogo dice «massimo 10 secondi», nessuna «circa»."""
+    import json
+    from eco.management.commands.carica_catalogo_eco import CATALOGO_PREDEFINITO
+    with open(CATALOGO_PREDEFINITO, encoding='utf-8') as f:
+        righe = json.load(f)['righe']
+    filmati = [r for r in righe if r['tipo_media'] == 'CLIP']
+    assert len(filmati) == 14
+    assert all(r['istruzioni'].startswith('Filmato di massimo 10 secondi.') for r in filmati)
+    assert not any('circa' in r['istruzioni'] or 'decina' in r['istruzioni'] for r in righe)
+
+
+def test_testi_delle_zone_filmato_massimo_10_secondi():
+    from consulti.views_percorso import TESTI_ZONA
+    assert 'massimo 10 secondi' in TESTI_ZONA['CLIP'][2] and 'massimo 10 secondi' in TESTI_ZONA['ENTRAMBI'][2]
+    assert not any('circa' in t for testi in TESTI_ZONA.values() for t in testi)

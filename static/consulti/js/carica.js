@@ -171,7 +171,7 @@
     var limite = parseInt(form.dataset.maxByte || '0', 10);
     if (limite && eFilmato(file) && file.size > limite) {
       stato(form, 'Il filmato pesa ' + mb(file.size) + ' MB: il limite e\' ' + mb(limite) +
-            ' MB. Esporta un filmato piu\' breve (una decina di secondi) o in MP4.', true);
+            ' MB. Esporta un filmato piu\' breve (massimo 10 secondi) o in MP4.', true);
       return;
     }
     if (file.size > MAX_PEZZI) {

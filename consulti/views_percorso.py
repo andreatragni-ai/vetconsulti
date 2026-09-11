@@ -235,10 +235,10 @@ def _file_per_categorie(allegati, categorie):
 TESTI_ZONA = {
     # tipo_media -> (testo con il mouse, testo al tocco, sottotesto)
     'CLIP': ('Trascina qui il filmato', 'Tocca per scegliere il filmato',
-             'MP4, AVI, MOV o DICOM · circa 10 secondi'),
+             'MP4, AVI, MOV o DICOM · massimo 10 secondi'),
     'STATICA': ('Trascina qui l\'immagine', 'Tocca per scegliere l\'immagine', 'JPG, PNG o DICOM'),
     'ENTRAMBI': ('Trascina qui il filmato o l\'immagine', 'Tocca per scegliere il file',
-                 'Un file: filmato (circa 10 secondi) oppure immagine'),
+                 'Un file: filmato (massimo 10 secondi) oppure immagine'),
 }
 ATTESO = {'CLIP': ('camera-reels', 'Filmato'), 'STATICA': ('image', 'Immagine'),
           'ENTRAMBI': ('collection-play', 'Filmato o immagine')}

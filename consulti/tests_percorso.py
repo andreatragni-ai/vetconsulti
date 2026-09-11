@@ -468,7 +468,7 @@ def test_eco_clip_troppo_pesante_rifiutata_con_messaggio(loggato, bozza_eco, cat
     # A pezzi il rifiuto arriva gia' allo stato, prima di mandare i pezzi.
     stato = loggato.get(reverse('consulti:upload_stato', args=[bozza_eco.pk]), {
         'impronta': 'a' * 64, 'slot': 'proiezione', 'proiezione': p.pk, 'nome': 'lunga.mp4', 'dimensione': 5000})
-    assert stato.status_code == 400 and 'una decina di secondi' in stato.json()['errore']
+    assert stato.status_code == 400 and 'massimo 10 secondi' in stato.json()['errore']
     # Un'immagine non ha quel limite.
     assert _carica(loggato, bozza_eco, 'proiezione', _file('ok.png', PNG * 20),
                    proiezione=catalogo['pd_statica'].pk).status_code == 200
@@ -537,7 +537,7 @@ def test_eco_righe_per_finestra_filmati_prima_e_liberi_in_fondo(loggato, bozza_e
 
 def test_eco_riga_con_testi_e_immagini_di_riferimento(loggato, bozza_eco, catalogo):
     p = catalogo['pd_clip']
-    p.istruzioni, p.deve_essere_visibile = 'Filmato di circa 10 secondi.', 'Le quattro camere.'
+    p.istruzioni, p.deve_essere_visibile = 'Filmato di massimo 10 secondi.', 'Le quattro camere.'
     p.serve_per, p.nota_riferimento = 'Soglia IVS 0,6 cm.', 'APPUNTO SOLO ADMIN'
     p.save()
     for i, didascalia in enumerate(('Immagine ecografica', 'Schema', 'Posizione della sonda'), start=1):
@@ -546,7 +546,7 @@ def test_eco_riga_con_testi_e_immagini_di_riferimento(loggato, bozza_eco, catalo
     prima, *altre = list(p.immagini.all())
     pagina = _t(loggato.get(reverse('consulti:passo_carica', args=[bozza_eco.pk])))
     riga = pagina[pagina.index(f'id="proiezione_{p.pk}"'):pagina.index(f'id="proiezione_{catalogo["pd_statica"].pk}"')]
-    assert '<strong>Come:</strong> Filmato di circa 10 secondi.' in riga
+    assert '<strong>Come:</strong> Filmato di massimo 10 secondi.' in riga
     assert '<strong>Deve vedersi:</strong> Le quattro camere.' in riga
     assert '<summary>A cosa serve</summary>' in riga and 'Soglia IVS' in riga
     assert 'APPUNTO SOLO ADMIN' not in pagina

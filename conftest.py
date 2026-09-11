@@ -26,6 +26,13 @@ def _media_temporanea(settings, tmp_path):
     settings.MEDIA_ROOT = tmp_path / 'media'
 
 
+@pytest.fixture(autouse=True)
+def _password_veloci(settings):
+    """PBKDF2 costa ~0,2 s a utente: nei test non protegge niente e con le
+    fixture a cinque utenti la suite passava da 20 s a oltre un minuto."""
+    settings.PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
+
+
 @pytest.fixture
 def pdf_finto():
     with mock.patch('referti.pdf.genera_pdf', return_value=PDF_FINTO) as finto:

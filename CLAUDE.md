@@ -24,7 +24,7 @@ sessioni brevi: ogni sessione deve lasciare il repo in uno stato ripartibile.
     export DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib   # WeasyPrint sul Mac (vedi sotto)
     venv/bin/python manage.py migrate && venv/bin/python manage.py seed_demo
     venv/bin/python manage.py runserver 127.0.0.1:8770
-    venv/bin/python -m pytest          # ~30 s, deve essere verde prima di ogni commit
+    venv/bin/python -m pytest          # pochi secondi, deve essere verde prima di ogni commit
 
 `seed_demo` (solo DEBUG) crea listino, catalogo eco (se vuoto) e utenti:
 `admin/admin`, refertatori `rferrari` (ECG+Holter) e `lmonti` (eco),

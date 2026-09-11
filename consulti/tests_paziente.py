@@ -123,3 +123,51 @@ def test_data_di_nascita_si_rilegge_come_gg_mm_aaaa(loggato, mondo, crea_bozza):
     loggato.post(reverse('consulti:nuova'), {'nome': 'Birba', 'specie': 'CANE', 'sesso': 'F',
                                              'data_nascita': '1/2/2020'})
     assert 'value="01/02/2020"' in loggato.get(reverse('consulti:nuova')).content.decode()
+
+
+# ── Maiuscole automatiche su nome e cognome del proprietario ─────────────────
+
+@pytest.mark.parametrize('scritto, salvato', [
+    ('luna', 'Luna'),
+    ('rossi', 'Rossi'),
+    ('de simone', 'De Simone'),
+    ("d'amico", "D'Amico"),
+    ("dell’orto", "Dell’Orto"),          # apostrofo tipografico (iPhone)
+    ('rossi-bianchi', 'Rossi-Bianchi'),
+    ('McDonald', 'McDonald'),            # gia' misto: non si tocca
+    ('ROSSI', 'ROSSI'),                  # tutto maiuscolo: non si tocca
+    ('van der Berg', 'Van Der Berg'),    # parola per parola
+    ('  luna   bianca ', 'Luna Bianca'),
+    ('', ''),
+])
+def test_maiuscole_nome(scritto, salvato):
+    from consulti.nomi import maiuscole_nome
+    assert maiuscole_nome(scritto) == salvato
+
+
+def test_maiuscole_al_salvataggio_dal_passo_1(loggato, mondo, crea_bozza):
+    r = crea_bozza(loggato, 'ECG', mondo.ref, paziente={'nome': 'luna', 'cognome_proprietario': 'de simone'})
+    assert (r.paziente.nome, r.paziente.cognome_proprietario) == ('Luna', 'De Simone')
+    assert r.titolo.startswith('Luna · ')
+    # Correggendo la bozza dal passo 1.
+    loggato.post(reverse('consulti:passo_paziente', args=[r.pk]), {
+        'nome': 'stella', 'specie': 'CANE', 'sesso': 'F', 'cognome_proprietario': "d'amico"})
+    r.paziente.refresh_from_db()
+    assert (r.paziente.nome, r.paziente.cognome_proprietario) == ('Stella', "D'Amico")
+
+
+def test_maiuscole_gia_al_passo_2_prima_della_bozza(loggato):
+    loggato.post(reverse('consulti:nuova'), {'nome': 'birba', 'specie': 'GATTO', 'sesso': 'F',
+                                             'cognome_proprietario': 'mcdonald'})
+    assert loggato.session[percorso.SESSIONE_PAZIENTE]['nome'] == 'Birba'
+    assert loggato.session[percorso.SESSIONE_PAZIENTE]['cognome_proprietario'] == 'Mcdonald'
+    assert 'Birba <span class="codice-caso' in loggato.get(reverse('consulti:nuova_esame')).content.decode()
+
+
+def test_maiuscole_anche_fuori_dal_form(mondo):
+    """Paziente.save(): anche admin e seed_demo."""
+    from consulti.models import Paziente, Richiesta
+    r = Richiesta.objects.create(tipo_esame='ECG', richiedente=mondo.richiedente, clinica=mondo.clinica)
+    p = Paziente.objects.create(richiesta=r, nome='fido', cognome_proprietario='McDonald')
+    p.refresh_from_db()
+    assert (p.nome, p.cognome_proprietario) == ('Fido', 'McDonald')

@@ -302,6 +302,13 @@ class Paziente(models.Model):
     def __str__(self):
         return f'{self.nome} ({self.get_specie_display()}{", " + self.razza if self.razza else ""})'
 
+    def save(self, *args, **kwargs):
+        # «luna» -> «Luna», «de simone» -> «De Simone»; «McDonald» resta com'e' (consulti/nomi.py).
+        from .nomi import maiuscole_nome
+        self.nome = maiuscole_nome(self.nome)
+        self.cognome_proprietario = maiuscole_nome(self.cognome_proprietario)
+        super().save(*args, **kwargs)
+
 
 class CategoriaAllegato(models.TextChoices):
     ECG_PDF = 'ECG_PDF', 'Tracciato ECG (PDF)'

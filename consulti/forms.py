@@ -6,6 +6,7 @@ from django import forms
 from accounts.models import Refertatore
 from core.tipi import TipoEsame
 from . import razze
+from .nomi import maiuscole_nome
 from .models import Paziente, Richiesta, Sesso, Specie
 
 
@@ -44,7 +45,8 @@ class PazienteForm(forms.ModelForm):
     """Solo nome, specie e sesso sono obbligatori. L'eta' si da' come data di
     nascita oppure come anni (in `eta_testo`, «8 anni»), non entrambe. La
     razza si sceglie dall'elenco della specie (consulti/razze.py) scrivendo
-    per filtrare; una razza fuori elenco si accetta com'e'."""
+    per filtrare; una razza fuori elenco si accetta com'e'. Nome e cognome
+    del proprietario prendono le maiuscole (consulti/nomi.py)."""
 
     # Gli elenchi per il JS del campo razza: {{ form.elenchi_razze|json_script:... }}.
     elenchi_razze = razze.RAZZE
@@ -101,6 +103,14 @@ class PazienteForm(forms.ModelForm):
             corrisponde = ETA_IN_ANNI.match(self.instance.eta_testo or '')
             if corrisponde:
                 self.initial['eta_anni'] = int(corrisponde.group(1))
+
+    # Maiuscole gia' qui (e di nuovo in Paziente.save): il passo 2 mostra il
+    # nome giusto anche prima che la bozza esista.
+    def clean_nome(self):
+        return maiuscole_nome(self.cleaned_data.get('nome'))
+
+    def clean_cognome_proprietario(self):
+        return maiuscole_nome(self.cleaned_data.get('cognome_proprietario'))
 
     def clean_data_nascita(self):
         from datetime import date

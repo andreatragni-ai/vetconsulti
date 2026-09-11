@@ -5,6 +5,7 @@ from django import forms
 
 from accounts.models import Refertatore
 from core.tipi import TipoEsame
+from . import razze
 from .models import Paziente, Richiesta, Sesso, Specie
 
 
@@ -34,7 +35,12 @@ def _eta_testo(anni):
 
 class PazienteForm(forms.ModelForm):
     """Solo nome, specie e sesso sono obbligatori. L'eta' si da' come data di
-    nascita oppure come anni (in `eta_testo`, «8 anni»), non entrambe."""
+    nascita oppure come anni (in `eta_testo`, «8 anni»), non entrambe. La
+    razza si sceglie dall'elenco della specie (consulti/razze.py) scrivendo
+    per filtrare; una razza fuori elenco si accetta com'e'."""
+
+    # Gli elenchi per il JS del campo razza: {{ form.elenchi_razze|json_script:... }}.
+    elenchi_razze = razze.RAZZE
 
     specie = forms.ChoiceField(
         label='Specie', choices=Specie.choices, widget=forms.RadioSelect,
@@ -66,6 +72,12 @@ class PazienteForm(forms.ModelForm):
         widgets = {
             'data_nascita': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
             'nome': forms.TextInput(attrs={'autocomplete': 'off'}),
+            # Combobox ARIA 1.2 (static/consulti/js/elenco_filtrato.js): l'elenco
+            # e' quello della specie scelta, id dei dati e dei radio qui.
+            'razza': forms.TextInput(attrs={
+                'autocomplete': 'off', 'spellcheck': 'false', 'role': 'combobox', 'aria-autocomplete': 'list',
+                'aria-expanded': 'false', 'aria-controls': 'razza-elenco', 'data-elenco-filtrato': 'razze-per-specie',
+                'data-chiave-da': 'specie', 'data-avviso': 'razza-avviso'}),
         }
         error_messages = {'nome': {'required': 'Scrivi il nome del paziente.'}}
 
@@ -90,6 +102,8 @@ class PazienteForm(forms.ModelForm):
         dati = super().clean()
         if dati.get('data_nascita') and dati.get('eta_anni') is not None:
             self.add_error('eta_anni', 'Basta una delle due: la data di nascita oppure l\'eta\'.')
+        # Scritta come nell'elenco della specie se c'e' («maine coon» -> «Maine Coon»), altrimenti com'e'.
+        dati['razza'] = razze.normalizza(dati.get('specie'), dati.get('razza'))
         return dati
 
     def save(self, commit=True):

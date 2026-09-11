@@ -65,6 +65,22 @@ def _grezzi(post, campi):
     return {c: post.get(c) for c in campi if post.get(c) not in (None, '')}
 
 
+# Testi che il form ripulisce (razza come nell'elenco, maiuscole sui nomi):
+# in sessione vanno gia' puliti, cosi' il passo 2 e il ritorno al passo 1 li
+# mostrano come verranno salvati.
+TESTI_PULITI = ('nome', 'razza', 'cognome_proprietario')
+
+
+def _paziente_in_sessione(form, post):
+    grezzi = _grezzi(post, CAMPI_PAZIENTE)
+    for campo in TESTI_PULITI:
+        if form.cleaned_data.get(campo):
+            grezzi[campo] = form.cleaned_data[campo]
+        else:
+            grezzi.pop(campo, None)
+    return grezzi
+
+
 def _tipi(form):
     scelto = form['tipo_esame'].value()
     return [{**t, 'etichetta': TipoEsame(t['valore']).label, 'scelto': scelto == t['valore']} for t in TIPI]
@@ -101,7 +117,7 @@ def nuova_paziente(request):
     if request.method == 'POST':
         form = PazienteForm(request.POST)
         if form.is_valid():
-            request.session[percorso.SESSIONE_PAZIENTE] = _grezzi(request.POST, CAMPI_PAZIENTE)
+            request.session[percorso.SESSIONE_PAZIENTE] = _paziente_in_sessione(form, request.POST)
             return redirect('consulti:nuova_esame')
     else:
         form = PazienteForm(initial=salvati or {})

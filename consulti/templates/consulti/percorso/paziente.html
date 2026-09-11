@@ -3,7 +3,9 @@
 Passo 1 della richiesta guidata: il paziente (consulti/views_percorso.py:
 nuova_paziente per una richiesta nuova, passo_paziente per una bozza).
 Obbligatori solo nome, specie (cane o gatto) e sesso; l'eta' e' la data
-di nascita OPPURE gli anni.
+di nascita OPPURE gli anni. La razza e' un elenco filtrato che cambia con
+la specie (consulti/razze.py, static/consulti/js/elenco_filtrato.js): una
+razza fuori elenco si accetta, con un avviso discreto.
 {% endcomment %}
 {% block title %}{% if richiesta %}{{ richiesta.titolo }} · paziente{% else %}Nuova richiesta{% endif %} — VetWay Consulti{% endblock %}
 {% block content %}
@@ -25,7 +27,17 @@ di nascita OPPURE gli anni.
         {% for e in form.specie.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
       </fieldset>
     </div>
-    <div class="col-md-4">{% include "_campo_form.html" with campo=form.razza %}</div>
+    <div class="col-md-4">
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.razza.id_for_label }}">{{ form.razza.label }}</label>
+        <div class="elenco-filtrato">
+          {{ form.razza }}
+          <ul class="elenco-filtrato-voci" id="razza-elenco" role="listbox" aria-label="Razze" hidden></ul>
+        </div>
+        <div class="form-text elenco-filtrato-avviso" id="razza-avviso" hidden><i class="bi bi-info-circle me-1" aria-hidden="true"></i>Non e' nell'elenco: va bene lo stesso, resta come l'hai scritta.</div>
+        {% for e in form.razza.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+    </div>
     <div class="col-md-4">{% include "_campo_form.html" with campo=form.sesso %}</div>
     <div class="col-md-4">{% include "_campo_form.html" with campo=form.peso_kg %}</div>
   </div>
@@ -51,4 +63,8 @@ di nascita OPPURE gli anni.
   </div>
 </div>
 </form>
+{{ form.elenchi_razze|json_script:"razze-per-specie" }}
+{% endblock %}
+{% block js %}{% load static %}
+<script src="{% static 'consulti/js/elenco_filtrato.js' %}"></script>
 {% endblock %}

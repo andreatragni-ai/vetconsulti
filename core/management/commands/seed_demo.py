@@ -224,7 +224,7 @@ class Command(BaseCommand):
             anamnesi='Nessun sintomo riferito. Soffio non rilevato. Esami del sangue nella norma.',
             terapia='Nessuna.')
         self._caso(richiedente, 'lmonti', TipoEsame.ECO, DEMO_ECO, self._allegati_eco, {
-            'nome': 'Luna', 'specie': Specie.GATTO, 'razza': 'Europeo', 'sesso': Sesso.FS,
+            'nome': 'Luna', 'specie': Specie.GATTO, 'razza': 'Comune Europeo', 'sesso': Sesso.FS,
             'eta_testo': '11 anni', 'peso_kg': Decimal('4.20'), 'cognome_proprietario': 'Esempio',
         }, quesito='Soffio sistolico 3/6 di recente riscontro: cardiomiopatia? Serve terapia?',
             anamnesi='Gatta di casa, asintomatica. Pressione sistolica 150 mmHg.',

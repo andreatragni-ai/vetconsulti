@@ -620,3 +620,34 @@ a.riferimento:hover, a.riferimento:focus-visible { outline: 3px solid var(--ovic
 .consulti-footer a { color: var(--bs-white); opacity: .75; }
 .consulti-footer a:hover { opacity: 1; }
 .consulti-footer strong { color: var(--bs-white); opacity: .85; }
+
+/* ── Elenco filtrato (razza nel passo 1): combobox con listbox sotto il campo.
+   Generico, candidato per vetway-ui 0.3.0 (static/consulti/js/elenco_filtrato.js). ── */
+.elenco-filtrato { position: relative; }
+.elenco-filtrato-voci {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  max-height: 16rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: .25rem 0;
+  list-style: none;
+  background: var(--bs-body-bg);
+  border: 1px solid var(--ovic-bordo);
+  border-radius: 6px;
+  box-shadow: var(--bs-box-shadow);
+}
+.elenco-filtrato-voci [role="option"] { padding: .4rem .75rem; cursor: pointer; }
+.elenco-filtrato-voci [role="option"]:hover,
+.elenco-filtrato-voci [role="option"][aria-selected="true"] {
+  background: var(--ovic-grigio);
+  background: color-mix(in srgb, var(--ovic-oro) 14%, var(--bs-body-bg));
+  color: var(--ovic-testo);
+}
+.elenco-filtrato-avviso { color: var(--bs-secondary-color); }
+@media (max-width: 767.98px) {
+  .elenco-filtrato-voci [role="option"] { min-height: 44px; display: flex; align-items: center; }
+}

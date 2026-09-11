@@ -2,8 +2,8 @@
 {% comment %}
 Passo 1 della richiesta guidata: il paziente (consulti/views_percorso.py:
 nuova_paziente per una richiesta nuova, passo_paziente per una bozza).
-Obbligatori solo nome, specie e sesso; l'eta' e' la data di nascita
-OPPURE gli anni. «Quale specie?» compare solo con Altro.
+Obbligatori solo nome, specie (cane o gatto) e sesso; l'eta' e' la data
+di nascita OPPURE gli anni.
 {% endcomment %}
 {% block title %}{% if richiesta %}{{ richiesta.titolo }} · paziente{% else %}Nuova richiesta{% endif %} — VetWay Consulti{% endblock %}
 {% block content %}
@@ -24,7 +24,6 @@ OPPURE gli anni. «Quale specie?» compare solo con Altro.
         </div>
         {% for e in form.specie.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
       </fieldset>
-      <div id="blocco-specie-altro"{% if form.specie.value != 'ALTRO' %} hidden{% endif %}>{% include "_campo_form.html" with campo=form.specie_altro %}</div>
     </div>
     <div class="col-md-4">{% include "_campo_form.html" with campo=form.razza %}</div>
     <div class="col-md-4">{% include "_campo_form.html" with campo=form.sesso %}</div>
@@ -52,15 +51,4 @@ OPPURE gli anni. «Quale specie?» compare solo con Altro.
   </div>
 </div>
 </form>
-{% endblock %}
-{% block js %}
-<script>
-(function () {
-  // «Quale specie?» solo con Altro.
-  var blocco = document.getElementById('blocco-specie-altro');
-  document.getElementById('form-paziente').addEventListener('change', function (e) {
-    if (e.target.name === 'specie') blocco.hidden = e.target.value !== 'ALTRO';
-  });
-})();
-</script>
 {% endblock %}

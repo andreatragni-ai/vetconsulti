@@ -68,7 +68,7 @@ I colori letterali qui sono ammessi: e' carta, non UI (vetway-ui non arriva in u
 <table class="dati">
   <tr><td class="k">Nome</td><td>{{ paziente.nome|default:"—" }}</td>
       <td class="k">Proprietario</td><td>{{ paziente.cognome_proprietario|default:"—" }}</td></tr>
-  <tr><td class="k">Specie / razza</td><td>{% if paziente.specie == 'ALTRO' %}{{ paziente.specie_altro }}{% else %}{{ paziente.get_specie_display }}{% endif %}{% if paziente.razza %}, {{ paziente.razza }}{% endif %}</td>
+  <tr><td class="k">Specie / razza</td><td>{{ paziente.get_specie_display }}{% if paziente.razza %}, {{ paziente.razza }}{% endif %}</td>
       <td class="k">Sesso</td><td>{{ paziente.get_sesso_display|default:"—" }}</td></tr>
   <tr><td class="k">Eta'</td><td>{% if paziente.data_nascita %}nato il {{ paziente.data_nascita|date:"d/m/Y" }}{% else %}{{ paziente.eta_testo|default:"—" }}{% endif %}</td>
       <td class="k">Peso</td><td>{% if paziente.peso_kg %}{{ paziente.peso_kg }} kg{% else %}—{% endif %}</td></tr>

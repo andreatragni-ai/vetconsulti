@@ -4,4 +4,4 @@ paziente, come lo ricorda un veterinario, con il codice piccolo sotto.
 Contesto: r (Richiesta con paziente), url_caso.
 {% endcomment %}
 <a href="{{ url_caso }}"><strong>{{ r.paziente.nome|default:r.codice }}</strong></a>{% if r.urgenza %} <i class="bi bi-lightning-fill text-danger" title="Urgenza"></i><span class="visually-hidden">urgente</span>{% endif %}
-<br><span class="codice-caso">{{ r.codice }}{% if r.paziente %} · {% if r.paziente.specie == 'ALTRO' and r.paziente.specie_altro %}{{ r.paziente.specie_altro }}{% else %}{{ r.paziente.get_specie_display }}{% endif %}{% if r.paziente.razza %}, {{ r.paziente.razza }}{% endif %}{% endif %}</span>
+<br><span class="codice-caso">{{ r.codice }}{% if r.paziente %} · {{ r.paziente.get_specie_display }}{% if r.paziente.razza %}, {{ r.paziente.razza }}{% endif %}{% endif %}</span>

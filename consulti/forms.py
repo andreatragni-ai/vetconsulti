@@ -38,7 +38,8 @@ class PazienteForm(forms.ModelForm):
 
     specie = forms.ChoiceField(
         label='Specie', choices=Specie.choices, widget=forms.RadioSelect,
-        error_messages={'required': 'Scegli la specie.'})
+        error_messages={'required': 'Scegli la specie.', 'invalid_choice': 'Il portale referta cani e gatti: '
+                                                                             'scegli una delle due specie.'})
     sesso = forms.ChoiceField(
         label='Sesso', choices=[('', 'Scegli...')] + list(Sesso.choices),
         error_messages={'required': 'Scegli il sesso (anche «Non noto»).'})
@@ -51,11 +52,9 @@ class PazienteForm(forms.ModelForm):
 
     class Meta:
         model = Paziente
-        fields = ['nome', 'specie', 'specie_altro', 'razza', 'sesso', 'data_nascita', 'peso_kg',
-                  'cognome_proprietario']
+        fields = ['nome', 'specie', 'razza', 'sesso', 'data_nascita', 'peso_kg', 'cognome_proprietario']
         labels = {
             'nome': 'Nome del paziente',
-            'specie_altro': 'Quale specie?',
             'razza': 'Razza',
             'data_nascita': 'Data di nascita',
             'cognome_proprietario': 'Cognome del proprietario',
@@ -67,7 +66,6 @@ class PazienteForm(forms.ModelForm):
         widgets = {
             'data_nascita': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
             'nome': forms.TextInput(attrs={'autocomplete': 'off'}),
-            'specie_altro': forms.TextInput(attrs={'placeholder': 'es. coniglio, furetto'}),
         }
         error_messages = {'nome': {'required': 'Scrivi il nome del paziente.'}}
 
@@ -92,8 +90,6 @@ class PazienteForm(forms.ModelForm):
         dati = super().clean()
         if dati.get('data_nascita') and dati.get('eta_anni') is not None:
             self.add_error('eta_anni', 'Basta una delle due: la data di nascita oppure l\'eta\'.')
-        if dati.get('specie') != Specie.ALTRO:
-            dati['specie_altro'] = ''
         return dati
 
     def save(self, commit=True):

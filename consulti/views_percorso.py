@@ -23,8 +23,7 @@ from . import caricamento, percorso, regole, upload_chunk
 from .forms import EsameForm, PazienteForm
 from .permessi import caso_del_richiedente
 
-CAMPI_PAZIENTE = ('nome', 'specie', 'specie_altro', 'razza', 'sesso', 'data_nascita', 'eta_anni', 'peso_kg',
-                  'cognome_proprietario')
+CAMPI_PAZIENTE = ('nome', 'specie', 'razza', 'sesso', 'data_nascita', 'eta_anni', 'peso_kg', 'cognome_proprietario')
 CAMPI_ESAME = ('tipo_esame', 'refertatore', 'urgenza', 'quesito', 'anamnesi', 'terapia')
 
 # Cosa servira' caricare, per le schede del tipo di esame (passo 2).

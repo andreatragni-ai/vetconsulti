@@ -23,7 +23,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 
 from accounts.models import Refertatore
-from . import caricamento, percorso, upload_chunk
+from . import caricamento, percorso, regole, upload_chunk
 from .models import Allegato, Richiesta, StatoRichiesta, TransizioneNonValida
 from .permessi import caso_del_richiedente, e_refertatore_assegnato, registra_accesso_staff
 from .racconto import racconta
@@ -110,6 +110,8 @@ def dettaglio(request, pk):
         'esperti': (percorso.esperti_con_prezzo(richiesta.tipo_esame, richiesta.urgenza)
                     if e_richiedente and richiesta.stato == StatoRichiesta.DECLINATA else []),
         'puo_annullare': e_richiedente and richiesta.stato in (StatoRichiesta.BOZZA, StatoRichiesta.INVIATA),
+        'ore_risposta': regole.ore_risposta(richiesta) if richiesta.refertatore_id else None,
+        'scadenza': regole.scadenza(richiesta),
     })
 
 

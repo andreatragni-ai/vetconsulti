@@ -15,8 +15,6 @@ Salvare e firmare sono rotte DIVERSE: `salva_bozza` non cambia mai lo stato,
 prima di mandare la conferma).
 """
 
-from datetime import timedelta
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse
@@ -78,8 +76,8 @@ def refertazione(request, pk):
         form = RefertoForm(instance=referto)
     versioni = list(referto.versioni.all()) if referto else []
     voci, iniziale = _voci_visore(richiesta)
-    ore = regole.ore_risposta_dichiarate(richiesta)
-    scadenza = richiesta.inviata_il + timedelta(hours=ore) if richiesta.inviata_il else None
+    ore = regole.ore_risposta(richiesta)   # 4 se urgente
+    scadenza = regole.scadenza(richiesta)
     return render(request, 'referti/refertazione.html', {
         'richiesta': richiesta,
         'referto': referto,
@@ -91,7 +89,7 @@ def refertazione(request, pk):
         'rettifica_in_corso': bool(referto and referto.firmato and referto.modificato_dopo_la_firma()),
         'voci_visore': voci,
         'iniziale': iniziale,
-        'ore_dichiarate': ore,
+        'ore_risposta': ore,
         'scadenza': scadenza,
         'form_declina': DeclinaForm(),
         'frasi_declina': _frasi_declina(richiesta.refertatore),

@@ -94,10 +94,12 @@ def _contesto_esperti(form):
     if isinstance(urgenza, str):
         urgenza = urgenza in ('on', 'true', '1', 'True')
     selezionato = form['refertatore'].value()
+    esperti = percorso.esperti_con_prezzo(tipo, bool(urgenza)) if tipo in TipoEsame.values else []
     return {
         'tipo_scelto': tipo if tipo in TipoEsame.values else '',
         'tipo_label': TipoEsame(tipo).label.lower() if tipo in TipoEsame.values else '',
-        'esperti': percorso.esperti_con_prezzo(tipo, bool(urgenza)) if tipo in TipoEsame.values else [],
+        'esperti': esperti, 'urgenza': bool(urgenza),
+        'nessuno_per_urgenza': bool(urgenza and esperti and not any(e['accetta_urgenze'] for e in esperti)),
         'selezionato': str(selezionato or ''),
     }
 
@@ -220,9 +222,11 @@ def esperti(request):
     if tipo not in TipoEsame.values:
         raise Http404
     urgenza = request.GET.get('urgenza') in ('on', 'true', '1')
+    esperti = percorso.esperti_con_prezzo(tipo, urgenza)
     return render(request, 'consulti/percorso/_esperti.html', {
-        'esperti': percorso.esperti_con_prezzo(tipo, urgenza), 'selezionato': request.GET.get('refertatore', ''),
-        'tipo_scelto': tipo, 'tipo_label': TipoEsame(tipo).label.lower(),
+        'esperti': esperti, 'selezionato': request.GET.get('refertatore', ''),
+        'tipo_scelto': tipo, 'tipo_label': TipoEsame(tipo).label.lower(), 'urgenza': urgenza,
+        'nessuno_per_urgenza': bool(urgenza and esperti and not any(e['accetta_urgenze'] for e in esperti)),
     })
 
 
@@ -394,5 +398,5 @@ def passo_riepilogo(request, pk):
         'prezzo': prezzo, 'motivo_blocco': motivo,
         'url_correggi': percorso.url_passo(richiesta, passo) if motivo and passo < 4 else None,
         'allegati': _allegati_in_ordine(richiesta),
-        'ore_risposta': regole.ore_risposta_dichiarate(richiesta) if richiesta.refertatore_id else None,
+        'ore_risposta': regole.ore_risposta(richiesta) if richiesta.refertatore_id else None,
     })

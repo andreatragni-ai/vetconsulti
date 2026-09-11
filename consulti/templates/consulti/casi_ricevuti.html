@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% comment %}
 Casi ricevuti dal refertatore (consulti/views_decisione.py:casi_ricevuti).
-Contesto: aperti / chiusi = [{richiesta, eta, ore_dichiarate, scadenza,
-in_ritardo}], da_decidere (quanti INVIATA). Aperti: urgenti in cima, poi
+Contesto: aperti / chiusi = [{richiesta, eta, ore_risposta, scadenza,
+in_ritardo}] (ore e scadenza da consulti.regole: 4 ore se urgente), da_decidere (quanti INVIATA). Aperti: urgenti in cima, poi
 quelli da decidere, poi dal piu' vecchio.
 {% endcomment %}
 {% block title %}Casi ricevuti — VetWay Consulti{% endblock %}
@@ -14,7 +14,7 @@ quelli da decidere, poi dal piu' vecchio.
 
 <div class="ovic-card"><div class="card-header-ovic">Da lavorare</div><div class="table-responsive">
 <table class="tbl-risultati align-middle">
-  <thead><tr><th>Paziente</th><th>Esame</th><th>Da</th><th>Stato</th><th>Inviato</th><th>Risposta dichiarata</th><th></th></tr></thead>
+  <thead><tr><th>Paziente</th><th>Esame</th><th>Da</th><th>Stato</th><th>Inviato</th><th>Risposta entro</th><th></th></tr></thead>
   <tbody>
   {% for riga in aperti %}{% with r=riga.richiesta %}
     {% url 'referti:refertazione' r.pk as url_caso %}
@@ -24,7 +24,7 @@ quelli da decidere, poi dal piu' vecchio.
       <td>{{ r.richiedente.user.get_full_name }}<br><span class="text-muted small">{{ r.intestatario.denominazione }}{% if not r.clinica_id %} (lib. prof.){% endif %}</span></td>
       <td><span class="pill-stato{% if r.tono_stato %} pill-stato--{{ r.tono_stato }}{% endif %}">{{ r.get_stato_display }}</span></td>
       <td class="num-tab">da {{ riga.eta }}<br><span class="text-muted small">{{ r.inviata_il|date:"d/m H:i" }}</span></td>
-      <td class="num-tab{% if riga.in_ritardo %} caso-in-ritardo{% endif %}">{{ riga.ore_dichiarate }} h<br><span class="small">{% if riga.in_ritardo %}scaduta il{% else %}entro il{% endif %} {{ riga.scadenza|date:"d/m H:i" }}</span></td>
+      <td class="num-tab{% if riga.in_ritardo %} caso-in-ritardo{% endif %}">{{ riga.ore_risposta }} h{% if r.urgenza %} <span class="small">(urgente)</span>{% endif %}<br><span class="small">{% if riga.in_ritardo %}scaduta il{% else %}entro il{% endif %} {{ riga.scadenza|date:"d/m H:i" }}</span></td>
       <td class="td-kebab"><a class="btn-sel" href="{% url 'referti:refertazione' r.pk %}">{% if r.stato == 'INVIATA' %}Decidi{% else %}Referta{% endif %}</a></td>
     </tr>
   {% endwith %}{% empty %}

@@ -103,18 +103,20 @@ class Command(BaseCommand):
 
     def _refertatori(self):
         # Due profili diversi apposta: serve a vedere che l'elenco degli
-        # esperti cambia in base al tipo di esame scelto.
+        # esperti cambia in base al tipo di esame scelto. (referente, prezzo,
+        # ore, accetta urgenze): rferrari accetta le urgenze per l'ECG ma non
+        # per l'Holter, cosi' con «Urgente» acceso si vede «Non accetta urgenze».
         persone = [
             ('rferrari', 'Roberto', 'Ferrari', 'Dott.', 'Cardiologia',
              '1234', 'Bergamo',
-             {TipoEsame.ECG: (True, None, 24),
-              TipoEsame.HOLTER: (True, Decimal('110.00'), 48),
-              TipoEsame.ECO: (False, None, None)}),
+             {TipoEsame.ECG: (True, None, 24, True),
+              TipoEsame.HOLTER: (True, Decimal('110.00'), 48, False),
+              TipoEsame.ECO: (False, None, None, False)}),
             ('lmonti', 'Laura', 'Monti', 'Dott.ssa', 'Ecocardiografia',
              '5678', 'Milano',
-             {TipoEsame.ECG: (False, None, None),
-              TipoEsame.HOLTER: (False, None, None),
-              TipoEsame.ECO: (True, Decimal('85.00'), 24)}),
+             {TipoEsame.ECG: (False, None, None, False),
+              TipoEsame.HOLTER: (False, None, None, False),
+              TipoEsame.ECO: (True, Decimal('85.00'), 24, True)}),
         ]
         for (username, nome, cognome, titolo, spec, iscrizione, ordine,
              competenze) in persone:
@@ -130,13 +132,14 @@ class Command(BaseCommand):
                           'numero_iscrizione': iscrizione,
                           'ordine_provinciale': ordine, 'attivo': True,
                           'soggetto_emittente': SoggettoEmittente.SOCIETA})
-            for tipo, (referente, prezzo, ore) in competenze.items():
+            for tipo, (referente, prezzo, ore, urgenze) in competenze.items():
                 CompetenzaRefertatore.objects.update_or_create(
                     refertatore=refertatore, tipo_esame=tipo,
                     defaults={'referente': referente,
                               'prezzo_personalizzato': prezzo,
-                              'tempo_risposta_ore': ore})
-            quali = ', '.join(t for t, (r, _p, _o) in competenze.items() if r)
+                              'tempo_risposta_ore': ore,
+                              'accetta_urgenze': urgenze})
+            quali = ', '.join(t for t, (r, _p, _o, _u) in competenze.items() if r)
             self.stdout.write(f'Refertatore {username}: referente per {quali}.')
 
     # ── Richiedenti ──────────────────────────────────────────────────

@@ -8,11 +8,12 @@ Sorveglianza dei casi aperti (cron, ogni ora). Due compiti:
    l'avviso del rilascio.
 
 2. **Sollecito a meta' tempo.** Per ogni caso INVIATA o PRESA_IN_CARICO,
-   passata la meta' del tempo di risposta dichiarato dall'esperto
-   (`regole.ore_risposta_dichiarate`: la competenza, altrimenti 48 ore, 4 per
-   un'urgenza) parte UN promemoria. Idempotente: il promemoria lascia un
-   evento SOLLECITO nell'audit e non si ripete finche' il caso non viene
-   rinviato (una riassegnazione riparte da zero, con il nuovo esperto).
+   passata la meta' del tempo di risposta (`regole.ore_risposta`: 4 ore per un
+   caso urgente, quindi il promemoria dopo 2; altrimenti le ore dichiarate
+   dall'esperto, 48 se non le ha dette) parte UN promemoria. Idempotente:
+   il promemoria lascia un evento SOLLECITO nell'audit e non si ripete
+   finche' il caso non viene rinviato (una riassegnazione riparte da zero,
+   con il nuovo esperto).
 
 `--prova` mostra cosa farebbe senza toccare nulla e senza inviare email.
 """
@@ -73,7 +74,7 @@ class Command(BaseCommand):
                   .exclude(pk__in=escludi).select_related('refertatore__user'))
         quanti = 0
         for r in aperte:
-            ore = regole.ore_risposta_dichiarate(r)
+            ore = regole.ore_risposta(r)
             meta = r.inviata_il + timedelta(hours=ore / 2)
             if adesso < meta or sollecito_gia_partito(r):
                 continue

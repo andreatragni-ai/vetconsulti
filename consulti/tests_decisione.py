@@ -246,12 +246,15 @@ def test_solo_refertatore_va_ai_casi_ricevuti(client, mondo):
     assert risp.status_code == 302 and risp.url == reverse('consulti:casi_ricevuti')
 
 
-def test_ore_risposta_dichiarate(caso_inviato, mondo):
-    assert regole.ore_risposta_dichiarate(caso_inviato) == 24          # dalla competenza
-    caso_inviato.refertatore = mondo.ref2
-    assert regole.ore_risposta_dichiarate(caso_inviato) == 48          # non dichiarato
+def test_ore_risposta(caso_inviato, mondo):
+    assert regole.ore_risposta(caso_inviato) == 24          # dalla competenza
     caso_inviato.urgenza = True
-    assert regole.ore_risposta_dichiarate(caso_inviato) == 4           # urgenza non dichiarata
+    assert regole.ore_risposta(caso_inviato) == 4           # urgente: 4 ore anche se l'esperto ne dichiara 24
+    caso_inviato.urgenza = False
+    caso_inviato.refertatore = mondo.ref2
+    assert regole.ore_risposta(caso_inviato) == 48          # non dichiarato
+    caso_inviato.urgenza = True
+    assert regole.ore_risposta(caso_inviato) == 4
 
 
 # ── Racconto dell'audit ──────────────────────────────────────────────────────

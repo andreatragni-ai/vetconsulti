@@ -7,9 +7,20 @@ la usa la pagina della richiesta per mostrare cosa manca PRIMA che l'utente
 prema il bottone. `perche_non_puoi_riassegnare` fa lo stesso per un caso
 declinato che il richiedente gira a un altro esperto.
 
-`ore_risposta_dichiarate` e' il tempo di risposta che l'esperto ha promesso
-per quel tipo: lo mostra l'elenco dei casi ricevuti e lo usa
-`sorveglia_consulti` per il sollecito a meta' tempo.
+`ore_risposta` e' il tempo entro cui il caso aspetta risposta: per un caso
+URGENTE sempre 4 ore (ORE_RISPOSTA_URGENZA, quelle del supplemento pagato),
+altrimenti cio' che l'esperto ha dichiarato per quel tipo (48 se non l'ha
+detto). `scadenza` ne ricava l'ora. Li usano la pagina di refertazione,
+l'elenco dei casi ricevuti, l'email «caso arrivato» e `sorveglia_consulti`
+per il sollecito a meta' tempo (2 ore per un urgente).
+
+## Urgenze solo a chi le accetta
+
+`rifiuta_urgenza` dice perche' un caso urgente non puo' andare a un
+esperto che non accetta urgenze per quel tipo
+(CompetenzaRefertatore.accetta_urgenze): la stessa frase ferma il form del
+passo 2, l'invio (`perche_non_puoi_inviare`) e la riassegnazione di un caso
+declinato (`perche_non_puoi_riassegnare`).
 
 ## Una regola sola per la frase e per la lista
 
@@ -21,6 +32,7 @@ legge. Aggiungere un requisito qui lo aggiunge in entrambi i posti.
 """
 
 from dataclasses import dataclass
+from datetime import timedelta
 
 from core.tipi import TipoEsame
 from .models import CategoriaAllegato, StatoRichiesta
@@ -96,7 +108,20 @@ def perche_non_puoi_inviare(richiesta):
     if not richiesta.refertatore.referta(richiesta.tipo_esame):
         return (f'{richiesta.refertatore} non e\' referente per '
                 f'{richiesta.get_tipo_esame_display()}: scegli un altro collega.')
+    motivo = rifiuta_urgenza(richiesta.refertatore, richiesta.tipo_esame, richiesta.urgenza)
+    if motivo:
+        return motivo
     return frase_mancanti(allegati_mancanti(richiesta))
+
+
+def rifiuta_urgenza(refertatore, tipo_esame, urgenza):
+    """La frase per l'utente se il caso e' urgente e l'esperto non accetta
+    urgenze per quel tipo di esame; altrimenti None."""
+    if not urgenza or refertatore is None or refertatore.accetta_urgenze_per(tipo_esame):
+        return None
+    tipo = TipoEsame(tipo_esame).label.lower() if tipo_esame in TipoEsame.values else 'questo esame'
+    return (f'{refertatore} non accetta casi urgenti per {tipo}: scegli un altro collega '
+            f'oppure togli «Urgente».')
 
 
 def frase_mancanti(mancanti):
@@ -122,19 +147,32 @@ def perche_non_puoi_riassegnare(richiesta, refertatore):
     if not refertatore.referta(richiesta.tipo_esame):
         return (f'{refertatore} non e\' referente per '
                 f'{richiesta.get_tipo_esame_display()}: scegli un altro collega.')
-    return None
+    return rifiuta_urgenza(refertatore, richiesta.tipo_esame, richiesta.urgenza)
 
 
 # Tempo di risposta se l'esperto non l'ha dichiarato per quel tipo. Da far
 # confermare ad Andre: oggi e' la lettura letterale della voce H di F3.
 ORE_RISPOSTA_PREDEFINITE = 48
+# Un caso urgente aspetta risposta entro 4 ore, qualunque sia il tempo che
+# l'esperto dichiara per i casi normali: e' cio' che il supplemento promette
+# («Risposta entro 4 ore», collaudo dell'11/09/2026).
 ORE_RISPOSTA_URGENZA = 4
 
 
-def ore_risposta_dichiarate(richiesta):
-    """Ore promesse dall'esperto assegnato per questo tipo di esame; se non
-    le ha dichiarate, 4 per un'urgenza e 48 altrimenti."""
+def ore_risposta(richiesta):
+    """Entro quante ore dall'invio si aspetta la risposta: 4 per un caso
+    urgente; altrimenti le ore dichiarate dall'esperto per quel tipo di
+    esame, o 48 se non le ha dichiarate."""
+    if richiesta.urgenza:
+        return ORE_RISPOSTA_URGENZA
     comp = richiesta.refertatore.competenza_per(richiesta.tipo_esame) if richiesta.refertatore_id else None
     if comp and comp.tempo_risposta_ore:
         return comp.tempo_risposta_ore
-    return ORE_RISPOSTA_URGENZA if richiesta.urgenza else ORE_RISPOSTA_PREDEFINITE
+    return ORE_RISPOSTA_PREDEFINITE
+
+
+def scadenza(richiesta):
+    """L'ora entro cui rispondere (None finche' il caso non e' inviato)."""
+    if not richiesta.inviata_il:
+        return None
+    return richiesta.inviata_il + timedelta(hours=ore_risposta(richiesta))

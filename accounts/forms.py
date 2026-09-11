@@ -226,7 +226,7 @@ class RefertatoreProfiloForm(forms.ModelForm):
 class CompetenzaForm(forms.ModelForm):
     class Meta:
         model = CompetenzaRefertatore
-        fields = ['tipo_esame', 'referente', 'prezzo_personalizzato', 'tempo_risposta_ore']
+        fields = ['tipo_esame', 'referente', 'prezzo_personalizzato', 'tempo_risposta_ore', 'accetta_urgenze']
         widgets = {'tipo_esame': forms.HiddenInput()}
 
     def __init__(self, *args, **kwargs):

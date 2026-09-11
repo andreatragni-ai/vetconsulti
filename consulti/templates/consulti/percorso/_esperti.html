@@ -1,8 +1,11 @@
 {% comment %}
 Schede degli esperti per il tipo scelto (passo 2; frammento htmx di
 consulti/views_percorso.py:esperti). Contesto: esperti [{refertatore,
-prezzo, disponibile, rientro, tempo}], selezionato (pk come stringa),
-tipo_scelto, tipo_label. Chi e' assente si vede, con il rientro, ma non si
+prezzo, disponibile, rientro, tempo, accetta_urgenze, no_urgenze,
+sceglibile}], selezionato (pk come stringa), tipo_scelto, tipo_label,
+urgenza, nessuno_per_urgenza. Con «Urgente» acceso chi non accetta urgenze
+per quel tipo si vede con «Non accetta urgenze» ma non si sceglie (il form
+e la regola di invio lo rifiutano comunque: regole.rifiuta_urgenza). Chi e' assente si vede, con il rientro, ma non si
 sceglie (e il form lo rifiuta comunque: EsameForm.clean_refertatore). In
 testa alla scheda la foto dell'esperto (consegna protetta, url_foto) o, se
 manca, le sue iniziali su fondo neutro.
@@ -12,11 +15,12 @@ manca, le sue iniziali su fondo neutro.
 {% elif not esperti %}
   <div class="alert alert-warning mb-0"><i class="bi bi-person-x me-1"></i>Per {{ tipo_label }} non c'e' ancora nessun esperto sul portale. Scegli un altro tipo di esame, oppure riprova piu' avanti.</div>
 {% else %}
-  <p class="small text-muted mb-2">Solo chi referta {{ tipo_label }}. Prezzi IVA inclusa: si paga solo il referto firmato.</p>
+  <p class="small text-muted mb-2">Solo chi referta {{ tipo_label }}. Prezzi IVA inclusa: si paga solo il referto firmato.{% if urgenza %} Urgente: risposta entro 4 ore, solo da chi accetta le urgenze.{% endif %}</p>
+  {% if nessuno_per_urgenza %}<div class="alert alert-warning py-2 small"><i class="bi bi-lightning me-1" aria-hidden="true"></i>Per {{ tipo_label }} nessun esperto accetta urgenze in questo momento: togli «Urgente» per mandare il caso con i tempi normali.</div>{% endif %}
   <div class="schede-scelta" role="radiogroup" aria-label="Esperto">
     {% for e in esperti %}{% with r=e.refertatore %}
     <div>
-      <input type="radio" class="btn-check" name="refertatore" id="esperto-{{ r.pk }}" value="{{ r.pk }}"{% if e.disponibile and selezionato == r.pk|stringformat:"s" %} checked{% endif %}{% if not e.disponibile %} disabled{% endif %} required>
+      <input type="radio" class="btn-check" name="refertatore" id="esperto-{{ r.pk }}" value="{{ r.pk }}"{% if e.sceglibile and selezionato == r.pk|stringformat:"s" %} checked{% endif %}{% if not e.sceglibile %} disabled{% endif %} required>
       <label class="scheda-scelta scheda-esperto" for="esperto-{{ r.pk }}">
         <span class="esperto-testa">
           <span class="esperto-foto">{% if r.foto %}<img src="{{ r.url_foto }}" alt="" width="64" height="64" loading="lazy">{% else %}<span class="esperto-iniziali" aria-hidden="true">{{ r.iniziali }}</span>{% endif %}</span>
@@ -31,8 +35,9 @@ manca, le sue iniziali su fondo neutro.
         {% else %}
           <span class="prezzo">Prezzo da definire</span>
         {% endif %}
-        <span class="tempo"><i class="bi bi-stopwatch me-1" aria-hidden="true"></i>{% if e.tempo %}Risposta in {{ e.tempo }} ore{% else %}Tempo di risposta non indicato{% endif %}</span>
+        <span class="tempo"><i class="bi bi-stopwatch me-1" aria-hidden="true"></i>{% if urgenza %}Risposta entro {{ e.tempo }} ore (urgente){% elif e.tempo %}Risposta in {{ e.tempo }} ore{% else %}Tempo di risposta non indicato{% endif %}</span>
         {% if r.messaggio %}<span class="nota">«{{ r.messaggio }}»</span>{% endif %}
+        {% if e.no_urgenze %}<span class="assente no-urgenze"><i class="bi bi-lightning" aria-hidden="true"></i>Non accetta urgenze</span>{% endif %}
         {% if not e.disponibile %}<span class="assente"><i class="bi bi-calendar-x" aria-hidden="true"></i>Assente{% if e.rientro %}: rientra il {{ e.rientro|date:"j F" }}{% endif %}</span>{% endif %}
         <i class="bi bi-check-circle-fill spunta" aria-hidden="true"></i>
       </label>

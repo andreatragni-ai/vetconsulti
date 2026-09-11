@@ -160,8 +160,8 @@ class EsameForm(forms.ModelForm):
             'terapia': 'Terapia in corso',
         }
         help_texts = {
-            'urgenza': 'Il collega lo trova in cima alla sua lista; costa un supplemento (i prezzi qui sotto '
-                       'si aggiornano).',
+            'urgenza': 'Risposta entro 4 ore e il caso in cima alla lista del collega; costa un supplemento '
+                       '(i prezzi qui sotto si aggiornano). Si sceglie solo fra chi accetta le urgenze.',
             'quesito': 'Cosa vuoi sapere. Es. «Aritmia all\'auscultazione prima di una TPLO: '
                        'e\' idoneo all\'anestesia?»',
             'anamnesi': 'Sintomi, visita, esami gia\' fatti. Facoltativa.',
@@ -202,6 +202,16 @@ class EsameForm(forms.ModelForm):
             rientro = f' fino al {refertatore.assente_al:%d/%m/%Y}' if refertatore.assente_al else ''
             raise forms.ValidationError(f'{refertatore} e\' assente{rientro}: scegli un altro collega.')
         return refertatore
+
+    def clean(self):
+        # Caso urgente solo a chi accetta urgenze per quel tipo: la stessa
+        # regola (e la stessa frase) che ferma l'invio in consulti.regole.
+        from .regole import rifiuta_urgenza
+        dati = super().clean()
+        motivo = rifiuta_urgenza(dati.get('refertatore'), dati.get('tipo_esame'), dati.get('urgenza'))
+        if motivo:
+            self.add_error('refertatore', motivo)
+        return dati
 
 
 # ── Decisioni del refertatore ────────────────────────────────────────────────

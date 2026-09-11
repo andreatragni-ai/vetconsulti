@@ -22,7 +22,7 @@
       {{ formset.management_form }}
       <div class="table-responsive">
       <table class="tbl-risultati align-middle">
-        <thead><tr><th>Esame</th><th>Referente</th><th>Prezzo personalizzato (imponibile)</th><th>Tempo di risposta (ore)</th></tr></thead>
+        <thead><tr><th>Esame</th><th>Referente</th><th>Prezzo personalizzato (imponibile)</th><th>Tempo di risposta (ore)</th><th>Accetta urgenze</th></tr></thead>
         <tbody>
         {% for f in formset %}
           <tr>
@@ -31,12 +31,13 @@
             <td>{{ f.referente }}</td>
             <td>{{ f.prezzo_personalizzato }}{% for e in f.prezzo_personalizzato.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</td>
             <td>{{ f.tempo_risposta_ore }}{% for e in f.tempo_risposta_ore.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</td>
+            <td>{{ f.accetta_urgenze }}</td>
           </tr>
         {% endfor %}
         </tbody>
       </table>
       </div>
-      <div class="form-text">Prezzo vuoto = listino. «Referente» = compari nell'elenco per quel tipo di esame.</div>
+      <div class="form-text">Prezzo vuoto = listino. «Referente» = compari nell'elenco per quel tipo di esame. «Accetta urgenze» = ti possono mandare casi urgenti di quel tipo, con risposta entro 4 ore dall'invio; senza, con «Urgente» acceso compari ma non ti si puo' scegliere.</div>
     </div></div>
     <button class="btn-nuova" type="submit"><i class="bi bi-save me-1"></i>Salva profilo</button>
   </div>

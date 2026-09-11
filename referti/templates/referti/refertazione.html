@@ -22,7 +22,7 @@ sono rotte diverse: la firma passa dalla modale di conferma del pacchetto.
 <p class="ovic-meta mb-3">
   Da <strong>{{ richiesta.richiedente.user.get_full_name }}</strong> ({{ richiesta.intestatario.denominazione }}{% if not richiesta.clinica_id %}, libero professionista{% endif %})
   {% if richiesta.inviata_il %}· inviato il {{ richiesta.inviata_il|date:"d/m/Y H:i" }}{% endif %}
-  · risposta dichiarata {{ ore_dichiarate }} h{% if scadenza and richiesta.stato == 'INVIATA' or scadenza and richiesta.stato == 'PRESA_IN_CARICO' %}, entro il {{ scadenza|date:"d/m H:i" }}{% endif %}
+  · {% if richiesta.urgenza %}<strong class="text-danger">urgente</strong>: risposta entro {{ ore_risposta }} h{% else %}risposta dichiarata {{ ore_risposta }} h{% endif %}{% if scadenza and richiesta.stato == 'INVIATA' or scadenza and richiesta.stato == 'PRESA_IN_CARICO' %}, entro il {{ scadenza|date:"d/m H:i" }}{% endif %}
 </p>
 
 <div class="row g-3">

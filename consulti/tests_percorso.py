@@ -70,7 +70,8 @@ def esperto_eco(mondo):
         user=User.objects.create_user('eco', 'eco@x.it', 'pw', first_name='Laura', last_name='Monti'),
         titolo='Dott.ssa', specializzazione='Ecocardiografia')
     CompetenzaRefertatore.objects.create(refertatore=r, tipo_esame=TipoEsame.ECO, referente=True,
-                                         prezzo_personalizzato=Decimal('85.00'), tempo_risposta_ore=24)
+                                         prezzo_personalizzato=Decimal('85.00'), tempo_risposta_ore=24,
+                                         accetta_urgenze=True)
     return r
 
 

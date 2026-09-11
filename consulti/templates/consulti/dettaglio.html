@@ -18,17 +18,17 @@ Il titolo e' il paziente con l'esame; il codice sta accanto, piccolo.
   <div class="col-lg-5">
     <div class="ovic-card"><div class="card-header-ovic">Paziente e richiesta</div><div class="card-body-ovic">
       <div class="row">
-        <div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Paziente" val=richiesta.paziente %}</div>
-        <div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Proprietario" val=richiesta.paziente.cognome_proprietario %}</div>
-        <div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Intestatario" val=intestatario_label %}</div>
-        <div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Richiedente" val=richiesta.richiedente.user.get_full_name %}</div>
-        <div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Refertatore" val=richiesta.refertatore %}</div>
+        <div class="col-6">{% include "_dato.html" with label="Paziente" val=richiesta.paziente %}</div>
+        <div class="col-6">{% include "_dato.html" with label="Proprietario" val=richiesta.paziente.cognome_proprietario %}</div>
+        <div class="col-6">{% include "_dato.html" with label="Intestatario" val=intestatario_label %}</div>
+        <div class="col-6">{% include "_dato.html" with label="Richiedente" val=richiesta.richiedente.user.get_full_name %}</div>
+        <div class="col-6">{% include "_dato.html" with label="Refertatore" val=richiesta.refertatore %}</div>
         {# Il motivo dell'esame non si chiede piu' (lo copre il quesito): si mostra solo se c'e' (richieste vecchie, casi demo). #}
-        {% if richiesta.motivo_esame %}<div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Motivo dell'esame" val=richiesta.motivo_esame %}</div>{% endif %}
+        {% if richiesta.motivo_esame %}<div class="col-6">{% include "_dato.html" with label="Motivo dell'esame" val=richiesta.motivo_esame %}</div>{% endif %}
       </div>
-      {% include "vetway_ui/partials/_campo.html" with label="Quesito" val=richiesta.quesito multiline=True %}
-      {% include "vetway_ui/partials/_campo.html" with label="Anamnesi" val=richiesta.anamnesi multiline=True %}
-      {% include "vetway_ui/partials/_campo.html" with label="Terapia in corso" val=richiesta.terapia multiline=True %}
+      {% include "_dato.html" with label="Quesito" val=richiesta.quesito multiline=True %}
+      {% include "_dato.html" with label="Anamnesi" val=richiesta.anamnesi multiline=True %}
+      {% include "_dato.html" with label="Terapia in corso" val=richiesta.terapia multiline=True %}
     </div></div>
   </div>
   <div class="col-lg-7">

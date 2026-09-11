@@ -11,7 +11,7 @@ scadenza (consulti.regole: 4 ore se urgente).
 {% elif richiesta.stato == 'DECLINATA' %}
   <div class="ovic-card"><div class="card-header-ovic">Caso declinato</div><div class="card-body-ovic">
     <p class="mb-2"><strong>{{ richiesta.refertatore }}</strong> non puo' occuparsene.</p>
-    {% include "vetway_ui/partials/_campo.html" with label="Motivo" val=richiesta.motivo_rifiuto multiline=True %}
+    {% include "_dato.html" with label="Motivo" val=richiesta.motivo_rifiuto multiline=True %}
     {% if e_richiedente %}
     <form method="post" action="{% url 'consulti:riassegna' richiesta.pk %}" class="row g-2 align-items-end mt-1">{% csrf_token %}
       <div class="col-md-8">
@@ -27,7 +27,7 @@ scadenza (consulti.regole: 4 ore se urgente).
 {% elif richiesta.stato == 'NON_REFERTABILE' %}
   <div class="ovic-card"><div class="card-header-ovic">Caso non refertabile</div><div class="card-body-ovic">
     <p class="mb-2"><strong>{{ richiesta.refertatore }}</strong> non e' in grado di refertare il caso con il materiale inviato. Il consulto non viene addebitato.</p>
-    {% include "vetway_ui/partials/_campo.html" with label="Motivo" val=richiesta.motivo_rifiuto multiline=True %}
+    {% include "_dato.html" with label="Motivo" val=richiesta.motivo_rifiuto multiline=True %}
     {% if e_richiedente %}<a class="btn-testata-ghost" href="{% url 'consulti:nuova' %}"><i class="bi bi-plus-circle"></i>Apri una nuova richiesta</a>{% endif %}
   </div></div>
 

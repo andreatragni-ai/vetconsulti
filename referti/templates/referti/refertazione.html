@@ -33,16 +33,16 @@ sono rotte diverse: la firma passa dalla modale di conferma del pacchetto.
   <div class="col-lg-5">
     <div class="ovic-card"><div class="card-header-ovic">Paziente e quesito</div><div class="card-body-ovic">
       <div class="row">
-        <div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Paziente" val=richiesta.paziente %}</div>
-        <div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Proprietario" val=richiesta.paziente.cognome_proprietario %}</div>
-        <div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Sesso" val=richiesta.paziente.get_sesso_display %}</div>
-        <div class="col-6">{% if richiesta.paziente.data_nascita %}{% include "vetway_ui/partials/_campo.html" with label="Nato il" val=richiesta.paziente.data_nascita|date:"d/m/Y" %}{% else %}{% include "vetway_ui/partials/_campo.html" with label="Eta'" val=richiesta.paziente.eta_testo %}{% endif %}</div>
-        <div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Peso (kg)" val=richiesta.paziente.peso_kg %}</div>
-        {% if richiesta.motivo_esame %}<div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Motivo dell'esame" val=richiesta.motivo_esame %}</div>{% endif %}
+        <div class="col-6">{% include "_dato.html" with label="Paziente" val=richiesta.paziente %}</div>
+        <div class="col-6">{% include "_dato.html" with label="Proprietario" val=richiesta.paziente.cognome_proprietario %}</div>
+        <div class="col-6">{% include "_dato.html" with label="Sesso" val=richiesta.paziente.get_sesso_display %}</div>
+        <div class="col-6">{% if richiesta.paziente.data_nascita %}{% include "_dato.html" with label="Nato il" val=richiesta.paziente.data_nascita|date:"d/m/Y" %}{% else %}{% include "_dato.html" with label="Eta'" val=richiesta.paziente.eta_testo %}{% endif %}</div>
+        <div class="col-6">{% include "_dato.html" with label="Peso (kg)" val=richiesta.paziente.peso_kg %}</div>
+        {% if richiesta.motivo_esame %}<div class="col-6">{% include "_dato.html" with label="Motivo dell'esame" val=richiesta.motivo_esame %}</div>{% endif %}
       </div>
-      {% include "vetway_ui/partials/_campo.html" with label="Quesito" val=richiesta.quesito multiline=True %}
-      {% include "vetway_ui/partials/_campo.html" with label="Anamnesi" val=richiesta.anamnesi multiline=True %}
-      {% include "vetway_ui/partials/_campo.html" with label="Terapia in corso" val=richiesta.terapia multiline=True %}
+      {% include "_dato.html" with label="Quesito" val=richiesta.quesito multiline=True %}
+      {% include "_dato.html" with label="Anamnesi" val=richiesta.anamnesi multiline=True %}
+      {% include "_dato.html" with label="Terapia in corso" val=richiesta.terapia multiline=True %}
     </div></div>
 
     {% if richiesta.stato == 'INVIATA' %}

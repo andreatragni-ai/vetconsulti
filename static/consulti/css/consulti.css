@@ -737,3 +737,19 @@ a.riferimento:hover, a.riferimento:focus-visible { outline: 3px solid var(--ovic
   color: var(--ovic-blu);
   background: var(--bs-body-bg);
 }
+
+/* ── Dati in sola lettura (templates/_dato.html): etichetta + valore come
+   TESTO, senza il bordo da casella di _campo.html del pacchetto, che li
+   faceva sembrare campi da compilare. Variante da portare in vetway-ui 0.3.0. ── */
+.dato { margin-bottom: .65rem; min-width: 0; }
+.dato-label {
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--bs-secondary-color);
+  margin-bottom: .05rem;
+}
+.dato-valore { font-size: .95rem; font-weight: 600; color: var(--ovic-testo); overflow-wrap: anywhere; }
+.dato-valore.dato-testo { font-weight: 400; white-space: pre-wrap; line-height: 1.45; }
+.dato-valore.vuoto { font-weight: 400; color: var(--bs-secondary-color); }

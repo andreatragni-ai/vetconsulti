@@ -1,0 +1,472 @@
+{
+ "versione": "2026-09-11b",
+ "fonte": "dettato di Andre (nota Obsidian Telemedicina) + guida proiezioni-eco dalla sua presentazione",
+ "sempre_obbligatorio": "Referto dell'ecografo in PDF, con le misure",
+ "righe": [
+  {
+   "codice": "DX1_B",
+   "finestra": "PARASTERNALE_DESTRA",
+   "nome": "Asse lungo 4 camere — B-mode",
+   "tipo_media": "CLIP",
+   "obbligatoria": true,
+   "scheda_guida": "DX-1",
+   "istruzioni": "Filmato di circa 10 secondi. Angolo sonda / torace 45° Cavo della sonda verso il gomito Marker verso la colonna Appoggio sulla giunzione costo-condrale Cane di piccola taglia o gatto: sonda sullo sterno",
+   "deve_essere_visibile": "Le quattro camere con apice non troncato, setto interventricolare e interatriale, entrambe le valvole atrio-ventricolari.",
+   "serve_per": "Morfologia di mitrale e tricuspide, spessori parietali, rapporti fra le camere. IVS ≈ PLVsx parete VD ≈ ½ VS camera VD ≈ ⅓ VS",
+   "immagini_riferimento": [
+    "dx1_eco.jpg",
+    "dx1_sonda.jpg",
+    "dx1_schema.jpg"
+   ],
+   "nota_riferimento": "",
+   "ordine": 10
+  },
+  {
+   "codice": "DX1_C",
+   "finestra": "PARASTERNALE_DESTRA",
+   "nome": "Asse lungo 4 camere — color Doppler",
+   "tipo_media": "CLIP",
+   "obbligatoria": true,
+   "scheda_guida": "DX-1",
+   "istruzioni": "Filmato di circa 10 secondi. Color Doppler su mitrale e tricuspide (filmato separato dal B-mode). Angolo sonda / torace 45° Cavo della sonda verso il gomito Marker verso la colonna Appoggio sulla giunzione costo-condrale Cane di piccola taglia o gatto: sonda sullo sterno",
+   "deve_essere_visibile": "Le quattro camere con apice non troncato, setto interventricolare e interatriale, entrambe le valvole atrio-ventricolari.",
+   "serve_per": "Morfologia di mitrale e tricuspide, spessori parietali, rapporti fra le camere. IVS ≈ PLVsx parete VD ≈ ½ VS camera VD ≈ ⅓ VS",
+   "immagini_riferimento": [
+    "dx1_eco.jpg",
+    "dx1_sonda.jpg",
+    "dx1_schema.jpg"
+   ],
+   "nota_riferimento": "",
+   "ordine": 20
+  },
+  {
+   "codice": "DX2_B",
+   "finestra": "PARASTERNALE_DESTRA",
+   "nome": "Asse lungo 5 camere, efflusso sinistro — B-mode",
+   "tipo_media": "CLIP",
+   "obbligatoria": true,
+   "scheda_guida": "DX-2",
+   "istruzioni": "Filmato di circa 10 secondi. Angolo sonda / torace 60° Punta della sonda verso le vertebre lombari Cavo della sonda verso il gomito Marker verso il collo",
+   "deve_essere_visibile": "Tratto di efflusso sinistro con valvola aortica e radice aortica in continuità con il setto.",
+   "serve_per": "Valutazione di setto ed efflusso, rapporti bidimensionali asse lungo (Strohm 2018). LV / Ao 1,8–2,5 AS / Ao 1,8–2,4",
+   "immagini_riferimento": [
+    "dx2_eco.jpg",
+    "dx2_sonda.jpg",
+    "dx2_schema.jpg",
+    "dx2_eco2.jpg"
+   ],
+   "nota_riferimento": "",
+   "ordine": 30
+  },
+  {
+   "codice": "DX2_C",
+   "finestra": "PARASTERNALE_DESTRA",
+   "nome": "Asse lungo 5 camere, efflusso sinistro — color Doppler",
+   "tipo_media": "CLIP",
+   "obbligatoria": true,
+   "scheda_guida": "DX-2",
+   "istruzioni": "Filmato di circa 10 secondi. Color sul tratto di efflusso e sulla valvola aortica (filmato separato dal B-mode). Angolo sonda / torace 60° Punta della sonda verso le vertebre lombari Cavo della sonda verso il gomito Marker verso il collo",
+   "deve_essere_visibile": "Tratto di efflusso sinistro con valvola aortica e radice aortica in continuità con il setto.",
+   "serve_per": "Valutazione di setto ed efflusso, rapporti bidimensionali asse lungo (Strohm 2018). LV / Ao 1,8–2,5 AS / Ao 1,8–2,4",
+   "immagini_riferimento": [
+    "dx2_eco.jpg",
+    "dx2_sonda.jpg",
+    "dx2_schema.jpg",
+    "dx2_eco2.jpg"
+   ],
+   "nota_riferimento": "",
+   "ordine": 40
+  },
+  {
+   "codice": "DX3_B",
+   "finestra": "PARASTERNALE_DESTRA",
+   "nome": "Asse corto, dall'apice alla base — B-mode",
+   "tipo_media": "CLIP",
+   "obbligatoria": true,
+   "scheda_guida": "DX-3",
+   "istruzioni": "Filmato di circa 10 secondi. Scansione a ventaglio continua dall'apice alla base del cuore. Dalle 4 camere ruotare il marker verso il gomito (rotazione antioraria) Mantenere l'angolo di 45° sonda-torace Sezioni a ventaglio dall'apice alla base",
+   "deve_essere_visibile": "Il “fungo simmetrico”: ventricolo circolare con i due muscoli papillari simmetrici e ventricolo destro riconoscibile.",
+   "serve_per": "Immagine di partenza per l'M-mode e per la valutazione della cinetica parietale.",
+   "immagini_riferimento": [
+    "dx3_eco.jpg",
+    "dx3_sonda.jpg",
+    "dx3_schema.jpg"
+   ],
+   "nota_riferimento": "",
+   "ordine": 50
+  },
+  {
+   "codice": "DX3_C",
+   "finestra": "PARASTERNALE_DESTRA",
+   "nome": "Asse corto, dall'apice alla base — color Doppler",
+   "tipo_media": "CLIP",
+   "obbligatoria": true,
+   "scheda_guida": "DX-3",
+   "istruzioni": "Filmato di circa 10 secondi. Stessa scansione dall'apice alla base, con il color attivo (filmato separato dal B-mode). Dalle 4 camere ruotare il marker verso il gomito (rotazione antioraria) Mantenere l'angolo di 45° sonda-torace Sezioni a ventaglio dall'apice alla base",
+   "deve_essere_visibile": "Il “fungo simmetrico”: ventricolo circolare con i due muscoli papillari simmetrici e ventricolo destro riconoscibile.",
+   "serve_per": "Immagine di partenza per l'M-mode e per la valutazione della cinetica parietale.",
+   "immagini_riferimento": [
+    "dx3_eco.jpg",
+    "dx3_sonda.jpg",
+    "dx3_schema.jpg"
+   ],
+   "nota_riferimento": "",
+   "ordine": 60
+  },
+  {
+   "codice": "DX7_MMODE",
+   "finestra": "PARASTERNALE_DESTRA",
+   "nome": "M-mode del ventricolo sinistro",
+   "tipo_media": "STATICA",
+   "obbligatoria": true,
+   "scheda_guida": "DX-7",
+   "istruzioni": "M-mode con le misure del ventricolo sinistro. Partire da un asse corto dritto e centrato Cursore al centro del ventricolo sinistro, perpendicolare al setto Livello delle corde tendinee della mitrale Il ventricolo destro deve essere visibile",
+   "deve_essere_visibile": "Setto, cavità e parete libera con endocardio netto su almeno 4–5 cicli; misurare a fine espirazione .",
+   "serve_per": "Diametri telediastolico e telesistolico, FS%, indici normalizzati e volumi con Teichholz. Convenzione leading edge to leading edge . LVIDdN ≥ 1,7 = B2 ESVI < 30–40 ml/m²",
+   "immagini_riferimento": [
+    "dx7_mmode.jpg",
+    "dx7_guida.jpg",
+    "dx7_resp.jpg"
+   ],
+   "nota_riferimento": "",
+   "ordine": 70
+  },
+  {
+   "codice": "DX_LAD",
+   "finestra": "PARASTERNALE_DESTRA",
+   "nome": "LAD — diametro dell'atrio sinistro",
+   "tipo_media": "STATICA",
+   "obbligatoria": true,
+   "scheda_guida": "DX-1",
+   "istruzioni": "Asse lungo 4 camere in telesistole, con la misura del diametro dell'atrio sinistro. Angolo sonda / torace 45° Cavo della sonda verso il gomito Marker verso la colonna Appoggio sulla giunzione costo-condrale Cane di piccola taglia o gatto: sonda sullo sterno",
+   "deve_essere_visibile": "Le quattro camere con apice non troncato, setto interventricolare e interatriale, entrambe le valvole atrio-ventricolari.",
+   "serve_per": "Morfologia di mitrale e tricuspide, spessori parietali, rapporti fra le camere. IVS ≈ PLVsx parete VD ≈ ½ VS camera VD ≈ ⅓ VS",
+   "immagini_riferimento": [
+    "dx1_eco.jpg",
+    "dx1_schema.jpg"
+   ],
+   "nota_riferimento": "Nella guida non c'e' un'immagine della misura LAD: si usa l'asse lungo 4 camere.",
+   "ordine": 80
+  },
+  {
+   "codice": "DX5_LAAO",
+   "finestra": "PARASTERNALE_DESTRA",
+   "nome": "LA/Ao — atrio sinistro / aorta",
+   "tipo_media": "STATICA",
+   "obbligatoria": true,
+   "scheda_guida": "DX-5",
+   "istruzioni": "Immagine con la misura LA/Ao. Proseguendo il ventaglio verso la base: aorta al centro con le tre cuspidi (“segno della Mercedes”), atrio sinistro e auricola a sinistra dell'immagine.",
+   "deve_essere_visibile": "Aorta simmetrica e chiusa, non ovalizzata Atrio sinistro con l'auricola Tratto di efflusso e infundibolo destro",
+   "serve_per": "Rapporto AS/Ao. Misura inner-edge to inner-edge sul primo frame utile dopo la chiusura della valvola aortica; non includere le vene polmonari . Metodo svedese (Hansson): misura in protodiastole, aorta fra cuspide coronarica destra e non coronarica. normale < 1,6 > 1,7 rischio Ao / Po 0,8–1,15",
+   "immagini_riferimento": [
+    "dx5_eco.jpg",
+    "dx5_schema.jpg",
+    "dx5_misura.jpg",
+    "dx5_svedese.jpg"
+   ],
+   "nota_riferimento": "",
+   "ordine": 90
+  },
+  {
+   "codice": "DX6_AP_PW",
+   "finestra": "PARASTERNALE_DESTRA",
+   "nome": "Arteria polmonare — Doppler pulsato",
+   "tipo_media": "STATICA",
+   "obbligatoria": true,
+   "scheda_guida": "DX-6",
+   "istruzioni": "Doppler pulsato sulla valvola polmonare, con le misure. Dalla base del cuore, lieve inclinazione cranio-dorsale della punta fino ad aprire il tronco polmonare e le due branche.",
+   "deve_essere_visibile": "Valvola polmonare, tronco, biforcazione con ramo destro (RMPA) e sinistro (LMPA); tricuspide e aorta in sezione.",
+   "serve_per": "Rapporto aorta / polmonare, sede di elezione per il rigurgito polmonare e per la stima delle pressioni polmonari. Ao / Po ≈ 1 tempo acc. > 80 ms",
+   "immagini_riferimento": [
+    "dx6_eco.jpg",
+    "dx6_eco2.jpg"
+   ],
+   "nota_riferimento": "",
+   "ordine": 100
+  },
+  {
+   "codice": "DX6_AP_CW",
+   "finestra": "PARASTERNALE_DESTRA",
+   "nome": "Arteria polmonare — Doppler continuo",
+   "tipo_media": "STATICA",
+   "obbligatoria": true,
+   "scheda_guida": "DX-6",
+   "istruzioni": "Doppler continuo sulla valvola polmonare, con le misure. Dalla base del cuore, lieve inclinazione cranio-dorsale della punta fino ad aprire il tronco polmonare e le due branche.",
+   "deve_essere_visibile": "Valvola polmonare, tronco, biforcazione con ramo destro (RMPA) e sinistro (LMPA); tricuspide e aorta in sezione.",
+   "serve_per": "Rapporto aorta / polmonare, sede di elezione per il rigurgito polmonare e per la stima delle pressioni polmonari. Ao / Po ≈ 1 tempo acc. > 80 ms",
+   "immagini_riferimento": [
+    "dx6_eco.jpg",
+    "dx6_eco2.jpg"
+   ],
+   "nota_riferimento": "",
+   "ordine": 110
+  },
+  {
+   "codice": "D2_PVPA",
+   "finestra": "PARASTERNALE_DESTRA",
+   "nome": "Arteria e vena polmonare in M-mode, sull'onda T",
+   "tipo_media": "STATICA",
+   "obbligatoria": true,
+   "scheda_guida": "D-2",
+   "istruzioni": "M-mode con la misura di arteria e vena polmonare dello stesso lobo durante l'onda T. Confronto fra vena e arteria dello stesso lobo, in asse lungo e in asse corto, sullo stesso frame.",
+   "deve_essere_visibile": "Entrambi i vasi affiancati, con calibro misurabile nello stesso momento del ciclo.",
+   "serve_per": "Congestione venosa polmonare e sospetto di ipertensione post-capillare.",
+   "immagini_riferimento": [
+    "d2_lungo.jpg",
+    "d2_corto.jpg",
+    "d2_3d.jpg"
+   ],
+   "nota_riferimento": "Le immagini della guida mostrano il confronto in B-mode; l'acquisizione richiesta e' in M-mode.",
+   "ordine": 120
+  },
+  {
+   "codice": "SUB_B",
+   "finestra": "SOTTOXIFOIDEA",
+   "nome": "Sottoxifoidea — B-mode",
+   "tipo_media": "CLIP",
+   "obbligatoria": true,
+   "scheda_guida": "",
+   "istruzioni": "Filmato di circa 10 secondi. Tratto di efflusso sinistro dalla finestra sottoxifoidea.",
+   "deve_essere_visibile": "",
+   "serve_per": "",
+   "immagini_riferimento": [],
+   "nota_riferimento": "Immagine di riferimento mancante: nella guida non c'e' la sottoxifoidea.",
+   "ordine": 130
+  },
+  {
+   "codice": "SUB_C",
+   "finestra": "SOTTOXIFOIDEA",
+   "nome": "Sottoxifoidea — color Doppler",
+   "tipo_media": "CLIP",
+   "obbligatoria": true,
+   "scheda_guida": "",
+   "istruzioni": "Filmato di circa 10 secondi. Stessa finestra con il color sul tratto di efflusso (filmato separato dal B-mode).",
+   "deve_essere_visibile": "",
+   "serve_per": "",
+   "immagini_riferimento": [],
+   "nota_riferimento": "Immagine di riferimento mancante.",
+   "ordine": 140
+  },
+  {
+   "codice": "SUB_LVOT_PW",
+   "finestra": "SOTTOXIFOIDEA",
+   "nome": "LVOT, efflusso sinistro — Doppler pulsato",
+   "tipo_media": "STATICA",
+   "obbligatoria": true,
+   "scheda_guida": "",
+   "istruzioni": "Dalla sottoxifoidea, Doppler pulsato nel tratto di efflusso sinistro, allineato al flusso, con le misure.",
+   "deve_essere_visibile": "",
+   "serve_per": "",
+   "immagini_riferimento": [
+    "sx10_ao.jpg"
+   ],
+   "nota_riferimento": "Riferimento parziale: e' il Doppler aortico dall'apicale 5 camere.",
+   "ordine": 150
+  },
+  {
+   "codice": "SUB_LVOT_CW",
+   "finestra": "SOTTOXIFOIDEA",
+   "nome": "LVOT, efflusso sinistro — Doppler continuo",
+   "tipo_media": "STATICA",
+   "obbligatoria": true,
+   "scheda_guida": "",
+   "istruzioni": "Dalla sottoxifoidea, Doppler continuo attraverso la valvola aortica, con le misure.",
+   "deve_essere_visibile": "",
+   "serve_per": "",
+   "immagini_riferimento": [
+    "sx10_ao.jpg"
+   ],
+   "nota_riferimento": "Riferimento parziale: e' il Doppler aortico dall'apicale 5 camere.",
+   "ordine": 160
+  },
+  {
+   "codice": "SX1_B",
+   "finestra": "PARASTERNALE_SINISTRA",
+   "nome": "Apicale 4 camere — B-mode",
+   "tipo_media": "CLIP",
+   "obbligatoria": true,
+   "scheda_guida": "SX-1",
+   "istruzioni": "Filmato di circa 10 secondi. Punta della sonda verso il collo Marker verso la colonna Angolo sonda / torace 30° Partire dal “fegato sottocostale” e risalire cranialmente",
+   "deve_essere_visibile": "Apice del ventricolo in alto, quattro camere allineate, setto interatriale completo, sbocco delle vene polmonari.",
+   "serve_per": "Misure area-lunghezza e Simpson, volumi atriali, allineamento per il Doppler degli afflussi.",
+   "immagini_riferimento": [
+    "sx1_eco.jpg",
+    "sx1_schema.jpg",
+    "sx1_rx.jpg"
+   ],
+   "nota_riferimento": "",
+   "ordine": 170
+  },
+  {
+   "codice": "SX1_C",
+   "finestra": "PARASTERNALE_SINISTRA",
+   "nome": "Apicale 4 camere — color Doppler",
+   "tipo_media": "CLIP",
+   "obbligatoria": true,
+   "scheda_guida": "SX-1",
+   "istruzioni": "Filmato di circa 10 secondi. Color su mitrale e tricuspide (filmato separato dal B-mode). Punta della sonda verso il collo Marker verso la colonna Angolo sonda / torace 30° Partire dal “fegato sottocostale” e risalire cranialmente",
+   "deve_essere_visibile": "Apice del ventricolo in alto, quattro camere allineate, setto interatriale completo, sbocco delle vene polmonari.",
+   "serve_per": "Misure area-lunghezza e Simpson, volumi atriali, allineamento per il Doppler degli afflussi.",
+   "immagini_riferimento": [
+    "sx1_eco.jpg",
+    "sx1_schema.jpg",
+    "sx1_rx.jpg"
+   ],
+   "nota_riferimento": "",
+   "ordine": 180
+  },
+  {
+   "codice": "SX2_B",
+   "finestra": "PARASTERNALE_SINISTRA",
+   "nome": "Apicale 5 camere — B-mode",
+   "tipo_media": "CLIP",
+   "obbligatoria": true,
+   "scheda_guida": "SX-2",
+   "istruzioni": "Filmato di circa 10 secondi. Dalla apicale 4 camere, alzare la coda della sonda fino a far comparire il tratto di efflusso e la valvola aortica.",
+   "deve_essere_visibile": "Efflusso sinistro allineato all'asse del fascio, valvola aortica al centro dell'immagine.",
+   "serve_per": "Doppler dell'aorta, anomalie del tratto di efflusso, TVI aortico per il metodo volumetrico.",
+   "immagini_riferimento": [
+    "sx2_eco.jpg",
+    "sx2_schema.jpg",
+    "sx10_ao.jpg"
+   ],
+   "nota_riferimento": "",
+   "ordine": 190
+  },
+  {
+   "codice": "SX2_C",
+   "finestra": "PARASTERNALE_SINISTRA",
+   "nome": "Apicale 5 camere — color Doppler",
+   "tipo_media": "CLIP",
+   "obbligatoria": true,
+   "scheda_guida": "SX-2",
+   "istruzioni": "Filmato di circa 10 secondi. Color sul tratto di efflusso e sulla valvola aortica (filmato separato dal B-mode). Dalla apicale 4 camere, alzare la coda della sonda fino a far comparire il tratto di efflusso e la valvola aortica.",
+   "deve_essere_visibile": "Efflusso sinistro allineato all'asse del fascio, valvola aortica al centro dell'immagine.",
+   "serve_per": "Doppler dell'aorta, anomalie del tratto di efflusso, TVI aortico per il metodo volumetrico.",
+   "immagini_riferimento": [
+    "sx2_eco.jpg",
+    "sx2_schema.jpg",
+    "sx10_ao.jpg"
+   ],
+   "nota_riferimento": "",
+   "ordine": 200
+  },
+  {
+   "codice": "SX4_AP_PW",
+   "finestra": "PARASTERNALE_SINISTRA",
+   "nome": "Arteria polmonare da sinistra — Doppler pulsato con color",
+   "tipo_media": "STATICA",
+   "obbligatoria": true,
+   "scheda_guida": "SX-4",
+   "istruzioni": "Doppler pulsato sulla valvola polmonare con il color, e le misure. Dal tratto di efflusso sinistro, alzare la coda della sonda finché compaiono infundibolo, valvola polmonare e tronco.",
+   "deve_essere_visibile": "Efflusso destro in continuità con la polmonare; aorta in sezione trasversale al centro.",
+   "serve_per": "Valvola polmonare, rigurgito polmonare, ricerca del dotto arterioso pervio.",
+   "immagini_riferimento": [
+    "sx4_eco.jpg",
+    "sx4_schema.jpg",
+    "sx4_eco2.jpg"
+   ],
+   "nota_riferimento": "",
+   "ordine": 210
+  },
+  {
+   "codice": "SX4_AP_CW",
+   "finestra": "PARASTERNALE_SINISTRA",
+   "nome": "Arteria polmonare da sinistra — Doppler continuo",
+   "tipo_media": "STATICA",
+   "obbligatoria": true,
+   "scheda_guida": "SX-4",
+   "istruzioni": "Doppler continuo sulla valvola polmonare, con le misure. Dal tratto di efflusso sinistro, alzare la coda della sonda finché compaiono infundibolo, valvola polmonare e tronco.",
+   "deve_essere_visibile": "Efflusso destro in continuità con la polmonare; aorta in sezione trasversale al centro.",
+   "serve_per": "Valvola polmonare, rigurgito polmonare, ricerca del dotto arterioso pervio.",
+   "immagini_riferimento": [
+    "sx4_eco.jpg",
+    "sx4_schema.jpg",
+    "sx4_eco2.jpg"
+   ],
+   "nota_riferimento": "",
+   "ordine": 220
+  },
+  {
+   "codice": "D1_MIT_PW",
+   "finestra": "PARASTERNALE_SINISTRA",
+   "nome": "Flusso transmitralico — Doppler pulsato (onde E e A) con color",
+   "tipo_media": "STATICA",
+   "obbligatoria": true,
+   "scheda_guida": "D-1",
+   "istruzioni": "Con le misure di onda E e onda A e il color del flusso transmitralico. Apicale 4 camere. Volume campione nel ventricolo sinistro, all'apice dei lembi valvolari mitralici , allineato al flusso.",
+   "deve_essere_visibile": "Onde E ed A separate e complete su più cicli; se fuse, ridurre la frequenza cardiaca o segnalarlo.",
+   "serve_per": "Pattern diastolico, tempo di decelerazione, rapporti E/A ed E/E′, IVRT. E > 1,2 m/s DecT < 80 ms E/E′ > 12 = CHF E′ > 6 cm/s",
+   "immagini_riferimento": [
+    "d1_pw.jpg",
+    "d1_schema.jpg"
+   ],
+   "nota_riferimento": "",
+   "ordine": 230
+  },
+  {
+   "codice": "D1_MIT_CW",
+   "finestra": "PARASTERNALE_SINISTRA",
+   "nome": "Flusso transmitralico — Doppler continuo",
+   "tipo_media": "STATICA",
+   "obbligatoria": true,
+   "scheda_guida": "D-1",
+   "istruzioni": "Doppler continuo sul flusso transmitralico, con le misure. Apicale 4 camere. Volume campione nel ventricolo sinistro, all'apice dei lembi valvolari mitralici , allineato al flusso.",
+   "deve_essere_visibile": "Onde E ed A separate e complete su più cicli; se fuse, ridurre la frequenza cardiaca o segnalarlo.",
+   "serve_per": "Pattern diastolico, tempo di decelerazione, rapporti E/A ed E/E′, IVRT. E > 1,2 m/s DecT < 80 ms E/E′ > 12 = CHF E′ > 6 cm/s",
+   "immagini_riferimento": [
+    "d1_pw.jpg",
+    "d1_schema.jpg"
+   ],
+   "nota_riferimento": "",
+   "ordine": 240
+  },
+  {
+   "codice": "D1_TDI",
+   "finestra": "PARASTERNALE_SINISTRA",
+   "nome": "Anello mitralico — TDI con misure",
+   "tipo_media": "STATICA",
+   "obbligatoria": true,
+   "scheda_guida": "D-1",
+   "istruzioni": "Doppler tissutale dell'anello mitralico, con le misure. Apicale 4 camere. Volume campione nel ventricolo sinistro, all'apice dei lembi valvolari mitralici , allineato al flusso.",
+   "deve_essere_visibile": "Onde E ed A separate e complete su più cicli; se fuse, ridurre la frequenza cardiaca o segnalarlo.",
+   "serve_per": "Pattern diastolico, tempo di decelerazione, rapporti E/A ed E/E′, IVRT. E > 1,2 m/s DecT < 80 ms E/E′ > 12 = CHF E′ > 6 cm/s",
+   "immagini_riferimento": [
+    "d1_pw.jpg",
+    "d1_schema.jpg"
+   ],
+   "nota_riferimento": "",
+   "ordine": 250
+  },
+  {
+   "codice": "LIBERO_1",
+   "finestra": "ALTRO",
+   "nome": "Filmato libero 1",
+   "tipo_media": "CLIP",
+   "obbligatoria": false,
+   "libera": true,
+   "scheda_guida": "",
+   "istruzioni": "Filmato di circa 10 secondi. Per una richiesta specifica: scrivi cosa mostra e cosa chiedi.",
+   "deve_essere_visibile": "",
+   "serve_per": "",
+   "immagini_riferimento": [],
+   "nota_riferimento": "",
+   "ordine": 260
+  },
+  {
+   "codice": "LIBERO_2",
+   "finestra": "ALTRO",
+   "nome": "Filmato libero 2",
+   "tipo_media": "CLIP",
+   "obbligatoria": false,
+   "libera": true,
+   "scheda_guida": "",
+   "istruzioni": "Filmato di circa 10 secondi. Per una richiesta specifica: scrivi cosa mostra e cosa chiedi.",
+   "deve_essere_visibile": "",
+   "serve_per": "",
+   "immagini_riferimento": [],
+   "nota_riferimento": "",
+   "ordine": 270
+  }
+ ]
+}

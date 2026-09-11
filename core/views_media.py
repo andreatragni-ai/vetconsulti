@@ -98,3 +98,17 @@ def scarica_allegato(request, pk):
     registra_accesso_staff(request.user, allegato.richiesta, f'allegato {allegato.pk}')
     return consegna(allegato.file.name, nome_scaricato=allegato.nome_originale or None,
                     inline=request.GET.get('inline') == '1')
+
+
+@login_required
+def immagine_riferimento(request, pk):
+    """Un'immagine di riferimento del catalogo eco (eco.ImmagineRiferimento:
+    immagine ecografica, schema, posizione della sonda). Non e' un dato
+    clinico, ma sta sotto MEDIA_ROOT come gli allegati e passa dalla stessa
+    consegna: nessun static(MEDIA_URL). Basta essere autenticati."""
+    from eco.models import ImmagineRiferimento
+
+    riferimento = get_object_or_404(ImmagineRiferimento, pk=pk)
+    if not riferimento.immagine:
+        raise Http404
+    return consegna(riferimento.immagine.name, inline=True)

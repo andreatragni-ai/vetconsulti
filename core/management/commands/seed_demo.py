@@ -14,7 +14,8 @@ Rifiuta di girare con DEBUG=False: sono account con password note.
 Due casi gia' INVIATI da `gbianchi`, per collaudare subito il lato del
 refertatore: un ECG a `rferrari` e un'eco a `lmonti`, quest'ultima con il
 referto dell'ecografo e tutte le proiezioni obbligatorie del catalogo
-(rispetta `perche_non_puoi_inviare`, come un invio vero). Gli allegati li
+(rispetta `perche_non_puoi_inviare`, come un invio vero; per ogni riga un
+PNG segnaposto, anche dove il catalogo chiede un filmato). Gli allegati li
 genera `core/demo.py`: PDF segnati DIMOSTRATIVO e PNG segnaposto, nessun
 file reale. Un caso dimostrativo si crea solo se non ce n'e' gia' uno
 aperto (inviato o preso in carico): rilanciare subito non duplica nulla,
@@ -199,14 +200,18 @@ class Command(BaseCommand):
     # ── Catalogo proiezioni eco ─────────────────────────────────────
 
     def _catalogo_eco(self):
-        """La bozza del catalogo, solo se il catalogo e' vuoto: se Andre lo
-        ha gia' ritoccato dall'admin, non lo si sovrascrive."""
+        """Il catalogo di Andre (eco/catalogo/, con le immagini di
+        riferimento), solo se il catalogo e' vuoto: se lo ha gia' ritoccato
+        dall'admin non lo si sovrascrive. Per ricaricarlo dal file:
+        `manage.py carica_catalogo_eco`."""
+        from io import StringIO
         from eco.models import ProiezioneCatalogo
         if ProiezioneCatalogo.objects.exists():
             self.stdout.write(f'Catalogo eco: {ProiezioneCatalogo.objects.count()} proiezioni (lasciato com\'e\').')
             return
-        call_command('loaddata', 'proiezioni_bozza', verbosity=0)
-        self.stdout.write(f'Catalogo eco: caricata la bozza ({ProiezioneCatalogo.objects.count()} proiezioni).')
+        uscita = StringIO()
+        call_command('carica_catalogo_eco', stdout=uscita)
+        self.stdout.write(uscita.getvalue().strip())
 
     # ── Casi dimostrativi ───────────────────────────────────────────
 

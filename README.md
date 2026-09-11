@@ -112,8 +112,10 @@ Come lo usa il portale:
   blocchi del form di registrazione, testi legali. Nessun colore letterale:
   solo variabili `--ovic-*` del pacchetto e `--bs-*` di Bootstrap.
 - **Attenzione all'omonimia**: `templates/_campo_form.html` del portale e' un
-  campo di FORM (`campo=form.x`); `vetway_ui/partials/_campo.html` e' un
-  partial ETICHETTA/VALORE in lettura (`label`, `val`, `multiline`).
+  campo di FORM (`campo=form.x`); `templates/_dato.html` e' un dato in SOLA
+  LETTURA come testo (`label`, `val`, `multiline`, `url`) e dall'11/09/2026
+  prende il posto di `vetway_ui/partials/_campo.html`, che disegna il valore
+  con il bordo di un input (la variante e' da portare in vetway-ui 0.3.0).
 
 WeasyPrint su macOS vuole le librerie Homebrew (`brew install pango`);
 `ffmpeg` e' facoltativo (senza, le clip eco restano nell'originale).
@@ -124,9 +126,9 @@ WeasyPrint su macOS vuole le librerie Homebrew (`brew install pango`);
 |---|---|
 | `config/` | settings (`base` / `dev` / `prod`), urls, wsgi |
 | `core/` | `TipoEsame`, context processor del profilo e della navbar (contatore dei casi da decidere), consegna protetta dei file (`scarica_allegato`, `?inline=1` per il visore), `seed_demo` e i file finti di `demo.py` |
-| `accounts/` | Refertatore + competenze, Clinica, DatiFatturazione (validazioni in `fiscale.py`; un solo soggetto fra clinica e richiedente), Richiedente (CLINICA / LIBERO_PROFESSIONISTA), Consenso; login, registrazione a due passi con conferma email, reset password, profili, area staff (refertatori, richiedenti da approvare) |
+| `accounts/` | Refertatore (con foto, `foto.py` la riduce; servita da `core.views_media.foto_refertatore`) + competenze (prezzo, tempo di risposta, `accetta_urgenze`), Clinica, DatiFatturazione (validazioni in `fiscale.py`; un solo soggetto fra clinica e richiedente), Richiedente (CLINICA / LIBERO_PROFESSIONISTA), Consenso; login, registrazione a due passi con conferma email, reset password, profili, area staff (refertatori, richiedenti da approvare) |
 | `listino/` | VoceListino, Supplemento, `prezzi.prezzo_effettivo()` |
-| `consulti/` | Richiesta (codice `TC-AAAA-NNNN`, `titolo` «Luna · Ecocardiografia», transizioni con audit, `riassegna` dopo un declino), Paziente, Allegato, Commento, EventoAudit append-only; richiesta guidata in quattro passi (`percorso.py`, `views_percorso.py`, template `percorso/`, `static/consulti/js/carica.js`), `caricamento.py` (zona + tipo di file -> categoria, ProiezioneCaricata, sostituzione), `regole.py` (invio con `elementi_obbligatori`, riassegnazione, tempo di risposta), `permessi.py` (chi agisce), `motivi.py` (frasi per declinare / non refertabile), `racconto.py` (audit leggibile), `views_decisione.py` (casi ricevuti, prendi in carico, declina, non refertabile), `upload_chunk.py`, comando `sorveglia_consulti` (rilascio + sollecito a meta' tempo) |
+| `consulti/` | Richiesta (codice `TC-AAAA-NNNN`, `titolo` «Luna · Ecocardiografia», transizioni con audit, `riassegna` dopo un declino), Paziente, Allegato, Commento, EventoAudit append-only; richiesta guidata in quattro passi (`percorso.py`, `views_percorso.py`, template `percorso/`, `static/consulti/js/carica.js`), `razze.py` (razze per specie copiate da VetCardio, campo con `static/consulti/js/elenco_filtrato.js`), `nomi.py` (maiuscole su nome e cognome), `caricamento.py` (zona + tipo di file -> categoria, ProiezioneCaricata, sostituzione), `elenco_file.py` (i file di un caso in ordine di catalogo per il visore e la pagina del caso), `regole.py` (invio con `elementi_obbligatori`, riassegnazione, tempo di risposta: 4 ore se urgente, urgenze solo a chi le accetta), `permessi.py` (chi agisce), `motivi.py` (frasi per declinare / non refertabile), `racconto.py` (audit leggibile), `views_decisione.py` (casi ricevuti, prendi in carico, declina, non refertabile), `upload_chunk.py`, comando `sorveglia_consulti` (rilascio + sollecito a meta' tempo) |
 | `eco/` | catalogo proiezioni (`catalogo/catalogo_eco.json` + `catalogo/img/`, comando `carica_catalogo_eco`; finestre acustiche, filmati liberi, ImmagineRiferimento), ProiezioneCaricata, `transcodifica.py` |
 | `referti/` | Referto (copia di lavoro) con `firma()` e `rettifica()`, VersioneReferto (istantanea firmata + PDF), `blocchi.py` (voci per tipo: il punto di aggancio delle misure ECG), pagina di refertazione con visore allegati e bozza automatica, PDF WeasyPrint, stampa protetta delle versioni |
 | `registro/` | Prestazione immutabile (`clinica` nulla per il libero professionista, `intestatario()`), StatoFatturazione, `registra_prestazione()`, comando `esporta_prestazioni` (colonne `intestatario`, `tipo_richiedente`) |

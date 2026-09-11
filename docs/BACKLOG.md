@@ -28,6 +28,18 @@ spunta. Le idee grosse hanno un file loro in `docs/`.
   dopo il passo 2 non blocca l'invio: il riepilogo lo segnala.
   Restano fuori: commenti con allegati; la pagina del refertatore con il
   visore piu' grande (passo successivo).
+  Rifiniture del collaudo dell'11/09 (branch `feat/rifiniture-collaudo`, da
+  questo): specie solo cane/gatto; razza da elenco per specie
+  (`consulti/razze.py`, copiato da VetCardio); data di nascita come testo
+  gg/mm/aaaa; maiuscole su nome e cognome (`consulti/nomi.py`); foto
+  dell'esperto; filmati «massimo 10 secondi»; urgenze a 4 ore e solo a chi
+  le accetta; file del refertatore in ordine di catalogo
+  (`consulti/elenco_file.py`); dati in lettura come testo
+  (`templates/_dato.html`). Da confermare: (h) una razza fuori elenco si
+  accetta con l'avviso «Non e' nell'elenco»; (i) `accetta_urgenze` per tipo
+  di esame sulla competenza, spento in partenza; (l) una parola gia' con
+  maiuscole («McDonald», anche «ROSSI») non si tocca. Dopo il merge:
+  `migrate` e `carica_catalogo_eco`.
 - [2026-09-11] **F3 — Andre conferma le scelte della refertazione**
   (branch `feat/refertazione`, da provare su `runserver` con `seed_demo`):
   (a) blocco per tipo minimo — ECG solo rischio anestesiologico con le voci
@@ -35,9 +47,9 @@ spunta. Le idee grosse hanno un file loro in `docs/`.
   (b) "non refertabile" chiude il caso SENZA prestazione, e l'email dice
   "non ti viene addebitato"; (c) testi delle email in
   `notifiche/templates/notifiche/*.txt` e frasi rapide in
-  `consulti/motivi.py`; (d) tempo di risposta non dichiarato = 48 h, 4 h
-  se urgente (`regole.ore_risposta_dichiarate`). Fatto = scelte confermate
-  o corrette, poi merge in `main`.
+  `consulti/motivi.py`; (d) tempo di risposta non dichiarato = 48 h; un
+  caso urgente sempre 4 h, deciso l'11/09 (`regole.ore_risposta`). Fatto =
+  scelte confermate o corrette, poi merge in `main`.
 - [2026-09-11] **Catalogo eco: le ultime lacune** (D6). Il catalogo di
   Andre e' in `eco/catalogo/catalogo_eco.json` (27 righe, 25 obbligatorie,
   62 immagini collegate; `manage.py carica_catalogo_eco`). Mancano le
@@ -50,9 +62,21 @@ spunta. Le idee grosse hanno un file loro in `docs/`.
 - [2026-09-11] Commenti con allegati sul caso (resto di F2).
 - [2026-09-11] vetway-ui 0.3.0: portare nel pacchetto i componenti nati
   in `static/consulti/css/consulti.css` per F2 (`.passi`, `.schede-scelta`,
-  `.zona-carica`, `.lista-controllo`, `.percorso-barra`) e una variabile
-  del footer per togliere «Django + PostgreSQL»; poi il portale torna a
-  usare l'include del pacchetto.
+  `.zona-carica`, `.lista-controllo`, `.percorso-barra`), l'elenco filtrato
+  (`.elenco-filtrato` + `static/consulti/js/elenco_filtrato.js`), una
+  variante «testo» di `partials/_campo.html` senza il bordo da input (oggi
+  `templates/_dato.html` + `.dato-*`) e una variabile del footer per
+  togliere «Django + PostgreSQL»; poi il portale torna a usare gli include
+  del pacchetto.
+- [2026-09-11] Miniature dei filmati nel visore del refertatore: le produce
+  il lavoro sullo smistamento; `consulti/elenco_file.py` ha gia' il campo
+  `miniatura` per voce.
+- [2026-09-11] Anche «Assente dal/al» nel profilo del refertatore e' un
+  type="date": su Safari vuoto sembra compilato come la data di nascita.
+  Stessa cura (testo gg/mm/aaaa) se ad Andre da' fastidio.
+- [2026-09-11] Termini del servizio: dire che l'urgenza promette la
+  risposta entro 4 ore (oggi dicono solo «supplemento di listino»), da
+  far rileggere al legale con il resto.
 
 - [2026-09-11] Misure ECG strutturate nel referto: quando il lettore SEIVA
   di VetCardio e' pronto, le sue voci entrano nel blocco ECG di

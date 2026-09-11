@@ -451,7 +451,9 @@ def test_eco_filmati_liberi_con_nota_uno_per_riga(loggato, bozza_eco, catalogo):
     # I filmati liberi sono facoltativi: non entrano fra gli obbligatori.
     assert not {libero.id, libero2.id} & {e.proiezione_id for e in regole.elementi_obbligatori(bozza_eco)}
     pagina = _t(loggato.get(reverse('consulti:passo_carica', args=[bozza_eco.pk])))
-    assert 'Filmati liberi · facoltativi' in pagina and '«versamento?»' in pagina
+    # Sul tavolo di smistamento la nota del filmato libero si legge (e si
+    # corregge) nella casella accanto al file.
+    assert 'Filmati liberi · facoltativi' in pagina and 'value="versamento?"' in pagina
 
 
 def test_eco_clip_troppo_pesante_rifiutata_con_messaggio(loggato, bozza_eco, catalogo, settings):

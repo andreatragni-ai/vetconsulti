@@ -143,3 +143,97 @@ class ProiezioneCaricata(models.Model):
 
     def __str__(self):
         return f'{self.richiesta.codice} — {self.proiezione.nome}'
+
+
+# ── Smistamento automatico (eco/smistamento/) ────────────────────────────────
+
+class StatoSmistamento(models.TextChoices):
+    IN_CORSO = 'IN_CORSO', 'In corso'
+    FATTO = 'FATTO', 'Fatto'
+    ERRORE = 'ERRORE', 'Non riuscito'
+
+
+class Smistamento(models.Model):
+    """Un giro di smistamento automatico dei file di un'eco (formato, pixel,
+    lettura AI, ordine di acquisizione). Gira in un thread dopo il commit; la
+    pagina legge `stato` finche' non e' FATTO. `messaggio` e' la frase per chi
+    carica (es. «lettura automatica non disponibile: smista a mano»);
+    `telemetria` tiene token, durata, costo stimato e errori della lettura AI."""
+
+    richiesta = models.ForeignKey(Richiesta, on_delete=models.CASCADE, related_name='smistamenti')
+    stato = models.CharField(max_length=10, choices=StatoSmistamento.choices, default=StatoSmistamento.IN_CORSO)
+    avviato_il = models.DateTimeField(auto_now_add=True)
+    finito_il = models.DateTimeField(null=True, blank=True)
+    avviato_da = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    n_file = models.PositiveIntegerField(default=0)
+    modello = models.CharField(max_length=60, blank=True)
+    lettura_ai = models.BooleanField(default=False, help_text='La lettura AI ha risposto per almeno un file.')
+    messaggio = models.TextField(blank=True)
+    telemetria = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        verbose_name = 'Smistamento automatico'
+        verbose_name_plural = 'Smistamenti automatici'
+        ordering = ['-avviato_il', '-pk']
+
+    def __str__(self):
+        return f'{self.richiesta.codice} — {self.get_stato_display()} ({self.avviato_il:%d/%m/%Y %H:%M})'
+
+
+class FonteProposta(models.TextChoices):
+    DA_SMISTARE = '', 'Da smistare'
+    FORMATO = 'FORMATO', 'Dal formato del file'
+    AI = 'AI', 'Lettura automatica'
+    ORDINE = 'ORDINE', 'Dall\'ordine di acquisizione'
+    MANUALE = 'MANUALE', 'Scelta di chi carica'
+    RIGA = 'RIGA', 'Caricato nella riga'
+
+
+class PropostaSmistamento(models.Model):
+    """Dove sta un file dell'eco sul «tavolo di smistamento»: una riga del
+    catalogo, il referto dell'ecografo, o nessuna («da smistare»). E' una
+    PROPOSTA: le ProiezioneCaricata (cio' che conta per inviare) nascono solo
+    quando chi carica preme «Confermo lo smistamento» (eco/smistamento/
+    tavolo.py:conferma). Una riga ha al piu' un file, un file al piu' una riga.
+
+    `fonte` dice chi l'ha messo li': il formato (il PDF e' il referto), la
+    lettura automatica, l'ordine di acquisizione, chi carica (spostandolo a
+    mano) o il caricamento diretto nella riga. Uno smistamento automatico
+    nuovo non tocca MANUALE e RIGA."""
+
+    richiesta = models.ForeignKey(Richiesta, on_delete=models.CASCADE, related_name='proposte_smistamento')
+    allegato = models.OneToOneField(Allegato, on_delete=models.CASCADE, related_name='proposta_smistamento')
+    proiezione = models.ForeignKey(ProiezioneCatalogo, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='+')
+    referto = models.BooleanField(default=False, help_text='Proposto come referto dell\'ecografo (PDF).')
+    nota = models.CharField(max_length=200, blank=True, help_text='Per i filmati liberi: cosa mostra / cosa chiedi.')
+    fonte = models.CharField(max_length=10, choices=FonteProposta.choices, default=FonteProposta.DA_SMISTARE,
+                             blank=True)
+    confidenza = models.FloatField(null=True, blank=True)
+    sicura = models.BooleanField(default=False)
+    motivo = models.CharField(max_length=300, blank=True)
+    seconda_scelta = models.ForeignKey(ProiezioneCatalogo, on_delete=models.SET_NULL, null=True, blank=True,
+                                       related_name='+')
+    tracciato = models.CharField(max_length=20, blank=True, help_text='Tipo di tracciato letto dalla AI.')
+    colore = models.CharField(max_length=10, blank=True, help_text='color / bmode / incerto, dai pixel.')
+    percorso_originale = models.CharField(max_length=500, blank=True,
+                                          help_text='Percorso nella cartella caricata (ordine di acquisizione).')
+    modificato_il = models.BigIntegerField(null=True, blank=True,
+                                           help_text='Data di modifica del file (ms), dal browser.')
+    aggiornata_il = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Proposta di smistamento'
+        verbose_name_plural = 'Proposte di smistamento'
+        constraints = [
+            models.UniqueConstraint(fields=['richiesta', 'proiezione'], condition=models.Q(proiezione__isnull=False),
+                                    name='una_proposta_per_riga'),
+        ]
+
+    def __str__(self):
+        dove = self.proiezione.codice if self.proiezione_id else ('referto' if self.referto else 'da smistare')
+        return f'{self.richiesta.codice} — {self.allegato.nome_originale} → {dove}'
+
+    @property
+    def da_smistare(self):
+        return self.proiezione_id is None and not self.referto

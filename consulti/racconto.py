@@ -48,6 +48,8 @@ def _frase(evento, refertatori):
         'PRESTAZIONE_REGISTRATA': f'prestazione registrata (€ {d.get("totale", "?")})',
         'SOLLECITO': 'promemoria inviato all\'esperto a meta\' del tempo di risposta',
         'ACCESSO_STAFF': f'ha consultato il caso come staff ({d.get("pagina", "pagina")})',
+        'SMISTAMENTO_AVVIATO': f'ha avviato lo smistamento automatico di {d.get("file", "")} file',
+        'SMISTAMENTO_CONFERMATO': f'ha confermato lo smistamento dei file ({d.get("righe", 0)} proiezioni)',
     }
     return frasi.get(a, a.replace('_', ' ').lower())
 

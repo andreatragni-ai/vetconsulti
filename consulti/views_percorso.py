@@ -327,6 +327,11 @@ def contesto_caricamento(richiesta):
             per_proiezione.setdefault(pc.proiezione_id, []).append(pc)
             mostrati.add(pc.allegato_id)
         ctx.update(_gruppi_eco(per_proiezione))
+        # Il tavolo di smistamento: ogni file dell'eco sta in una riga, nel
+        # referto o fra i «da smistare» (consulti/views_smistamento.py).
+        from .views_smistamento import contesto_tavolo
+        ctx.update(contesto_tavolo(richiesta, ctx))
+        mostrati.update(a.pk for a in allegati)
     ctx['altri_file'] = [a for a in allegati if a.pk not in mostrati]
     return ctx
 

@@ -1,0 +1,52 @@
+{% comment %}
+Un file dell'eco sul tavolo di smistamento (consulti/views_smistamento.py:
+contesto_tavolo): in una riga, nel referto o fra i «da smistare».
+Miniatura (Allegato.url_anteprima; senza, l'icona del tipo), nome, bollino
+(confermato / sicuro / da verificare / scelto da te), il perche' della
+proposta a richiesta, «Sposta in...» (menu: tastiera e iPad; con JS parte
+alla scelta, senza JS c'e' il pulsante) e «Elimina». Si puo' anche
+trascinare (static/consulti/js/tavolo.js).
+Parametri: posto = {allegato, proposta, bollino, confermata, genere, icona, voci}.
+{% endcomment %}
+{% with a=posto.allegato p=posto.proposta %}
+<div class="posto-file{% if posto.bollino %} posto--{{ posto.bollino }}{% endif %}" draggable="true" data-allegato="{{ a.pk }}"
+     data-nome="{{ a.nome_originale }}">
+  <a class="posto-miniatura" href="{% url 'scarica_allegato' a.pk %}?inline=1" target="_blank" rel="noopener" draggable="false"
+     title="Apri {{ a.nome_originale }}">
+    {% if a.url_anteprima %}<img src="{{ a.url_anteprima }}" alt="Miniatura di {{ a.nome_originale }}" loading="lazy" draggable="false">
+    {% else %}<span class="posto-senza"><i class="bi bi-{{ posto.icona }}" aria-hidden="true"></i></span>{% endif %}
+    {% if posto.genere == 'video' %}<span class="posto-tipo" aria-hidden="true"><i class="bi bi-play-fill"></i></span>{% endif %}
+  </a>
+  <div class="posto-testo">
+    <span class="posto-nome">{{ a.nome_originale }}</span>
+    <span class="posto-stato">
+      {% if posto.bollino == 'confermato' %}<span class="bollino bollino--ok"><i class="bi bi-check-circle-fill" aria-hidden="true"></i>Confermato</span>
+      {% elif posto.bollino == 'sicuro' %}<span class="bollino bollino--sicuro"><i class="bi bi-patch-check-fill" aria-hidden="true"></i>Sicuro</span>
+      {% elif posto.bollino == 'verifica' %}<span class="bollino bollino--verifica"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>Da verificare</span>
+      {% elif posto.bollino == 'manuale' %}<span class="bollino bollino--manuale"><i class="bi bi-hand-index-thumb" aria-hidden="true"></i>Scelto da te</span>{% endif %}
+      <span class="posto-meta">{{ a.dimensione|filesizeformat }}</span>
+    </span>
+    {% if p.motivo %}<details class="posto-motivo"><summary>Perche'?</summary><p>{{ p.motivo }}{% if p.seconda_scelta and p.seconda_scelta_id != p.proiezione_id %} Seconda ipotesi: «{{ p.seconda_scelta.nome }}».{% endif %}</p></details>{% endif %}
+  </div>
+  <div class="posto-azioni">
+    <form class="posto-sposta" method="post" action="{% url 'consulti:smistamento_sposta' richiesta.pk %}" data-sposta>
+      {% csrf_token %}
+      <input type="hidden" name="allegato" value="{{ a.pk }}">
+      <label class="visually-hidden" for="sposta-{{ a.pk }}">Sposta «{{ a.nome_originale }}» in</label>
+      <select name="destinazione" id="sposta-{{ a.pk }}" class="form-select form-select-sm">
+        <option value="">Sposta in…</option>
+        {% for valore, etichetta in posto.voci %}<option value="{{ valore }}">{{ etichetta }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="btn btn-outline-secondary btn-sm posto-vai">Sposta</button>
+    </form>
+    <button type="button" class="btn btn-outline-danger btn-sm posto-elimina"
+            data-bs-toggle="modal" data-bs-target="#modalConfermaElimina"
+            data-elimina-href="{% url 'consulti:elimina_allegato' richiesta.pk a.pk %}"
+            data-elimina-titolo="Eliminare «{{ a.nome_originale }}»?"
+            data-elimina-dettaglio="Il file viene tolto dalla richiesta; potrai caricarlo di nuovo."
+            data-elimina-intestazione="Conferma eliminazione" data-elimina-azione="Si', elimina">
+      <i class="bi bi-trash" aria-hidden="true"></i><span class="visually-hidden">Elimina {{ a.nome_originale }}</span>
+    </button>
+  </div>
+</div>
+{% endwith %}

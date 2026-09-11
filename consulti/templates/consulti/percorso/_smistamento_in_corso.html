@@ -1,0 +1,10 @@
+{% comment %}
+Smistamento automatico in corso (consulti/views_smistamento.py:stato): htmx
+richiede lo stato ogni 2 secondi; a lavoro finito il server risponde con
+HX-Refresh e la pagina si ricarica con il tavolo pieno.
+{% endcomment %}
+<div class="avviso-smistamento" id="stato-smistamento" role="status"
+     hx-get="{% url 'consulti:smistamento_stato' richiesta.pk %}" hx-trigger="every 2s" hx-swap="outerHTML">
+  <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+  <span>Sto smistando {{ smistamento.n_file }} file: guardo formato e colori, leggo i fotogrammi e li metto nelle righe. Di solito basta meno di un minuto; la pagina si aggiorna da sola.</span>
+</div>

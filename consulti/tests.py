@@ -408,3 +408,43 @@ def test_ogni_stato_ha_un_tono_per_la_pillola():
     uno stato nuovo senza tono uscirebbe grigio in silenzio."""
     assert set(Richiesta.TONO_STATO) == {s.value for s in StatoRichiesta}
     assert set(Richiesta.TONO_STATO.values()) <= {'', 'corso', 'ok', 'attesa', 'chiusa', 'errore'}
+
+
+# ── Nuova richiesta dal form: l'esperto dipende dal tipo scelto ─────────────
+
+@pytest.fixture
+def esperto_eco(db):
+    """Referente solo per l'eco: e' il caso che il bug del prefisso rompeva."""
+    u = User.objects.create_user('eco', 'eco@x.it', 'pw', first_name='Laura', last_name='Monti')
+    r = Refertatore.objects.create(user=u)
+    CompetenzaRefertatore.objects.create(refertatore=r, tipo_esame=TipoEsame.ECO, referente=True)
+    return r
+
+
+def _crea_dal_form(client, tipo, esperto):
+    return client.post(reverse('consulti:nuova'), {
+        'r-tipo_esame': tipo, 'r-refertatore': esperto.pk, 'r-quesito': 'Soffio da valutare',
+        'p-nome': 'Luna', 'p-specie': 'GATTO', 'p-sesso': 'ND'})
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('tipo', [TipoEsame.ECO, TipoEsame.HOLTER, TipoEsame.ECG])
+def test_nuova_richiesta_accetta_l_esperto_del_tipo_scelto(client, richiedente, refertatore, esperto_eco, tipo):
+    """Il form ha il prefisso 'r': il tipo va letto da 'r-tipo_esame'. Prima si
+    leggeva 'tipo_esame', il tipo risultava sempre ECG e chiedere un'eco a un
+    referente solo eco dava 'Scegli un'opzione valida'."""
+    esperto = esperto_eco if tipo == TipoEsame.ECO else refertatore
+    client.force_login(richiedente.user)
+    risposta = _crea_dal_form(client, tipo, esperto)
+    assert risposta.status_code == 302, 'la richiesta non e\' stata creata'
+    creata = Richiesta.objects.get()
+    assert creata.tipo_esame == tipo and creata.refertatore == esperto
+
+
+@pytest.mark.django_db
+def test_nuova_richiesta_rifiuta_un_esperto_non_referente_per_quel_tipo(client, richiedente, refertatore):
+    """Il rovescio: Anna referta ECG e Holter, non l'eco."""
+    client.force_login(richiedente.user)
+    risposta = _crea_dal_form(client, TipoEsame.ECO, refertatore)
+    assert risposta.status_code == 200
+    assert not Richiesta.objects.exists()

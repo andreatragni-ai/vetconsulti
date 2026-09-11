@@ -39,7 +39,11 @@ class NuovaRichiestaForm(forms.ModelForm):
         # htmx ricarica il select degli esperti quando cambia il tipo.
         self.fields['tipo_esame'].widget.attrs.update({
             'hx-get': '/consulti/esperti/', 'hx-target': '#esperti', 'hx-trigger': 'change'})
-        tipo = self.data.get('tipo_esame') or self.initial.get('tipo_esame') or TipoEsame.ECG
+        # Il form vive con un prefisso ('r' in nuova_richiesta): la chiave nel
+        # POST e' 'r-tipo_esame'. Leggendo 'tipo_esame' il tipo risultava sempre
+        # ECG e un esperto dell'eco veniva rifiutato come scelta non valida.
+        tipo = (self.data.get(self.add_prefix('tipo_esame'))
+                or self.initial.get('tipo_esame') or TipoEsame.ECG)
         self.fields['refertatore'].queryset = Refertatore.referenti_per(tipo)
 
 

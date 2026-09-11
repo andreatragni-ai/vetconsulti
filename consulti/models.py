@@ -128,6 +128,16 @@ class Richiesta(models.Model):
     def tono_stato(self):
         return self.TONO_STATO.get(self.stato, '')
 
+    @property
+    def titolo(self):
+        """Come la ricorda un veterinario: «Luna · Ecocardiografia», non
+        «TC-2026-0001». Il codice resta accanto, piccolo (fatture, telefono).
+        Senza paziente (non dovrebbe capitare) si ripiega sul codice."""
+        paziente = getattr(self, 'paziente', None)
+        if paziente is None or not paziente.nome:
+            return f'{self.codice} · {self.get_tipo_esame_display()}'
+        return f'{paziente.nome} · {self.get_tipo_esame_display()}'
+
     def save(self, *args, **kwargs):
         if not self.codice:
             self.codice = ContatoreAnno.prossimo_codice(timezone.now().year)
@@ -359,21 +369,29 @@ class Allegato(models.Model):
         return 'altro'
 
     @classmethod
-    def da_upload(cls, richiesta, file_caricato, categoria, utente=None):
-        """Crea un allegato da un UploadedFile calcolando impronta e dimensione
-        in un solo passaggio, prima che il file finisca nello storage."""
-        digest = hashlib.sha256()
-        for blocco in file_caricato.chunks():
-            digest.update(blocco)
-        file_caricato.seek(0)
-        nome = getattr(file_caricato, 'name', '') or ''
-        mime = getattr(file_caricato, 'content_type', '') or mimetypes.guess_type(nome)[0] or ''
+    def da_upload(cls, richiesta, file_caricato, categoria, utente=None, *, nome=None, mime=None,
+                  impronta=None, **dettaglio_audit):
+        """Crea un allegato da un UploadedFile (o da un File gia' su disco,
+        come alla fine del caricamento a pezzi) calcolando impronta e
+        dimensione in un solo passaggio, prima che il file finisca nello
+        storage. `impronta` si passa quando e' gia' stata verificata;
+        `dettaglio_audit` finisce nell'evento ALLEGATO_CARICATO."""
+        if impronta is None:
+            digest = hashlib.sha256()
+            for blocco in file_caricato.chunks():
+                digest.update(blocco)
+            file_caricato.seek(0)
+            impronta = digest.hexdigest()
+        nome = nome or getattr(file_caricato, 'name', '') or ''
+        mime = (mime or getattr(file_caricato, 'content_type', '') or mimetypes.guess_type(nome)[0] or '')
+        if mime == 'application/octet-stream':
+            mime = mimetypes.guess_type(nome)[0] or mime
         allegato = cls(richiesta=richiesta, categoria=categoria, nome_originale=os.path.basename(nome)[:255],
-                       dimensione=file_caricato.size, sha256=digest.hexdigest(), mime=mime[:100],
+                       dimensione=file_caricato.size, sha256=impronta, mime=mime[:100],
                        caricato_da=utente)
         allegato.file.save(os.path.basename(nome) or 'allegato', file_caricato, save=True)
         richiesta.registra('ALLEGATO_CARICATO', utente, allegato=allegato.id, categoria=categoria,
-                           nome=allegato.nome_originale)
+                           nome=allegato.nome_originale, **dettaglio_audit)
         return allegato
 
 

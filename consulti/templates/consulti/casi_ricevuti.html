@@ -14,13 +14,13 @@ quelli da decidere, poi dal piu' vecchio.
 
 <div class="ovic-card"><div class="card-header-ovic">Da lavorare</div><div class="table-responsive">
 <table class="tbl-risultati align-middle">
-  <thead><tr><th>Codice</th><th>Esame</th><th>Paziente</th><th>Da</th><th>Stato</th><th>Inviato</th><th>Risposta dichiarata</th><th></th></tr></thead>
+  <thead><tr><th>Paziente</th><th>Esame</th><th>Da</th><th>Stato</th><th>Inviato</th><th>Risposta dichiarata</th><th></th></tr></thead>
   <tbody>
   {% for riga in aperti %}{% with r=riga.richiesta %}
-    <tr class="riga-cliccabile" onclick="window.location='{% url 'referti:refertazione' r.pk %}'">
-      <td class="text-nowrap"><a href="{% url 'referti:refertazione' r.pk %}"><strong>{{ r.codice }}</strong></a>{% if r.urgenza %} <i class="bi bi-lightning-fill text-danger" title="Urgenza"></i>{% endif %}</td>
+    {% url 'referti:refertazione' r.pk as url_caso %}
+    <tr class="riga-cliccabile" onclick="window.location='{{ url_caso }}'">
+      <td>{% include "consulti/_cella_paziente.html" %}</td>
       <td>{{ r.get_tipo_esame_display }}</td>
-      <td>{{ r.paziente|default:"—" }}</td>
       <td>{{ r.richiedente.user.get_full_name }}<br><span class="text-muted small">{{ r.intestatario.denominazione }}{% if not r.clinica_id %} (lib. prof.){% endif %}</span></td>
       <td><span class="pill-stato{% if r.tono_stato %} pill-stato--{{ r.tono_stato }}{% endif %}">{{ r.get_stato_display }}</span></td>
       <td class="num-tab">da {{ riga.eta }}<br><span class="text-muted small">{{ r.inviata_il|date:"d/m H:i" }}</span></td>
@@ -28,7 +28,7 @@ quelli da decidere, poi dal piu' vecchio.
       <td class="td-kebab"><a class="btn-sel" href="{% url 'referti:refertazione' r.pk %}">{% if r.stato == 'INVIATA' %}Decidi{% else %}Referta{% endif %}</a></td>
     </tr>
   {% endwith %}{% empty %}
-    <tr><td colspan="8" class="text-center text-muted py-5"><i class="bi bi-inbox fs-3 d-block mb-2"></i>Nessun caso in attesa.</td></tr>
+    <tr><td colspan="7" class="text-center text-muted py-5"><i class="bi bi-inbox fs-3 d-block mb-2"></i>Nessun caso in attesa.</td></tr>
   {% endfor %}
   </tbody>
 </table>
@@ -37,13 +37,13 @@ quelli da decidere, poi dal piu' vecchio.
 {% if chiusi %}
 <div class="ovic-card"><div class="card-header-ovic">Chiusi di recente</div><div class="table-responsive">
 <table class="tbl-risultati align-middle">
-  <thead><tr><th>Codice</th><th>Esame</th><th>Paziente</th><th>Da</th><th>Stato</th><th>Chiuso</th></tr></thead>
+  <thead><tr><th>Paziente</th><th>Esame</th><th>Da</th><th>Stato</th><th>Chiuso</th></tr></thead>
   <tbody>
   {% for riga in chiusi %}{% with r=riga.richiesta %}
-    <tr class="riga-cliccabile" onclick="window.location='{% url 'referti:refertazione' r.pk %}'">
-      <td class="text-nowrap"><a href="{% url 'referti:refertazione' r.pk %}"><strong>{{ r.codice }}</strong></a></td>
+    {% url 'referti:refertazione' r.pk as url_caso %}
+    <tr class="riga-cliccabile" onclick="window.location='{{ url_caso }}'">
+      <td>{% include "consulti/_cella_paziente.html" %}</td>
       <td>{{ r.get_tipo_esame_display }}</td>
-      <td>{{ r.paziente|default:"—" }}</td>
       <td>{{ r.intestatario.denominazione }}</td>
       <td><span class="pill-stato{% if r.tono_stato %} pill-stato--{{ r.tono_stato }}{% endif %}">{{ r.get_stato_display }}</span></td>
       <td class="num-tab text-muted">{{ r.chiusa_il|date:"d/m/Y H:i" }}</td>

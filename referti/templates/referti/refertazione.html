@@ -11,10 +11,10 @@ allegati; a destra (sotto) il caso in lettura e, a seconda dello stato:
 Salvare (referti:salva_bozza) e firmare (referti:firma / referti:rettifica)
 sono rotte diverse: la firma passa dalla modale di conferma del pacchetto.
 {% endcomment %}
-{% block title %}{{ richiesta.codice }} — refertazione — VetWay Consulti{% endblock %}
+{% block title %}{{ richiesta.titolo }} — refertazione — VetWay Consulti{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2 barra-azioni-testata">
-  <h4 class="mb-0">{{ richiesta.codice }} <small class="text-muted">{{ richiesta.get_tipo_esame_display }}</small>
+  <h4 class="caso-titolo">{{ richiesta.titolo }} <span class="codice-caso ms-1">{{ richiesta.codice }}</span>
     <span class="pill-stato{% if richiesta.tono_stato %} pill-stato--{{ richiesta.tono_stato }}{% endif %} ms-2">{{ richiesta.get_stato_display }}</span>
     {% if richiesta.urgenza %}<span class="badge bg-danger ms-1">urgenza</span>{% endif %}</h4>
   <a class="btn-testata-ghost" href="{% url 'consulti:casi_ricevuti' %}"><i class="bi bi-arrow-left"></i> Casi ricevuti</a>
@@ -38,7 +38,7 @@ sono rotte diverse: la firma passa dalla modale di conferma del pacchetto.
         <div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Sesso" val=richiesta.paziente.get_sesso_display %}</div>
         <div class="col-6">{% if richiesta.paziente.data_nascita %}{% include "vetway_ui/partials/_campo.html" with label="Nato il" val=richiesta.paziente.data_nascita|date:"d/m/Y" %}{% else %}{% include "vetway_ui/partials/_campo.html" with label="Eta'" val=richiesta.paziente.eta_testo %}{% endif %}</div>
         <div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Peso (kg)" val=richiesta.paziente.peso_kg %}</div>
-        <div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Motivo dell'esame" val=richiesta.motivo_esame %}</div>
+        {% if richiesta.motivo_esame %}<div class="col-6">{% include "vetway_ui/partials/_campo.html" with label="Motivo dell'esame" val=richiesta.motivo_esame %}</div>{% endif %}
       </div>
       {% include "vetway_ui/partials/_campo.html" with label="Quesito" val=richiesta.quesito multiline=True %}
       {% include "vetway_ui/partials/_campo.html" with label="Anamnesi" val=richiesta.anamnesi multiline=True %}

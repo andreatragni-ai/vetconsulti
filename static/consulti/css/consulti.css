@@ -142,3 +142,14 @@
 .azioni-secondarie > summary { cursor: pointer; font-size: .85rem; font-weight: 600; color: var(--ovic-blu); }
 .azioni-secondarie > summary + * { margin-top: .6rem; }
 .testo-a-capo { white-space: pre-wrap; }
+
+/* ── Titolo del caso: il paziente, con il codice piccolo accanto ── */
+.caso-titolo { margin: 0; font-weight: 700; color: var(--ovic-testo); }
+.codice-caso {
+  font-size: .8rem;
+  font-weight: 500;
+  color: var(--bs-secondary-color);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}

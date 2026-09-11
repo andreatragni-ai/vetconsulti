@@ -37,6 +37,12 @@ def _link_refertazione(richiesta):
     return _assoluto(reverse('referti:refertazione', args=[richiesta.pk]))
 
 
+def _caso(richiesta):
+    """Come si nomina il caso nell'oggetto: il paziente con l'esame, e il
+    codice fra parentesi («Luna · Ecocardiografia (TC-2026-0002)»)."""
+    return f'{richiesta.titolo} ({richiesta.codice})'
+
+
 def _invia(tipo, destinatario, oggetto, template, contesto, richiesta=None, link=None, allegati=()):
     """`allegati`: [(nome, contenuto_bytes, mime)]."""
     nomi = ', '.join(nome for nome, _c, _m in allegati)[:300]
@@ -86,7 +92,7 @@ def avvisa_caso_arrivato(richiesta):
     if ref is None:
         return False
     return _invia(TipoInvio.CASO_ARRIVATO, ref.user.email,
-                  f'[VetWay Consulti] Nuovo caso {richiesta.codice} — {richiesta.get_tipo_esame_display()}',
+                  f'[VetWay Consulti] Nuovo caso{" URGENTE" if richiesta.urgenza else ""}: {_caso(richiesta)}',
                   'notifiche/caso_arrivato.txt', {'refertatore': ref}, richiesta,
                   link=_link_refertazione(richiesta))
 
@@ -97,7 +103,7 @@ def sollecita_refertatore(richiesta, ore_dichiarate=None):
     if ref is None:
         return False
     return _invia(TipoInvio.SOLLECITO, ref.user.email,
-                  f'[VetWay Consulti] Promemoria: caso {richiesta.codice} in attesa',
+                  f'[VetWay Consulti] Promemoria: {_caso(richiesta)} in attesa',
                   'notifiche/sollecito.txt', {'refertatore': ref, 'ore_dichiarate': ore_dichiarate},
                   richiesta, link=_link_refertazione(richiesta))
 
@@ -108,7 +114,7 @@ def avvisa_presa_rilasciata(richiesta, ore=None):
     if ref is None:
         return False
     return _invia(TipoInvio.RILASCIO, ref.user.email,
-                  f'[VetWay Consulti] Caso {richiesta.codice} rimesso a disposizione',
+                  f'[VetWay Consulti] {_caso(richiesta)} rimesso a disposizione',
                   'notifiche/rilascio.txt', {'refertatore': ref, 'ore': ore}, richiesta,
                   link=_link_refertazione(richiesta))
 
@@ -117,21 +123,21 @@ def avvisa_presa_rilasciata(richiesta, ore=None):
 
 def avvisa_referto_pronto(richiesta, versione=None):
     return _invia(TipoInvio.REFERTO_PRONTO, richiesta.richiedente.user.email,
-                  f'[VetWay Consulti] Referto pronto per {richiesta.codice}',
+                  f'[VetWay Consulti] Referto pronto: {_caso(richiesta)}',
                   'notifiche/referto_pronto.txt', {'richiedente': richiesta.richiedente, 'versione': versione},
                   richiesta, allegati=_pdf_allegato(versione))
 
 
 def avvisa_referto_rettificato(richiesta, versione):
     return _invia(TipoInvio.REFERTO_RETTIFICATO, richiesta.richiedente.user.email,
-                  f'[VetWay Consulti] Referto {richiesta.codice} rettificato (versione {versione.numero})',
+                  f'[VetWay Consulti] Referto rettificato: {_caso(richiesta)}, versione {versione.numero}',
                   'notifiche/referto_rettificato.txt', {'richiedente': richiesta.richiedente, 'versione': versione},
                   richiesta, allegati=_pdf_allegato(versione))
 
 
 def avvisa_caso_declinato(richiesta, refertatore=None):
     return _invia(TipoInvio.CASO_DECLINATO, richiesta.richiedente.user.email,
-                  f'[VetWay Consulti] Caso {richiesta.codice} declinato: scegli un altro esperto',
+                  f'[VetWay Consulti] {_caso(richiesta)} declinato: scegli un altro esperto',
                   'notifiche/caso_declinato.txt',
                   {'richiedente': richiesta.richiedente, 'refertatore': refertatore or richiesta.refertatore},
                   richiesta)
@@ -139,5 +145,5 @@ def avvisa_caso_declinato(richiesta, refertatore=None):
 
 def avvisa_non_refertabile(richiesta):
     return _invia(TipoInvio.NON_REFERTABILE, richiesta.richiedente.user.email,
-                  f'[VetWay Consulti] Caso {richiesta.codice} non refertabile',
+                  f'[VetWay Consulti] {_caso(richiesta)} non refertabile',
                   'notifiche/non_refertabile.txt', {'richiedente': richiesta.richiedente}, richiesta)

@@ -614,3 +614,9 @@ a.riferimento:hover, a.riferimento:focus-visible { outline: 3px solid var(--ovic
   font-weight: 600;
   color: var(--bs-warning-text-emphasis);
 }
+
+/* Pie' di pagina del portale: markup come quello del pacchetto, senza la riga
+   sulla tecnologia (vedi templates/base.html). */
+.consulti-footer a { color: var(--bs-white); opacity: .75; }
+.consulti-footer a:hover { opacity: 1; }
+.consulti-footer strong { color: var(--bs-white); opacity: .85; }

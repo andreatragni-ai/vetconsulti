@@ -5,7 +5,8 @@ base.html — template "ospite" di VetWay Consulti sopra vetway_ui/base.html
 (pacchetto vetway-ui). Qui resta SOLO cio' che e' del portale: testata con
 il nome del prodotto, voci della navbar (dal context processor
 core.context_processors.navigazione), avviso "completa i dati di
-fatturazione", footer con privacy e termini (vetway-ui >= 0.2.0), CSS di dominio. Vendor
+fatturazione", footer con privacy e termini (markup del pacchetto senza la
+riga sulla tecnologia), CSS di dominio. Vendor
 (Bootstrap, Icons, HTMX in locale), sessione, spinner, messaggi e modale
 di conferma vengono dal pacchetto.
 I template del portale estendono "base.html" e usano i blocchi
@@ -43,8 +44,15 @@ title / content / js (alias di extra_js) / extra_head / extra_body.
 {% endblock %}
 
 {% block footer %}
-{% url 'core:privacy' as privacy_url %}{% url 'core:termini' as termini_url %}
-{% include "vetway_ui/partials/_footer.html" with privacy_url=privacy_url termini_url=termini_url prodotto="VetWay Consulti" %}
+{# Stesso markup di vetway_ui/partials/_footer.html (0.2.0) ma senza la riga #}
+{# «Django + PostgreSQL», che al collega non dice nulla: il partial del       #}
+{# pacchetto la stampa sempre. Candidato vetway-ui 0.3.0: variabile per       #}
+{# toglierla, poi si torna all'include.                                        #}
+<div class="ovic-footer consulti-footer">
+  Powered by <strong>VetWay Consulti</strong>
+  &nbsp;·&nbsp; <a href="{% url 'core:privacy' %}">Privacy &amp; cookie</a>
+  &nbsp;·&nbsp; <a href="{% url 'core:termini' %}">Termini del servizio</a>
+</div>
 {% endblock %}
 
 {% block extra_js %}{% block js %}{% endblock %}{% endblock %}

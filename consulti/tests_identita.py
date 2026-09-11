@@ -42,3 +42,12 @@ def test_email_con_il_nome_del_paziente(caso_inviato):
     oggetti = [m.subject for m in mail.outbox]
     assert len(oggetti) == 2
     assert all(f'Fido · Elettrocardiogramma ({caso_inviato.codice})' in o for o in oggetti), oggetti
+
+
+def test_pie_di_pagina_senza_la_tecnologia(client, mondo):
+    """«Django + PostgreSQL» al collega non dice nulla: il pie' di pagina ha
+    solo il prodotto, la privacy e i termini."""
+    client.force_login(mondo.richiedente.user)
+    pagina = _t(client.get(reverse('consulti:mie_richieste')))
+    assert 'Django + PostgreSQL' not in pagina and 'Powered by <strong>VetWay Consulti</strong>' in pagina
+    assert reverse('core:privacy') in pagina and reverse('core:termini') in pagina

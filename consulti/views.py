@@ -172,7 +172,8 @@ def carica_allegato(request, pk):
                 richiesta, file_caricato, file_caricato.name, slot, request.user,
                 proiezione_id=_intero(request.POST.get('proiezione')),
                 sostituisci_id=_intero(request.POST.get('sostituisci')),
-                mime=getattr(file_caricato, 'content_type', ''), nota=request.POST.get('nota', ''))
+                mime=getattr(file_caricato, 'content_type', ''), nota=request.POST.get('nota', ''),
+                anteprima=request.FILES.get('anteprima'))
         except caricamento.CaricamentoNonValido as e:
             errore = str(e)
     if json:
@@ -340,7 +341,8 @@ def upload_concludi(request, pk):
             allegato = caricamento.allega(richiesta, File(f, name=nome), nome, zona['slot'], request.user,
                                           proiezione_id=zona['proiezione_id'],
                                           sostituisci_id=zona['sostituisci_id'], nota=zona['nota'],
-                                          mime=mime, impronta=impronta, a_pezzi=True)
+                                          mime=mime, impronta=impronta, anteprima=request.FILES.get('anteprima'),
+                                          a_pezzi=True)
     except caricamento.CaricamentoNonValido as e:
         upload_chunk.abbandona(impronta)
         return _json_errore(str(e))

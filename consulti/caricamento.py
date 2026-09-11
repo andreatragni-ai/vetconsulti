@@ -37,6 +37,12 @@ arriva il file, non cosa diventa.
 transazione: la riga non resta mai vuota a meta'. Rimuovere un allegato
 toglie anche la sua ProiezioneCaricata. Entrambe le cose lasciano l'audit.
 
+## Anteprime
+
+Ogni zona accetta, insieme al file, la miniatura fatta dal browser
+(`anteprima`); se manca e il file e' un'immagine la fa il server
+(consulti/anteprime.py).
+
 ## Transcodifica
 
 Una clip eco appena caricata passa a `eco.transcodifica` dopo il commit, in
@@ -235,12 +241,13 @@ def controlla(richiesta, slot, nome, mime='', *, proiezione_id=None, sostituisci
 
 
 def allega(richiesta, file_obj, nome, slot, utente, *, proiezione_id=None, sostituisci_id=None,
-           mime='', impronta=None, nota='', **dettaglio_audit):
+           mime='', impronta=None, nota='', anteprima=None, **dettaglio_audit):
     """Crea l'allegato dello slot (e la ProiezioneCaricata, se lo slot e' una
     proiezione), sostituendo un allegato esistente se richiesto. Solleva
     CaricamentoNonValido prima di scrivere qualsiasi cosa. `nota` e' il
     «cosa mostra / cosa chiedi» del filmato libero; sostituendo senza nota
-    nuova resta quella di prima."""
+    nuova resta quella di prima. `anteprima`: la miniatura del browser
+    (facoltativa)."""
     proiezione, vecchio = _verifica(richiesta, slot, proiezione_id, sostituisci_id, nota)
     categoria = categoria_per(slot, nome, mime, proiezione)
     _verifica_dimensione(categoria, getattr(file_obj, 'size', None))
@@ -258,9 +265,20 @@ def allega(richiesta, file_obj, nome, slot, utente, *, proiezione_id=None, sosti
                                               nota=nota)
         if vecchio is not None:
             rimuovi(vecchio, utente, sostituito_da=allegato.id)
+        _anteprima(allegato, anteprima)
         if categoria == CategoriaAllegato.ECO_CLIP:
             transaction.on_commit(lambda: pianifica_transcodifica(allegato.pk))
     return allegato
+
+
+def _anteprima(allegato, file_anteprima):
+    """La miniatura del browser se c'e' e va bene; per un'immagine, se no,
+    quella fatta qui. Un'anteprima che non riesce non ferma il caricamento."""
+    from . import anteprime
+    if anteprime.da_upload(allegato, file_anteprima):
+        return
+    if genere_file(allegato.nome_originale, allegato.mime) == 'immagine':
+        anteprime.assicura(allegato)
 
 
 def rimuovi(allegato, utente, **dettaglio_audit):
@@ -268,6 +286,8 @@ def rimuovi(allegato, utente, **dettaglio_audit):
     richiesta = allegato.richiesta
     nome, pk = allegato.nome_originale, allegato.pk
     allegato.proiezioni.all().delete()
+    if allegato.anteprima:
+        allegato.anteprima.delete(save=False)
     if allegato.file:
         allegato.file.delete(save=False)
     allegato.delete()
@@ -287,6 +307,9 @@ def pianifica_transcodifica(allegato_id):
             allegato = Allegato.objects.select_related('richiesta').filter(pk=allegato_id).first()
             if allegato is not None:
                 transcodifica.transcodifica(allegato)
+                # Il browser non ha saputo fare la miniatura (AVI, WMV...): la fa ffmpeg.
+                from . import anteprime
+                anteprime.assicura(allegato)
         except Exception:
             logger.exception('Transcodifica dell\'allegato %s non riuscita.', allegato_id)
         finally:

@@ -181,7 +181,7 @@ class LettoreClaude:
     `client` si passa nei test (un finto con `beta.messages.create`); senza,
     si crea `anthropic.Anthropic` con la chiave di ANTHROPIC_API_KEY."""
 
-    def __init__(self, modello, *, chiave=None, effort='medium', timeout=90.0, taglio_alto=0.0, per_richiesta=8,
+    def __init__(self, modello, *, chiave=None, effort='medium', timeout=180.0, taglio_alto=0.0, per_richiesta=8,
                  paralleli=3, prezzi=None, client=None):
         self.modello = modello
         self.chiave = chiave

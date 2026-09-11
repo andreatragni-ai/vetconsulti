@@ -177,7 +177,10 @@ CONSULTI_SMISTAMENTO_AI = os.environ.get('CONSULTI_SMISTAMENTO_AI', 'True') == '
 # prova: `manage.py valuta_smistamento` (docstring del comando e docs/BACKLOG.md).
 CONSULTI_MODELLO_SMISTAMENTO = os.environ.get('CONSULTI_MODELLO_SMISTAMENTO', 'claude-opus-5')
 CONSULTI_SMISTAMENTO_EFFORT = os.environ.get('CONSULTI_SMISTAMENTO_EFFORT', 'medium')
-CONSULTI_SMISTAMENTO_TIMEOUT = float(os.environ.get('CONSULTI_SMISTAMENTO_TIMEOUT', '90'))
+# Tempo massimo per una richiesta all'API (8 miniature con il ragionamento
+# del modello possono volere piu' di un minuto; lo smistamento gira in un
+# thread e la pagina aspetta con htmx, quindi si puo' essere larghi).
+CONSULTI_SMISTAMENTO_TIMEOUT = float(os.environ.get('CONSULTI_SMISTAMENTO_TIMEOUT', '180'))
 # Frazione dell'altezza tolta in alto alla miniatura prima di mandarla all'AI
 # (intestazione dell'ecografo: nome del paziente, codice). 0 = niente taglio.
 CONSULTI_SMISTAMENTO_TAGLIO_ALTO = float(os.environ.get('CONSULTI_SMISTAMENTO_TAGLIO_ALTO', '0.08'))

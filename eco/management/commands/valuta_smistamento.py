@@ -129,7 +129,7 @@ class Command(BaseCommand):
             verita[i] = {'file': nome, 'neutro': neutro, 'giuste': giuste, 'genere': genere, 'gruppo': gruppo,
                          'scritte': scritte}
         lettore = LettoreClaude(opzioni['modello'], effort=opzioni['effort'], taglio_alto=opzioni['taglio'],
-                                timeout=getattr(settings, 'CONSULTI_SMISTAMENTO_TIMEOUT', 90.0),
+                                timeout=getattr(settings, 'CONSULTI_SMISTAMENTO_TIMEOUT', 180.0),
                                 per_richiesta=getattr(settings, 'CONSULTI_SMISTAMENTO_PER_RICHIESTA', 8),
                                 prezzi=getattr(settings, 'CONSULTI_PREZZI_MODELLI', {}))
         inizio = time.monotonic()

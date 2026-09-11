@@ -78,10 +78,64 @@
 @media (min-width: 992px) {
   .visore { position: sticky; top: .75rem; }
 }
-.visore-schede { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .6rem; }
-.visore-schede .btn { font-size: .78rem; text-align: left; max-width: 16rem; }
-.visore-schede .btn .proiezione { display: block; font-size: .7rem; opacity: .75; }
-.visore-schede .btn.attiva { background: var(--ovic-blu); border-color: var(--ovic-blu); color: var(--bs-white); }
+/* Elenco dei file a gruppi (consulti/elenco_file.py): titolo della finestra,
+   poi le schede con miniatura (immagini) o icona (filmati, PDF). */
+.visore-elenco { margin-bottom: .6rem; }
+.visore-gruppo {
+  margin: .5rem 0 .3rem;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--ovic-blu);
+}
+.visore-gruppo:first-child { margin-top: 0; }
+.visore-gruppo .conta { font-weight: 600; color: var(--bs-secondary-color); letter-spacing: 0; }
+.visore-schede { display: flex; flex-wrap: wrap; gap: .35rem; }
+.visore-scheda {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  width: 13.5rem;
+  min-height: 44px;
+  padding: .25rem .5rem .25rem .25rem;
+  text-align: left;
+  font-size: .78rem;
+  line-height: 1.2;
+  color: var(--ovic-testo);
+  background: var(--bs-body-bg);
+  border: 1px solid var(--ovic-bordo);
+  border-radius: 6px;
+}
+.visore-scheda:hover { border-color: var(--ovic-oro-lt); }
+.visore-scheda:focus-visible { outline: 3px solid var(--ovic-oro-lt); outline-offset: 1px; }
+.visore-scheda .miniatura {
+  flex: none;
+  width: 48px;
+  height: 36px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--ovic-grigio);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ovic-blu);
+  font-size: 1.1rem;
+}
+.visore-scheda .miniatura img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.visore-scheda .testo { min-width: 0; }
+.visore-scheda .nome {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-weight: 600;
+}
+.visore-scheda .tipo { display: block; font-size: .72rem; color: var(--bs-secondary-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.visore-scheda.attiva { background: var(--ovic-blu); border-color: var(--ovic-blu); color: var(--bs-white); }
+.visore-scheda.attiva .tipo { color: var(--bs-white); opacity: .8; }
+.visore-scheda.attiva .miniatura { color: var(--ovic-blu); }
+.visore-elenco + .visore-scena { margin-top: .6rem; }
 .visore-scena {
   background: var(--ovic-grigio);
   border: 1px solid var(--ovic-bordo);
@@ -100,9 +154,9 @@
 @media (max-width: 767.98px) {
   .visore-scena iframe { height: 60vh; }
   .visore-scena img, .visore-scena video { max-height: 60vh; }
-  /* Su mobile le schede scorrono in orizzontale invece di impilarsi. */
+  /* Su mobile le schede di un gruppo scorrono in orizzontale invece di impilarsi. */
   .visore-schede { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .25rem; }
-  .visore-schede .btn { min-height: 44px; flex: 0 0 auto; max-width: 70%; }
+  .visore-scheda { flex: 0 0 auto; width: 12rem; max-width: 75%; }
 }
 
 /* Barra delle azioni del referto: su mobile resta attaccata in basso,
@@ -673,3 +727,13 @@ a.riferimento:hover, a.riferimento:focus-visible { outline: 3px solid var(--ovic
 /* Il campo foto nel profilo e nell'admin: anteprima protetta + «Togli la foto». */
 .foto-attuale { display: flex; align-items: center; gap: .75rem; margin-bottom: .4rem; }
 .foto-attuale img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; border: 1px solid var(--ovic-bordo); }
+/* Pagina del caso: i file a gruppi per finestra, come nel visore. */
+.tbl-risultati .riga-gruppo th {
+  padding-top: .6rem;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--ovic-blu);
+  background: var(--bs-body-bg);
+}

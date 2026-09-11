@@ -25,7 +25,8 @@ from django.views.decorators.http import require_POST
 
 from consulti import regole
 from consulti.forms import DeclinaForm, NonRefertabileForm
-from consulti.models import StatoAllegato, StatoRichiesta, TransizioneNonValida
+from consulti.elenco_file import gruppi_file
+from consulti.models import StatoRichiesta, TransizioneNonValida
 from consulti.motivi import FRASI_DECLINA
 from consulti.permessi import (caso_del_refertatore, e_refertatore_assegnato, e_richiedente,
                                registra_accesso_staff)
@@ -40,15 +41,14 @@ STATI_CON_EDITOR = (StatoRichiesta.PRESA_IN_CARICO, StatoRichiesta.REFERTATA)
 
 
 def _voci_visore(richiesta):
-    """Gli allegati per il visore, con l'etichetta della proiezione eco se
-    c'e'. Il primo PDF (o il primo in assoluto) e' quello aperto all'arrivo."""
-    proiezioni = {}
-    for pc in richiesta.proiezioni.select_related('proiezione'):
-        proiezioni.setdefault(pc.allegato_id, pc.proiezione.nome)
-    voci = [{'allegato': a, 'genere': a.genere, 'proiezione': proiezioni.get(a.id)}
-            for a in richiesta.allegati.exclude(stato=StatoAllegato.SCARTATO)]
+    """Gli allegati per il visore nell'ordine del catalogo, a gruppi per
+    finestra acustica (consulti/elenco_file.py). Il primo PDF (il referto
+    dell'ecografo, il tracciato ECG, il referto Holter) o, se manca, il primo
+    file e' quello aperto all'arrivo."""
+    gruppi = gruppi_file(richiesta)
+    voci = [v for g in gruppi for v in g['voci']]
     iniziale = next((v for v in voci if v['genere'] == 'pdf'), voci[0] if voci else None)
-    return voci, iniziale
+    return gruppi, voci, iniziale
 
 
 def _frasi_declina(refertatore):
@@ -75,7 +75,7 @@ def refertazione(request, pk):
     if referto is not None and richiesta.stato in STATI_CON_EDITOR:
         form = RefertoForm(instance=referto)
     versioni = list(referto.versioni.all()) if referto else []
-    voci, iniziale = _voci_visore(richiesta)
+    gruppi, voci, iniziale = _voci_visore(richiesta)
     ore = regole.ore_risposta(richiesta)   # 4 se urgente
     scadenza = regole.scadenza(richiesta)
     return render(request, 'referti/refertazione.html', {
@@ -87,6 +87,7 @@ def refertazione(request, pk):
         'classificazione_ultima': (classificazione_leggibile(richiesta.tipo_esame, versioni[0].classificazione)
                                    if versioni else []),
         'rettifica_in_corso': bool(referto and referto.firmato and referto.modificato_dopo_la_firma()),
+        'gruppi_visore': gruppi,
         'voci_visore': voci,
         'iniziale': iniziale,
         'ore_risposta': ore,

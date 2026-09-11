@@ -36,14 +36,15 @@ Il titolo e' il paziente con l'esame; il codice sta accanto, piccolo.
       <div class="table-responsive">
       <table class="tbl-risultati mb-0">
         <tbody>
-        {% for a in allegati %}
+        {% for v in voci_file %}{% with a=v.allegato %}
+          {% ifchanged v.gruppo %}{% if v.gruppo %}<tr class="riga-gruppo"><th colspan="4">{{ v.gruppo }}</th></tr>{% endif %}{% endifchanged %}
           <tr>
-            <td><span class="badge bg-secondary">{{ a.get_categoria_display }}</span></td>
+            <td>{{ v.proiezione|default:a.get_categoria_display }}{% if v.proiezione %} <span class="text-muted small">· {% if v.filmato %}filmato{% else %}{{ a.get_categoria_display|lower }}{% endif %}</span>{% endif %}</td>
             <td><a href="{% url 'scarica_allegato' a.pk %}">{{ a.nome_originale|default:a.file.name }}</a></td>
             <td class="text-muted num-tab">{{ a.dimensione|filesizeformat }}</td>
             <td class="text-muted">{{ a.get_stato_display }}</td>
           </tr>
-        {% empty %}<tr><td class="text-muted">Nessun allegato.</td></tr>{% endfor %}
+        {% endwith %}{% empty %}<tr><td class="text-muted">Nessun allegato.</td></tr>{% endfor %}
         </tbody>
       </table>
       </div>

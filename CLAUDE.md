@@ -16,17 +16,30 @@ sessioni brevi: ogni sessione deve lasciare il repo in uno stato ripartibile.
   puo' aspettare. Il lavoro e' in `docs/BACKLOG.md`.
 - Il catalogo delle proiezioni eco (`eco/fixtures/proiezioni_bozza.json`) e'
   una bozza: Andre deve ancora confermarlo.
+- F3 (refertazione) costruita sul branch `feat/refertazione` l'11/09/2026,
+  non ancora in `main`: aspetta le conferme elencate in `docs/BACKLOG.md`.
 
 ## Avvio e collaudo
 
+    export DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib   # WeasyPrint sul Mac (vedi sotto)
     venv/bin/python manage.py migrate && venv/bin/python manage.py seed_demo
-    venv/bin/python manage.py runserver
+    venv/bin/python manage.py runserver 127.0.0.1:8770
     venv/bin/python -m pytest          # ~30 s, deve essere verde prima di ogni commit
 
-`seed_demo` (solo DEBUG) crea listino e utenti: `admin/admin`, refertatori
-`rferrari` (ECG+Holter) e `lmonti` (eco), richiedenti `gbianchi` (clinica) e
-`mrossi` (libero professionista), password `prova12345`. Le email escono in
-console. Grafica dal pacchetto `../vetway-ui` installato con `pip install -e`.
+`seed_demo` (solo DEBUG) crea listino, catalogo eco (se vuoto) e utenti:
+`admin/admin`, refertatori `rferrari` (ECG+Holter) e `lmonti` (eco),
+richiedenti `gbianchi` (clinica) e `mrossi` (libero professionista), password
+`prova12345`; e due casi gia' INVIATI da `gbianchi`: un ECG a `rferrari` e
+un'eco a `lmonti` (allegati finti segnati DIMOSTRATIVO, `core/demo.py`). Un
+caso demo nuovo nasce solo se non ce n'e' uno aperto: rilanciare dopo averlo
+refertato ne prepara un altro. Le email escono in console (anche il PDF
+allegato). Grafica dal pacchetto `../vetway-ui` installato con `pip install -e`.
+
+**WeasyPrint sul Mac**: senza `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib`
+`python -c "import weasyprint"` non trova pango/gobject. Dentro i processi
+Django funziona anche senza (ripiego in `config/settings/base.py`), ma la
+variabile e' il modo documentato: niente modifiche ai file della shell.
+Senza librerie il test del PDF vero salta con un messaggio che lo dice.
 
 ## Regole
 
@@ -55,6 +68,14 @@ console. Grafica dal pacchetto `../vetway-ui` installato con `pip install -e`.
 - `registro/`: `Prestazione` e' immutabile una volta registrata.
 - `core/views_media.py` + `consulti/upload_chunk.py`: gli allegati non sono
   mai serviti come statici (FileResponse in dev, X-Accel-Redirect in prod).
+  `?inline=1` li mostra nel visore (iframe della stessa origine, SAMEORIGIN).
+- `consulti/permessi.py`: solo il refertatore assegnato agisce, il
+  richiedente sul suo caso, lo staff legge e lascia ACCESSO_STAFF, gli altri 404.
+- `referti/models.py`: salvare la bozza non firma MAI; `firma()` e
+  `rettifica()` sono le sole strade per una `VersioneReferto` (immutabile);
+  la prestazione si registra una volta sola, alla prima firma. Il JS della
+  pagina di refertazione salva prima di confermare la firma: la modale del
+  pacchetto e' inclusa DOPO `extra_js`, quindi si ascolta sul documento.
 - `config/settings/prod.py`: tutto dall'ambiente, `check --deploy` pulito.
 
 Struttura delle app e dettagli: `README.md`. Installazione server:

@@ -29,15 +29,30 @@ Progetto gemello di VetCardio, ma indipendente: non importa nulla da `cardio`.
 ```bash
 python3.12 -m venv venv
 venv/bin/pip install -r requirements.txt
+venv/bin/pip install -e ../vetway-ui
+
+# WeasyPrint sul Mac: pango/gobject stanno in /opt/homebrew/lib (brew install pango)
+export DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib
+
 venv/bin/python manage.py migrate
-venv/bin/python manage.py loaddata eco/fixtures/proiezioni_bozza.json
-
-# Superuser senza prompt
-DJANGO_SUPERUSER_USERNAME=admin DJANGO_SUPERUSER_EMAIL=admin@example.com \
-DJANGO_SUPERUSER_PASSWORD=admin venv/bin/python manage.py createsuperuser --noinput
-
-venv/bin/python manage.py runserver
+venv/bin/python manage.py seed_demo      # listino, catalogo eco, utenti e casi demo (solo DEBUG)
+venv/bin/python manage.py runserver 127.0.0.1:8770
 ```
+
+La variabile va nell'ambiente del comando (o esportata nella shell di
+lavoro), non nei file di configurazione della shell. Senza,
+`python -c "import weasyprint"` fallisce; dentro i processi Django funziona
+comunque grazie al ripiego in `config/settings/base.py`, ma la variabile e'
+il modo documentato. Il test che genera il PDF vero salta con un messaggio
+chiaro se le librerie non si trovano.
+
+`seed_demo` crea `admin/admin`, i refertatori `rferrari` (ECG+Holter) e
+`lmonti` (eco), i richiedenti `gbianchi` (clinica) e `mrossi` (libero
+professionista), password `prova12345`, e due casi gia' INVIATI da
+`gbianchi` per collaudare la refertazione: un ECG a `rferrari` e un'eco a
+`lmonti` con il referto dell'ecografo e tutte le proiezioni obbligatorie.
+Gli allegati sono finti (PDF segnati DIMOSTRATIVO, PNG segnaposto:
+`core/demo.py`). Un caso demo nuovo nasce solo se non ce n'e' uno aperto.
 
 `manage.py` usa `config.settings.dev` (sqlite `db_dev.sqlite3`, email in
 console). In produzione `DJANGO_SETTINGS_MODULE=config.settings.prod` con le
@@ -97,14 +112,14 @@ WeasyPrint su macOS vuole le librerie Homebrew (`brew install pango`);
 | Cartella | Cosa |
 |---|---|
 | `config/` | settings (`base` / `dev` / `prod`), urls, wsgi |
-| `core/` | `TipoEsame`, context processor del profilo, consegna protetta dei file (`scarica_allegato`) |
+| `core/` | `TipoEsame`, context processor del profilo e della navbar (contatore dei casi da decidere), consegna protetta dei file (`scarica_allegato`, `?inline=1` per il visore), `seed_demo` e i file finti di `demo.py` |
 | `accounts/` | Refertatore + competenze, Clinica, DatiFatturazione (validazioni in `fiscale.py`; un solo soggetto fra clinica e richiedente), Richiedente (CLINICA / LIBERO_PROFESSIONISTA), Consenso; login, registrazione a due passi con conferma email, reset password, profili, area staff (refertatori, richiedenti da approvare) |
 | `listino/` | VoceListino, Supplemento, `prezzi.prezzo_effettivo()` |
-| `consulti/` | Richiesta (codice `TC-AAAA-NNNN`, transizioni con audit), Paziente, Allegato, Commento, EventoAudit append-only; `regole.py`, `upload_chunk.py`, comando `sorveglia_consulti` |
+| `consulti/` | Richiesta (codice `TC-AAAA-NNNN`, transizioni con audit, `riassegna` dopo un declino), Paziente, Allegato, Commento, EventoAudit append-only; `regole.py` (invio, riassegnazione, tempo di risposta), `permessi.py` (chi agisce), `motivi.py` (frasi per declinare / non refertabile), `racconto.py` (audit leggibile), `views_decisione.py` (casi ricevuti, prendi in carico, declina, non refertabile), `upload_chunk.py`, comando `sorveglia_consulti` (rilascio + sollecito a meta' tempo) |
 | `eco/` | catalogo proiezioni (fixture `proiezioni_bozza.json`, **da confermare**), ProiezioneCaricata, `transcodifica.py` |
-| `referti/` | Referto con `firma()`, template PDF WeasyPrint, view di stampa protetta |
+| `referti/` | Referto (copia di lavoro) con `firma()` e `rettifica()`, VersioneReferto (istantanea firmata + PDF), `blocchi.py` (voci per tipo: il punto di aggancio delle misure ECG), pagina di refertazione con visore allegati e bozza automatica, PDF WeasyPrint, stampa protetta delle versioni |
 | `registro/` | Prestazione immutabile (`clinica` nulla per il libero professionista, `intestatario()`), StatoFatturazione, `registra_prestazione()`, comando `esporta_prestazioni` (colonne `intestatario`, `tipo_richiedente`) |
-| `notifiche/` | InvioEmail e le tre email (testi in `templates/notifiche/*.txt`) |
+| `notifiche/` | InvioEmail e le email quando la palla cambia mano: caso arrivato, sollecito, rilascio (al refertatore); referto pronto e rettificato con il PDF allegato, caso declinato, non refertabile (al richiedente). Testi in `templates/notifiche/*.txt` |
 | `deploy/` | systemd, nginx, env di esempio, `deploy.sh`, `INSTALLAZIONE.md` |
 
 I file caricati non sono mai serviti come statici: passano da
@@ -116,9 +131,9 @@ I file caricati non sono mai serviti come statici: passano da
 - **F2 — Flusso di caricamento per tipo**: pagina guidata per ECG / Holter /
   Eco (catalogo proiezioni con istruzioni e immagini di riferimento, clip a
   pezzi con transcodifica in background), commenti con allegati.
-- **F3 — Refertazione**: pagina del refertatore (presa in carico, declina,
-  non refertabile, editor referto per tipo, firma, PDF), avviso "referto
-  pronto" al richiedente, storico versioni del referto.
+- **F3 — Refertazione**: costruita (branch `feat/refertazione`), in attesa
+  delle conferme di Andre elencate in `docs/BACKLOG.md`. Mancano le misure
+  ECG strutturate, che arriveranno dal lettore SEIVA di VetCardio.
 - **F4 — Amministrazione e fatturazione**: cruscotto prestazioni, stati di
   fatturazione da interfaccia, export mensile, dati di fatturazione dei
   refertatori che emettono in proprio.

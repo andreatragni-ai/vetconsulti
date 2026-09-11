@@ -6,10 +6,14 @@ ingrandisce nella modale #modalRiferimento (carica.js), senza JS si aprono
 in una scheda. Senza immagini, un segnaposto sobrio col nome. A destra
 nome, obbligatoria/facoltativa, cosa si aspetta, «Come» e «Deve vedersi»
 sempre in vista, «A cosa serve» richiudibile (e' per il refertatore). Sotto,
-il file caricato o la zona: una riga = un file.
+il file caricato o la zona: una riga = un file. Con il tavolo di smistamento
+(eco, `tavolo` nel contesto) al posto del file c'e' il file proposto con il
+suo bollino (_posto.html), la riga e' un bersaglio per il trascinamento
+(`data-destinazione`) e un'obbligatoria vuota e' in evidenza.
 {% endcomment %}
-{% with p=riga.proiezione %}
-<div class="riga-proiezione{% if riga.fatta %} fatta{% endif %}" id="proiezione_{{ p.pk }}">
+{% with p=riga.proiezione chiusa=riga.posto|default:riga.fatta %}
+<div class="riga-proiezione{% if riga.fatta %} fatta{% endif %}{% if tavolo and not riga.posto and p.obbligatoria %} vuota-obbligatoria{% endif %}" id="proiezione_{{ p.pk }}"
+     {% if tavolo %}data-destinazione="proiezione:{{ p.pk }}"{% endif %}>
   <div class="riferimento-galleria" data-galleria="{{ p.nome }}">
     {% if riga.prima %}
       <a class="riferimento" href="{% url 'immagine_riferimento' riga.prima.pk %}" target="_blank" rel="noopener"
@@ -38,11 +42,11 @@ il file caricato o la zona: una riga = un file.
     </div>
   </div>
   <div class="testi-riga">
-    {# Riga gia' caricata: le istruzioni si ritirano in un richiudibile, la pagina si accorcia man mano. #}
-    {% if riga.fatta and p.istruzioni or riga.fatta and p.deve_essere_visibile %}<details class="istruzioni"><summary>Come si acquisisce</summary>{% endif %}
+    {# Riga con il suo file (anche solo proposto): le istruzioni si ritirano, il tavolo resta corto. #}
+    {% if chiusa and p.istruzioni or chiusa and p.deve_essere_visibile %}<details class="istruzioni"><summary>Come si acquisisce</summary>{% endif %}
     {% if p.istruzioni %}<p class="testo-riga"><strong>Come:</strong> {{ p.istruzioni }}</p>{% endif %}
     {% if p.deve_essere_visibile %}<p class="testo-riga"><strong>Deve vedersi:</strong> {{ p.deve_essere_visibile }}</p>{% endif %}
-    {% if riga.fatta and p.istruzioni or riga.fatta and p.deve_essere_visibile %}</details>{% endif %}
+    {% if chiusa and p.istruzioni or chiusa and p.deve_essere_visibile %}</details>{% endif %}
     {% if p.serve_per %}
     <details class="istruzioni">
       <summary>A cosa serve</summary>
@@ -51,12 +55,27 @@ il file caricato o la zona: una riga = un file.
     {% endif %}
   </div>
   <div class="zona">
+  {% if tavolo %}
+    {# Tavolo di smistamento: il file proposto (o confermato) per la riga; vuota, la zona per caricarlo qui. #}
+    {% if riga.posto %}
+      {% include "consulti/percorso/_posto.html" with posto=riga.posto %}
+      {% if p.libera %}
+      <label class="form-label small fw-semibold mt-2 mb-1" for="nota-libera-{{ p.pk }}">Cosa mostra / cosa chiedi <span class="text-danger">*</span></label>
+      <input type="text" name="nota_{{ p.pk }}" id="nota-libera-{{ p.pk }}" form="form-conferma" class="form-control" maxlength="200"
+             value="{{ riga.posto.proposta.nota }}" placeholder="es. «jet sospetto sulla valvola aortica, lo vedi anche tu?»">
+      {% endif %}
+    {% else %}
+      {% if p.obbligatoria %}<p class="riga-vuota-avviso"><i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>Nessun file: trascinane uno qui dai «Da smistare», oppure caricalo.</p>{% endif %}
+      {% include "consulti/percorso/_zona.html" with slot="proiezione" proiezione=p testo=riga.testo testo_tocco=riga.testo_tocco sottotesto=riga.sottotesto accetta=riga.accetta a_pezzi=riga.filmato nota=p.libera max_byte=max_clip compatta=True %}
+    {% endif %}
+  {% else %}
     {% for pc in riga.caricate %}
       {% include "consulti/percorso/_file.html" with a=pc.allegato slot="proiezione" proiezione=p nota=pc.nota accetta=riga.accetta a_pezzi=riga.filmato max_byte=max_clip %}
     {% endfor %}
     {% if riga.zona_aperta %}
       {% include "consulti/percorso/_zona.html" with slot="proiezione" proiezione=p testo=riga.testo testo_tocco=riga.testo_tocco sottotesto=riga.sottotesto accetta=riga.accetta a_pezzi=riga.filmato nota=p.libera max_byte=max_clip compatta=True %}
     {% endif %}
+  {% endif %}
   </div>
 </div>
 {% endwith %}

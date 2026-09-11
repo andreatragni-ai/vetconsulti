@@ -10,7 +10,8 @@
      della POST semplice. Lo stato riceve anche la zona: il server dice
      subito se il file non va bene, prima di mandare centinaia di MB.
    La categoria la decide il server; qui si controlla solo cio' che evita un
-   viaggio inutile (limite di peso, nota del filmato libero).
+   viaggio inutile (limite di peso, nota del filmato libero). Con ogni
+   immagine o filmato parte anche la sua miniatura (anteprime.js).
    Finiti tutti i caricamenti la pagina si ricarica e torna sulla riga
    appena usata (anche se sta in un gruppo che si e' chiuso da solo).
    ═══════════════════════════════════════════════════════════════════════ */
@@ -70,10 +71,11 @@
   }
 
   // ── POST semplice ─────────────────────────────────────────────────────
-  function semplice(form, file) {
+  function semplice(form, file, anteprima) {
     return new Promise(function (ok, ko) {
       var dati = new FormData();
       dati.append('file', file);
+      if (anteprima) dati.append('anteprima', anteprima, 'anteprima.jpg');
       campi(form, dati);
       var xhr = new XMLHttpRequest();
       xhr.open('POST', URL_CARICA);
@@ -113,7 +115,7 @@
     if (!r.ok) throw new Error(j.errore || 'Caricamento non riuscito.');
     return j.ricevuti || 0;
   }
-  async function aPezzi(form, file) {
+  async function aPezzi(form, file, anteprima) {
     if (!(window.crypto && crypto.subtle)) {
       throw new Error('Questo browser non puo\' caricare file grandi su una connessione non sicura (serve https).');
     }
@@ -152,6 +154,7 @@
     fine.append('impronta', sha);
     fine.append('nome', file.name);
     fine.append('mime', file.type || '');
+    if (anteprima) fine.append('anteprima', anteprima, 'anteprima.jpg');
     campi(form, fine);
     stato(form, 'Controllo il file…');
     var rf = await fetch(URL_PEZZI + 'concludi/', {method: 'POST', headers: {'X-CSRFToken': csrf}, body: fine});
@@ -183,8 +186,9 @@
     form.classList.add('in-corso');
     stato(form, 'Carico ' + file.name + '…');
     try {
+      var anteprima = window.ConsultiAnteprime ? await window.ConsultiAnteprime.genera(file).catch(function () { return null; }) : null;
       if (pezzi) stato(form, 'In coda: ' + file.name + '…');
-      var j = pezzi ? await inCoda(function () { return aPezzi(form, file); }) : await semplice(form, file);
+      var j = pezzi ? await inCoda(function () { return aPezzi(form, file, anteprima); }) : await semplice(form, file, anteprima);
       riusciti++;
       barra(form, 1);
       stato(form, 'Caricato: ' + j.nome);

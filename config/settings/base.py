@@ -151,7 +151,7 @@ CONSULTI_ORE_PRESA_IN_CARICO = int(os.environ.get('CONSULTI_ORE_PRESA_IN_CARICO'
 # Versione dei testi legali (core/templates/core/privacy.html e termini.html).
 # E' il valore che finisce in Consenso.versione: cambiare il testo vuol dire
 # cambiare la data qui, e da quel momento il consenso va richiesto di nuovo.
-VERSIONE_PRIVACY = '2026-09-02'
+VERSIONE_PRIVACY = '2026-09-12'
 VERSIONE_TERMINI = '2026-09-02'
 
 # Binario ffmpeg per la transcodifica delle clip eco. Se manca, eco.transcodifica
@@ -166,6 +166,42 @@ ALLEGATO_MAX_BYTE = int(os.environ.get('ALLEGATO_MAX_BYTE', 50 * 1024 * 1024))
 # massimo 10 secondi; senza ffmpeg la durata non si misura, quindi il
 # freno e' il peso: 100 MB bastano per 10 s anche in DICOM poco compresso.
 ECO_CLIP_MAX_BYTE = int(os.environ.get('ECO_CLIP_MAX_BYTE', 100 * 1024 * 1024))
+
+# ── Smistamento automatico dei file dell'eco (eco/smistamento/) ──────────────
+# La lettura AI delle miniature usa l'API Anthropic con la chiave in
+# ANTHROPIC_API_KEY (ambiente; MAI nel repo). Senza chiave, o con
+# CONSULTI_SMISTAMENTO_AI=False, lo smistamento si ferma a formato e colore
+# e le righe le sceglie chi carica.
+CONSULTI_SMISTAMENTO_AI = os.environ.get('CONSULTI_SMISTAMENTO_AI', 'True') == 'True'
+# Modello con visione: Claude Opus 5. Misure e costi per esame sul banco di
+# prova: `manage.py valuta_smistamento` (docstring del comando e docs/BACKLOG.md).
+CONSULTI_MODELLO_SMISTAMENTO = os.environ.get('CONSULTI_MODELLO_SMISTAMENTO', 'claude-opus-5')
+CONSULTI_SMISTAMENTO_EFFORT = os.environ.get('CONSULTI_SMISTAMENTO_EFFORT', 'medium')
+# Tempo massimo per una richiesta all'API (8 miniature con il ragionamento
+# del modello possono volere piu' di un minuto; lo smistamento gira in un
+# thread e la pagina aspetta con htmx, quindi si puo' essere larghi).
+CONSULTI_SMISTAMENTO_TIMEOUT = float(os.environ.get('CONSULTI_SMISTAMENTO_TIMEOUT', '180'))
+# Frazione dell'altezza tolta in alto alla miniatura prima di mandarla all'AI
+# (intestazione dell'ecografo: nome del paziente, codice). 0 = niente taglio.
+CONSULTI_SMISTAMENTO_TAGLIO_ALTO = float(os.environ.get('CONSULTI_SMISTAMENTO_TAGLIO_ALTO', '0.08'))
+CONSULTI_SMISTAMENTO_PER_RICHIESTA = 8          # miniature per richiesta all'API
+# Esemplari: l'immagine di riferimento di ogni riga viaggia con la richiesta
+# (prefisso in cache), cosi' il modello confronta invece di leggere solo la
+# descrizione. SPENTO: misurato sul banco (3 semi, 12/09/2026) non migliora la
+# riga giusta (10,3 -> 10,7 su 17, dentro il rumore), fa dire «sconosciuto» la
+# meta' delle volte ma sbaglia di piu' (2,7 -> 5,0 file messi nella riga
+# sbagliata) e costa il 30 % in piu'. Il codice resta: si riaccende qui e si
+# rimisura con `manage.py valuta_smistamento --esemplari si`.
+CONSULTI_SMISTAMENTO_ESEMPLARI = os.environ.get('CONSULTI_SMISTAMENTO_ESEMPLARI', 'False') == 'True'
+CONSULTI_SMISTAMENTO_ESEMPLARI_PX = int(os.environ.get('CONSULTI_SMISTAMENTO_ESEMPLARI_PX', '320'))
+CONSULTI_SMISTAMENTO_IN_THREAD = True           # i test lo spengono (conftest.py)
+# Prezzi in dollari per milione di token (ingresso, uscita), per la stima del
+# costo nella telemetria. Da aggiornare se cambiano i listini.
+CONSULTI_PREZZI_MODELLI = {
+    'claude-opus-5': (5.0, 25.0),
+    'claude-sonnet-5': (2.0, 10.0),
+    'claude-haiku-4-5': (1.0, 5.0),
+}
 
 # Django usa il tag 'error', Bootstrap la classe 'danger': senza questa
 # mappatura il messaggio di errore e' invisibile.

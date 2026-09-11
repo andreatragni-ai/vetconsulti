@@ -176,7 +176,12 @@ def carica_allegato(request, pk):
                 richiesta, file_caricato, file_caricato.name, slot, request.user,
                 proiezione_id=_intero(request.POST.get('proiezione')),
                 sostituisci_id=_intero(request.POST.get('sostituisci')),
-                mime=getattr(file_caricato, 'content_type', ''), nota=request.POST.get('nota', ''))
+                mime=getattr(file_caricato, 'content_type', ''), nota=request.POST.get('nota', ''),
+                anteprima=request.FILES.get('anteprima'), **_origine(request.POST))
+        except caricamento.GiaCaricato as e:
+            if json:
+                return _json_errore(str(e), status=409, gia_presente=True)
+            errore = str(e)
         except caricamento.CaricamentoNonValido as e:
             errore = str(e)
     if json:
@@ -275,6 +280,14 @@ def _zona_dal_post(dati):
             'sostituisci_id': _intero(dati.get('sostituisci')), 'nota': dati.get('nota', '')}
 
 
+def _origine(dati):
+    """Da dove viene un file della cartella: percorso relativo e data di
+    modifica (ms) mandati dal browser, per l'ordine di acquisizione."""
+    return {'percorso': os.path.normpath(dati.get('percorso', '') or '').lstrip('./')[:500]
+            if dati.get('percorso') else '',
+            'modificato_il': _intero(dati.get('modificato_il'))}
+
+
 @login_required
 @require_GET
 def upload_stato(request, pk):
@@ -285,7 +298,10 @@ def upload_stato(request, pk):
             zona = _zona_dal_post(request.GET)
             caricamento.controlla(richiesta, zona['slot'], request.GET.get('nome', ''), request.GET.get('mime', ''),
                                   proiezione_id=zona['proiezione_id'], sostituisci_id=zona['sostituisci_id'],
-                                  dimensione=_intero(request.GET.get('dimensione')), nota=zona['nota'])
+                                  dimensione=_intero(request.GET.get('dimensione')), nota=zona['nota'],
+                                  impronta=request.GET.get('impronta') or None)
+        except caricamento.GiaCaricato as e:
+            return _json_errore(str(e), status=409, gia_presente=True)
         except (TransizioneNonValida, caricamento.CaricamentoNonValido) as e:
             return _json_errore(str(e))
     try:
@@ -335,8 +351,12 @@ def upload_concludi(request, pk):
     zona = _zona_dal_post(request.POST)
     try:
         caricamento.controlla(richiesta, zona['slot'], nome, mime, proiezione_id=zona['proiezione_id'],
-                              sostituisci_id=zona['sostituisci_id'], nota=zona['nota'])
+                              sostituisci_id=zona['sostituisci_id'], nota=zona['nota'],
+                              impronta=impronta if upload_chunk.IMPRONTA_VALIDA.match(impronta) else None)
         percorso_file = upload_chunk.concludi(impronta)
+    except caricamento.GiaCaricato as e:
+        upload_chunk.abbandona(impronta)
+        return _json_errore(str(e), status=409, gia_presente=True)
     except (caricamento.CaricamentoNonValido, upload_chunk.UploadNonValido) as e:
         return _json_errore(str(e))
     try:
@@ -344,9 +364,11 @@ def upload_concludi(request, pk):
             allegato = caricamento.allega(richiesta, File(f, name=nome), nome, zona['slot'], request.user,
                                           proiezione_id=zona['proiezione_id'],
                                           sostituisci_id=zona['sostituisci_id'], nota=zona['nota'],
-                                          mime=mime, impronta=impronta, a_pezzi=True)
+                                          mime=mime, impronta=impronta, anteprima=request.FILES.get('anteprima'),
+                                          a_pezzi=True, **_origine(request.POST))
     except caricamento.CaricamentoNonValido as e:
         upload_chunk.abbandona(impronta)
-        return _json_errore(str(e))
+        return _json_errore(str(e), **({'status': 409, 'gia_presente': True}
+                                       if isinstance(e, caricamento.GiaCaricato) else {}))
     upload_chunk.abbandona(impronta)
     return JsonResponse({'allegato': allegato.id, 'nome': allegato.nome_originale})

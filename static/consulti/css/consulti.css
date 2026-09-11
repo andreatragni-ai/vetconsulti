@@ -755,3 +755,191 @@ a.riferimento:hover, a.riferimento:focus-visible { outline: 3px solid var(--ovic
 .dato-valore { font-size: .95rem; font-weight: 600; color: var(--ovic-testo); overflow-wrap: anywhere; }
 .dato-valore.dato-testo { font-weight: 400; white-space: pre-wrap; line-height: 1.45; }
 .dato-valore.vuoto { font-weight: 400; color: var(--bs-secondary-color); }
+/* ═══ Eco: cartella intera, tavolo di smistamento, protocollo stampabile ═══
+   (consulti/templates/consulti/percorso/_zona_cartella.html, _posto.html,
+   carica.html; eco/templates/eco/protocollo.html). Solo --ovic-* e --bs-*. */
+
+/* Zona unica per la cartella: la stessa area tratteggiata delle zone, con due pulsanti. */
+.zona-cartella .zona-carica-area { cursor: default; min-height: 9rem; }
+.zona-cartella.compatta .zona-carica-area { min-height: 4rem; flex-direction: row; flex-wrap: wrap; gap: .5rem; }
+.zona-cartella.compatta .zona-carica-area .sottotesto { flex-basis: 100%; }
+.zona-cartella .zona-carica-area.trascina {
+  border-color: var(--ovic-oro);
+  background: color-mix(in srgb, var(--ovic-oro) 6%, var(--bs-body-bg));
+}
+.zona-cartella.in-corso .zona-carica-area { opacity: .6; pointer-events: none; }
+.cartella-pulsanti { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; }
+.cartella-pulsanti .cta { cursor: pointer; margin-top: .4rem; }
+.zona-cartella.compatta .cartella-pulsanti .cta { margin-top: 0; }
+.cartella-pulsanti .cta:focus-within { outline: 3px solid var(--ovic-oro-lt); outline-offset: 2px; }
+.cartella-avanzamento { margin-top: .6rem; }
+.cartella-avanzamento .progress { height: 8px; margin-top: .35rem; }
+.cartella-note { list-style: none; padding: 0; margin: .4rem 0 0; font-size: .82rem; color: var(--bs-secondary-color); }
+.cartella-note li.errore { color: var(--bs-danger-text-emphasis); font-weight: 600; }
+
+/* Smistamento in corso e riepilogo dopo lo smistamento. */
+.avviso-smistamento, .riepilogo-smistamento {
+  display: flex;
+  gap: .75rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding: .75rem 1rem;
+  border: 1px solid var(--ovic-bordo);
+  border-left: 4px solid var(--ovic-oro);
+  border-radius: 6px;
+  background: var(--bs-body-bg);
+  font-size: .9rem;
+}
+.avviso-smistamento .spinner-border { flex: none; margin-top: .15rem; color: var(--ovic-oro); }
+.riepilogo-smistamento { justify-content: space-between; flex-wrap: wrap; }
+.riepilogo-smistamento > div { flex: 1 1 20rem; }
+.riepilogo-numeri { display: inline-flex; flex-wrap: wrap; gap: .35rem; margin-left: .5rem; vertical-align: middle; }
+
+/* Bollini del tavolo: verde confermato/sicuro, giallo da verificare, neutro scelto da te. */
+.bollino {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  padding: .05rem .5rem;
+  border-radius: 999px;
+  border: 1px solid var(--ovic-bordo);
+  background: var(--ovic-grigio);
+  color: var(--ovic-testo);
+  font-size: .75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.bollino--ok, .bollino--sicuro {
+  background: var(--bs-success-bg-subtle);
+  border-color: var(--bs-success-border-subtle);
+  color: var(--bs-success-text-emphasis);
+}
+.bollino--verifica {
+  background: var(--bs-warning-bg-subtle);
+  border-color: var(--bs-warning-border-subtle);
+  color: var(--bs-warning-text-emphasis);
+}
+.bollino--manuale {
+  background: var(--bs-primary-bg-subtle);
+  border-color: var(--bs-primary-border-subtle);
+  color: var(--bs-primary-text-emphasis);
+}
+.bollino--vuota {
+  background: var(--bs-danger-bg-subtle);
+  border-color: var(--bs-danger-border-subtle);
+  color: var(--bs-danger-text-emphasis);
+}
+
+/* Un file sul tavolo: miniatura, nome e bollino, «Sposta in...» ed «Elimina». */
+.posto-file {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  grid-template-areas: "mini testo" "mini azioni";
+  gap: .35rem .75rem;
+  padding: .5rem;
+  margin-bottom: .4rem;
+  border: 1px solid var(--ovic-bordo);
+  border-left: 4px solid var(--ovic-bordo);
+  border-radius: 6px;
+  background: var(--bs-body-bg);
+  cursor: grab;
+}
+.posto-file.posto--confermato, .posto-file.posto--sicuro { border-left-color: var(--bs-success); }
+.posto-file.posto--verifica { border-left-color: var(--bs-warning); }
+.posto-file.posto--manuale { border-left-color: var(--bs-primary); }
+.posto-file.in-volo { opacity: .45; }
+.posto-miniatura {
+  grid-area: mini;
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--ovic-blu-dark);
+}
+.posto-miniatura img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.posto-senza { display: flex; height: 100%; align-items: center; justify-content: center; font-size: 1.6rem;
+  color: var(--bs-white); opacity: .7; }
+.posto-tipo {
+  position: absolute;
+  left: .25rem;
+  bottom: .25rem;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ovic-oro);
+  color: var(--bs-white);
+  font-size: .85rem;
+}
+.posto-testo { grid-area: testo; min-width: 0; }
+.posto-nome { display: block; font-weight: 600; font-size: .85rem; overflow-wrap: anywhere; }
+.posto-stato { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; margin-top: .15rem; }
+.posto-meta { font-size: .75rem; color: var(--bs-secondary-color); }
+.posto-motivo { font-size: .8rem; margin-top: .15rem; }
+.posto-motivo > summary { cursor: pointer; color: var(--ovic-link); font-weight: 600; display: inline-flex; min-height: 28px; align-items: center; }
+.posto-motivo > p { margin: 0; color: var(--ovic-testo); }
+.posto-azioni { grid-area: azioni; display: flex; gap: .35rem; align-items: center; flex-wrap: wrap; }
+.posto-sposta { display: flex; gap: .35rem; flex: 1 1 12rem; margin: 0; min-width: 0; }
+.posto-sposta select { min-width: 0; flex: 1 1 auto; }
+.posto-azioni .btn { min-height: 34px; }
+.posto-perche { margin: -.2rem 0 .6rem; padding-left: .6rem; font-size: .78rem; color: var(--bs-secondary-color); }
+
+/* Pannello «Da smistare»: a destra su desktop, resta in vista mentre si scorre. */
+@media (min-width: 992px) {
+  .pannello-da-smistare { position: sticky; top: .75rem; max-height: calc(100vh - 1.5rem); overflow-y: auto; }
+}
+.pannello-da-smistare .card-header-ovic .conteggio { margin-left: .35rem; }
+.pannello-da-smistare .posto-file { grid-template-columns: 5.5rem minmax(0, 1fr); }
+
+/* Bersagli del trascinamento e righe obbligatorie vuote. */
+.trascinando-file [data-destinazione] { outline: 2px dashed var(--ovic-bordo); outline-offset: -2px; }
+.trascinando-file [data-destinazione].bersaglio {
+  outline: 3px solid var(--ovic-oro);
+  background: color-mix(in srgb, var(--ovic-oro) 6%, var(--bs-body-bg));
+}
+.riga-proiezione.vuota-obbligatoria .nome-proiezione { color: var(--bs-danger-text-emphasis); }
+.riga-proiezione.vuota-obbligatoria .zona .zona-carica-area { border-color: var(--bs-danger-border-subtle); }
+.riga-vuota-avviso { margin: 0 0 .35rem; font-size: .82rem; font-weight: 600; color: var(--bs-danger-text-emphasis); }
+.riga-vuota-avviso .bi { margin-right: .3rem; }
+.tavolo-in-corso { cursor: progress; }
+.avviso-tavolo { position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); z-index: 1080; max-width: 90vw; }
+
+@media (max-width: 767.98px) {
+  .posto-file { grid-template-columns: 5.5rem minmax(0, 1fr); grid-template-areas: "mini testo" "azioni azioni"; }
+  .posto-azioni .btn, .posto-sposta select { min-height: 44px; }
+  .posto-motivo > summary { min-height: 44px; }
+  .cartella-pulsanti .cta { min-height: 44px; }
+}
+
+/* Protocollo stampabile (a video; la stampa e' nel template). */
+.protocollo-sottotitolo { font-size: .9rem; color: var(--bs-secondary-color); }
+.protocollo-consiglio {
+  padding: .6rem .9rem;
+  border: 1px solid var(--ovic-oro);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ovic-oro) 7%, var(--bs-body-bg));
+  font-weight: 600;
+}
+.protocollo-riga {
+  display: grid;
+  grid-template-columns: 2rem 14rem minmax(0, 1fr);
+  gap: .75rem;
+  padding: .75rem 0;
+  border-top: 1px solid var(--ovic-bordo);
+}
+.protocollo-riga:first-child { border-top: 0; padding-top: 0; }
+.protocollo-numero { font-size: 1.3rem; font-weight: 700; color: var(--ovic-blu); line-height: 1; }
+.protocollo-immagine img { width: 100%; max-height: 11rem; object-fit: contain; border: 1px solid var(--ovic-bordo); border-radius: 4px; background: var(--ovic-blu-dark); }
+.protocollo-senza { border: 1px dashed var(--ovic-bordo); border-radius: 4px; padding: 1.5rem .5rem; text-align: center; font-size: .8rem; color: var(--bs-secondary-color); }
+.protocollo-nome { font-weight: 700; color: var(--ovic-blu); }
+.protocollo-dati { font-size: .8rem; color: var(--bs-secondary-color); margin-bottom: .25rem; }
+.protocollo-testo p { margin: 0 0 .2rem; font-size: .88rem; line-height: 1.4; }
+.protocollo-testo strong { color: var(--ovic-blu); font-weight: 600; }
+@media (max-width: 767.98px) {
+  .protocollo-riga { grid-template-columns: 1.6rem minmax(0, 1fr); }
+  .protocollo-immagine { grid-column: 2; }
+  .protocollo-testo { grid-column: 2; }
+}

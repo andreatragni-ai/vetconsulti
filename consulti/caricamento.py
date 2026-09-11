@@ -37,6 +37,22 @@ arriva il file, non cosa diventa.
 transazione: la riga non resta mai vuota a meta'. Rimuovere un allegato
 toglie anche la sua ProiezioneCaricata. Entrambe le cose lasciano l'audit.
 
+## La cartella intera (eco)
+
+La zona unica in cima al passo 3 dell'eco (`SLOT_CARTELLA`) riceve tutti i
+file dell'esame. La categoria viene dal tipo di file (filmato ECO_CLIP,
+immagine ECO_STATICA, DICOM ECO_CLIP finche' non trova la sua riga); un PDF
+entra come ALTRO e diventa il referto dell'ecografo solo quando chi carica
+conferma lo smistamento. Nessuna ProiezioneCaricata: ogni file nasce «da
+smistare» (eco/smistamento/tavolo.py) e lo smistamento automatico propone
+dove va. Lo stesso file (stessa impronta) caricato due volte non si duplica.
+
+## Anteprime
+
+Ogni zona accetta, insieme al file, la miniatura fatta dal browser
+(`anteprima`); se manca e il file e' un'immagine la fa il server
+(consulti/anteprime.py).
+
 ## Transcodifica
 
 Una clip eco appena caricata passa a `eco.transcodifica` dopo il commit, in
@@ -44,6 +60,7 @@ un thread a parte (puo' durare minuti). Senza ffmpeg la transcodifica
 logga un avviso e l'allegato resta com'e': il collega vede l'originale.
 """
 
+import hashlib
 import logging
 import mimetypes
 import os
@@ -62,11 +79,12 @@ SLOT_HOLTER_REFERTO = 'holter_referto'
 SLOT_HOLTER_FILE = 'holter_file'
 SLOT_ECO_REFERTO = 'eco_referto'
 SLOT_PROIEZIONE = 'proiezione'
+SLOT_CARTELLA = 'cartella'
 
 SLOT_PER_TIPO = {
     TipoEsame.ECG: (SLOT_ECG,),
     TipoEsame.HOLTER: (SLOT_HOLTER_REFERTO, SLOT_HOLTER_FILE),
-    TipoEsame.ECO: (SLOT_ECO_REFERTO, SLOT_PROIEZIONE),
+    TipoEsame.ECO: (SLOT_ECO_REFERTO, SLOT_PROIEZIONE, SLOT_CARTELLA),
 }
 
 # Categorie che ogni slot mostra: servono al passo 3 per sapere quali file
@@ -94,6 +112,7 @@ ACCETTA = {
     SLOT_HOLTER_FILE: '',
     SLOT_ECO_REFERTO: '.pdf,application/pdf',
     SLOT_PROIEZIONE: 'video/*,image/*,.dcm,.avi,.mov,.mkv,.wmv',
+    SLOT_CARTELLA: '.pdf,application/pdf,video/*,image/*,.dcm,.avi,.mov,.mkv,.wmv',
 }
 ACCETTA_CLIP = 'video/*,.mp4,.mov,.avi,.mkv,.wmv,.dcm'
 ACCETTA_STATICA = 'image/*,.dcm'
@@ -111,6 +130,11 @@ def accetta_per(proiezione):
 
 class CaricamentoNonValido(Exception):
     """Il messaggio e' pensato per l'utente."""
+
+
+class GiaCaricato(CaricamentoNonValido):
+    """Lo stesso file (stessa impronta) e' gia' nella richiesta: dalla
+    cartella non si duplica. Non e' un errore per chi carica."""
 
 
 def genere_file(nome, mime=''):
@@ -162,6 +186,15 @@ def categoria_per(slot, nome, mime='', proiezione=None):
         raise CaricamentoNonValido(
             f'Il referto dell\'ecografo va caricato in PDF: «{nome_breve}» non lo e\'. '
             f'Filmati e immagini vanno nelle righe delle proiezioni.')
+    if slot == SLOT_CARTELLA:
+        if genere == 'pdf':
+            return CategoriaAllegato.ALTRO
+        if genere in ('video', 'dicom'):
+            return CategoriaAllegato.ECO_CLIP
+        if genere == 'immagine':
+            return CategoriaAllegato.ECO_STATICA
+        raise CaricamentoNonValido(
+            f'«{nome_breve}» non e\' un file dell\'esame: servono il referto in PDF, i filmati e le immagini.')
     if slot == SLOT_PROIEZIONE:
         from eco.models import TipoMedia
         media = proiezione.tipo_media if proiezione is not None else TipoMedia.ENTRAMBI
@@ -224,26 +257,46 @@ def _verifica_dimensione(categoria, dimensione):
             f'Esporta dall\'ecografo un filmato piu\' breve (massimo 10 secondi) o in MP4.')
 
 
+def _verifica_doppione(richiesta, slot, impronta, nome):
+    if slot == SLOT_CARTELLA and impronta and richiesta.allegati.filter(sha256=impronta).exists():
+        raise GiaCaricato(f'«{os.path.basename(nome or "")}» c\'e\' gia\'.')
+
+
+def _impronta(file_obj):
+    digest = hashlib.sha256()
+    for blocco in file_obj.chunks():
+        digest.update(blocco)
+    file_obj.seek(0)
+    return digest.hexdigest()
+
+
 def controlla(richiesta, slot, nome, mime='', *, proiezione_id=None, sostituisci_id=None, dimensione=None,
-              nota=''):
+              nota='', impronta=None):
     """Tutti i controlli di `allega` senza scrivere nulla: il caricamento a
     pezzi lo chiama prima di mandare il primo byte. Ritorna la categoria."""
     proiezione, _vecchio = _verifica(richiesta, slot, proiezione_id, sostituisci_id, nota)
     categoria = categoria_per(slot, nome, mime, proiezione)
     _verifica_dimensione(categoria, dimensione)
+    _verifica_doppione(richiesta, slot, impronta, nome)
     return categoria
 
 
 def allega(richiesta, file_obj, nome, slot, utente, *, proiezione_id=None, sostituisci_id=None,
-           mime='', impronta=None, nota='', **dettaglio_audit):
+           mime='', impronta=None, nota='', anteprima=None, percorso='', modificato_il=None, **dettaglio_audit):
     """Crea l'allegato dello slot (e la ProiezioneCaricata, se lo slot e' una
     proiezione), sostituendo un allegato esistente se richiesto. Solleva
     CaricamentoNonValido prima di scrivere qualsiasi cosa. `nota` e' il
     «cosa mostra / cosa chiedi» del filmato libero; sostituendo senza nota
-    nuova resta quella di prima."""
+    nuova resta quella di prima. `anteprima`: la miniatura del browser
+    (facoltativa). `percorso` e `modificato_il` (ms): da dove viene il file
+    nella cartella caricata, per l'ordine di acquisizione dello smistamento."""
     proiezione, vecchio = _verifica(richiesta, slot, proiezione_id, sostituisci_id, nota)
     categoria = categoria_per(slot, nome, mime, proiezione)
     _verifica_dimensione(categoria, getattr(file_obj, 'size', None))
+    if slot == SLOT_CARTELLA:
+        if impronta is None:
+            impronta = _impronta(file_obj)
+        _verifica_doppione(richiesta, slot, impronta, nome)
     nota = (nota or '').strip()[:200]
     if not nota and vecchio is not None and proiezione is not None:
         nota = vecchio.proiezioni.filter(proiezione=proiezione).values_list('nota', flat=True).first() or ''
@@ -258,9 +311,23 @@ def allega(richiesta, file_obj, nome, slot, utente, *, proiezione_id=None, sosti
                                               nota=nota)
         if vecchio is not None:
             rimuovi(vecchio, utente, sostituito_da=allegato.id)
+        if slot == SLOT_CARTELLA:
+            from eco.smistamento.tavolo import registra_da_cartella
+            registra_da_cartella(allegato, percorso or nome, modificato_il)
+        _anteprima(allegato, anteprima)
         if categoria == CategoriaAllegato.ECO_CLIP:
             transaction.on_commit(lambda: pianifica_transcodifica(allegato.pk))
     return allegato
+
+
+def _anteprima(allegato, file_anteprima):
+    """La miniatura del browser se c'e' e va bene; per un'immagine, se no,
+    quella fatta qui. Un'anteprima che non riesce non ferma il caricamento."""
+    from . import anteprime
+    if anteprime.da_upload(allegato, file_anteprima):
+        return
+    if genere_file(allegato.nome_originale, allegato.mime) == 'immagine':
+        anteprime.assicura(allegato)
 
 
 def rimuovi(allegato, utente, **dettaglio_audit):
@@ -268,6 +335,8 @@ def rimuovi(allegato, utente, **dettaglio_audit):
     richiesta = allegato.richiesta
     nome, pk = allegato.nome_originale, allegato.pk
     allegato.proiezioni.all().delete()
+    if allegato.anteprima:
+        allegato.anteprima.delete(save=False)
     if allegato.file:
         allegato.file.delete(save=False)
     allegato.delete()
@@ -287,6 +356,9 @@ def pianifica_transcodifica(allegato_id):
             allegato = Allegato.objects.select_related('richiesta').filter(pk=allegato_id).first()
             if allegato is not None:
                 transcodifica.transcodifica(allegato)
+                # Il browser non ha saputo fare la miniatura (AVI, WMV...): la fa ffmpeg.
+                from . import anteprime
+                anteprime.assicura(allegato)
         except Exception:
             logger.exception('Transcodifica dell\'allegato %s non riuscita.', allegato_id)
         finally:

@@ -27,6 +27,14 @@ def _media_temporanea(settings, tmp_path):
 
 
 @pytest.fixture(autouse=True)
+def _smistamento_senza_rete(settings):
+    """Nessun test chiama l'API Anthropic: la lettura AI si prova con un
+    lettore finto passato a mano, e lo smistamento gira nel thread del test."""
+    settings.CONSULTI_SMISTAMENTO_AI = False
+    settings.CONSULTI_SMISTAMENTO_IN_THREAD = False
+
+
+@pytest.fixture(autouse=True)
 def _password_veloci(settings):
     """PBKDF2 costa ~0,2 s a utente: nei test non protegge niente e con le
     fixture a cinque utenti la suite passava da 20 s a oltre un minuto."""

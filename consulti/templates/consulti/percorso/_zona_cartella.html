@@ -1,0 +1,47 @@
+{% comment %}
+Zona unica in cima al passo 3 dell'eco: la cartella intera dell'esame
+(static/consulti/js/cartella.js). Su desktop si trascina la cartella
+(attraversata con webkitGetAsEntry) o la si sceglie con «Scegli la
+cartella» (webkitdirectory); «Scegli i file» vale ovunque e su iPad/iPhone
+(dove i browser non aprono cartelle) e' l'unico pulsante. File di sistema e
+formati inutili si scartano e si dice quanti. Ogni file parte con la sua
+miniatura; alla fine parte lo smistamento automatico.
+Senza JavaScript restano le zone riga per riga qui sotto.
+Contesto: richiesta, n_file_eco, max_clip.
+{% endcomment %}
+<div class="ovic-card" id="zona-cartella"><div class="card-header-ovic">{% if n_file_eco %}Aggiungi altri file dell'esame{% else %}Carica l'esame{% endif %}</div><div class="card-body-ovic">
+  <div class="zona-cartella{% if n_file_eco %} compatta{% endif %}" data-cartella
+       data-url-avvia="{% url 'consulti:smistamento_avvia' richiesta.pk %}"
+       data-url-stato="{% url 'consulti:smistamento_stato' richiesta.pk %}"
+       data-max-clip="{{ max_clip }}">
+    <div class="zona-carica-area" data-area-cartella>
+      <i class="bi bi-folder-symlink" aria-hidden="true"></i>
+      <span class="testo">
+        <span class="solo-mouse" data-testo-mouse>Trascina qui la cartella dell'esame, oppure scegli i file</span>
+        <span class="solo-tocco">Tocca «Scegli i file» e prendi tutti i file dell'esame (dall'app File o da Foto)</span>
+      </span>
+      <span class="sottotesto">Referto in PDF, filmati (MP4, MOV, AVI) e immagini (JPG, PNG), tutti insieme: li mettiamo noi nelle righe, tu controlli e confermi.</span>
+      <span class="cartella-pulsanti">
+        <label class="cta" data-solo-cartella>
+          <input type="file" class="visually-hidden" webkitdirectory directory multiple data-input-cartella>
+          <i class="bi bi-folder2-open" aria-hidden="true"></i>Scegli la cartella
+        </label>
+        <label class="cta">
+          <input type="file" class="visually-hidden" multiple accept=".pdf,application/pdf,video/*,image/*,.avi,.mov,.mkv,.wmv,.dcm" data-input-file>
+          <i class="bi bi-files" aria-hidden="true"></i>Scegli i file
+        </label>
+      </span>
+    </div>
+    <noscript><p class="small text-muted mt-2 mb-0">Senza JavaScript la cartella non si carica tutta insieme: usa le zone di ogni riga qui sotto.</p></noscript>
+    <div class="cartella-avanzamento" hidden data-avanzamento>
+      <div class="d-flex justify-content-between flex-wrap gap-2">
+        <strong data-conteggio>0 di 0 file caricati</strong>
+        <span class="small text-muted" data-corrente></span>
+      </div>
+      <div class="progress" role="progressbar" aria-label="File caricati"><div class="progress-bar" data-barra></div></div>
+      <ul class="cartella-note" data-note></ul>
+    </div>
+    <div class="zona-carica-stato" aria-live="polite" data-stato></div>
+  </div>
+  <p class="small text-muted mt-2 mb-0"><i class="bi bi-printer me-1" aria-hidden="true"></i>Se acquisisci nell'ordine del <a href="{% url 'eco:protocollo' %}" target="_blank" rel="noopener">protocollo stampabile</a>, lo smistamento automatico e' piu' preciso.</p>
+</div></div>

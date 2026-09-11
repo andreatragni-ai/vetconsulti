@@ -101,6 +101,21 @@ def scarica_allegato(request, pk):
 
 
 @login_required
+def anteprima_allegato(request, pk):
+    """La miniatura di un allegato (Allegato.anteprima): stessi permessi del
+    file. Non lascia ACCESSO_STAFF a ogni miniatura (una pagina ne mostra
+    decine): lo lascia la pagina che le mostra."""
+    from consulti.models import Allegato
+
+    allegato = get_object_or_404(Allegato.objects.select_related('richiesta__richiedente'), pk=pk)
+    if not puo_vedere_allegato(request.user, allegato) or not allegato.anteprima:
+        raise Http404
+    risposta = consegna(allegato.anteprima.name, inline=True)
+    risposta['Cache-Control'] = 'private, max-age=3600'
+    return risposta
+
+
+@login_required
 def immagine_riferimento(request, pk):
     """Un'immagine di riferimento del catalogo eco (eco.ImmagineRiferimento:
     immagine ecografica, schema, posizione della sonda). Non e' un dato

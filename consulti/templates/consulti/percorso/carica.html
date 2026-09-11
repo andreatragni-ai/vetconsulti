@@ -9,6 +9,11 @@ le zone: ECG un tracciato (anche piu' file); Holter referto PDF + file
 dell'apparecchio facoltativo; eco referto PDF + una riga per proiezione del
 catalogo, raggruppate per finestra acustica, e in fondo i filmati liberi.
 «Avanti» e' spento finche' manca qualcosa di obbligatorio, e dice cosa.
+Eco: in cima la zona unica per la cartella intera (_zona_cartella.html) e,
+dopo lo smistamento automatico, il «tavolo»: ogni riga con il file proposto
+e il suo bollino, a destra i file da smistare; «Confermo lo smistamento»
+(form #form-conferma) prende il posto di «Avanti» finche' ci sono proposte
+non confermate (consulti/views_smistamento.py).
 {% endcomment %}
 {% block title %}{{ richiesta.titolo }} · carica gli esami — VetWay Consulti{% endblock %}
 {% block content %}
@@ -20,6 +25,22 @@ catalogo, raggruppate per finestra acustica, e in fondo i filmati liberi.
      data-max-semplice="{{ max_semplice }}" data-max-pezzi="{{ max_pezzi }}">
 
   <div class="col-lg-4 order-lg-2">
+    {% if tavolo and n_file_eco %}
+    <div class="ovic-card pannello-da-smistare" id="da-smistare" data-destinazione="nessuna">
+      <div class="card-header-ovic">Da smistare <span class="conteggio">{{ da_smistare|length }}</span></div>
+      <div class="card-body-ovic">
+        {% if da_smistare %}
+          <p class="small text-muted mb-2">Trascinali sulla riga giusta, oppure usa «Sposta in…».</p>
+          {% for posto in da_smistare %}
+            {% include "consulti/percorso/_posto.html" %}
+            {% if posto.proposta.motivo %}<p class="posto-perche">{{ posto.proposta.motivo }}</p>{% endif %}
+          {% endfor %}
+        {% else %}
+          <p class="small text-muted mb-0"><i class="bi bi-check2-all me-1" aria-hidden="true"></i>Nessun file da smistare: ognuno ha la sua riga.</p>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
     <div class="ovic-card"><div class="card-header-ovic">Cosa serve per inviare</div><div class="card-body-ovic">
       <details class="elenco-controllo" open>
         <summary class="contatore-obbligatori">
@@ -72,10 +93,36 @@ catalogo, raggruppate per finestra acustica, e in fondo i filmati liberi.
     </div></div>
 
   {% elif richiesta.tipo_esame == 'ECO' %}
-    <div class="ovic-card" id="eco_referto"><div class="card-header-ovic">Referto dell'ecografo · obbligatorio</div><div class="card-body-ovic">
+    <p class="small mb-2"><a href="{% url 'eco:protocollo' %}" target="_blank" rel="noopener"><i class="bi bi-printer me-1" aria-hidden="true"></i>Protocollo stampabile delle proiezioni</a>, da tenere accanto all'ecografo.</p>
+    {% include "consulti/percorso/_zona_cartella.html" %}
+
+    {% if smistamento_in_corso %}
+      {% include "consulti/percorso/_smistamento_in_corso.html" with smistamento=smistamento_in_corso %}
+    {% elif smistamento and n_file_eco %}
+    <div class="riepilogo-smistamento" id="riepilogo-smistamento">
+      <div>
+        <strong>{% if smistamento.stato == 'ERRORE' %}Smistamento automatico non riuscito{% else %}Smistamento automatico fatto{% endif %}</strong>
+        <span class="riepilogo-numeri">
+          {% if n_sicure %}<span class="bollino bollino--sicuro"><i class="bi bi-patch-check-fill" aria-hidden="true"></i>{{ n_sicure }} sicur{{ n_sicure|pluralize:"o,i" }}</span>{% endif %}
+          {% if n_da_verificare %}<span class="bollino bollino--verifica"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>{{ n_da_verificare }} da verificare</span>{% endif %}
+          {% if da_smistare %}<span class="bollino"><i class="bi bi-inbox" aria-hidden="true"></i>{{ da_smistare|length }} da smistare</span>{% endif %}
+          {% if not modifiche_da_confermare %}<span class="bollino bollino--ok"><i class="bi bi-check-circle-fill" aria-hidden="true"></i>tutto confermato</span>{% endif %}
+          {% if righe_vuote_obbligatorie %}<span class="bollino bollino--vuota"><i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>{{ righe_vuote_obbligatorie }} rig{{ righe_vuote_obbligatorie|pluralize:"a,he" }} obbligatori{{ righe_vuote_obbligatorie|pluralize:"a,e" }} vuot{{ righe_vuote_obbligatorie|pluralize:"a,e" }}</span>{% endif %}
+        </span>
+        {% if smistamento.messaggio %}<p class="small mb-0 mt-1">{{ smistamento.messaggio }}</p>{% endif %}
+        {% if modifiche_da_confermare %}<p class="small text-muted mb-0 mt-1">Controlla ogni riga confrontando la miniatura con l'immagine di riferimento: «Sicuro» vuol dire che formato, colori e lettura automatica sono d'accordo; «Da verificare» va guardato. Nulla arriva al collega finche' non confermi.</p>{% endif %}
+      </div>
+      <form method="post" action="{% url 'consulti:smistamento_avvia' richiesta.pk %}">{% csrf_token %}
+        <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>Rifai lo smistamento</button>
+      </form>
+    </div>
+    {% endif %}
+
+    <div class="ovic-card" id="eco_referto" data-destinazione="referto"><div class="card-header-ovic">Referto dell'ecografo · obbligatorio</div><div class="card-body-ovic">
       <p class="small text-muted">Il PDF con le misure che stampa l'ecografo.</p>
-      {% for a in zona_eco_referto.files %}{% include "consulti/percorso/_file.html" with a=a slot="eco_referto" accetta=zona_eco_referto.accetta %}{% endfor %}
-      {% if not zona_eco_referto.files %}
+      {% if posto_referto %}
+        {% include "consulti/percorso/_posto.html" with posto=posto_referto %}
+      {% else %}
         {% include "consulti/percorso/_zona.html" with slot="eco_referto" testo="Trascina qui il referto dell'ecografo" testo_tocco="Tocca per scegliere il referto in PDF" sottotesto="Solo PDF" accetta=zona_eco_referto.accetta %}
       {% endif %}
     </div></div>
@@ -84,7 +131,7 @@ catalogo, raggruppate per finestra acustica, e in fondo i filmati liberi.
     <details class="ovic-card gruppo-finestra" id="finestra-{{ g.finestra|lower }}"{% if not g.completa %} open{% endif %}>
       <summary class="card-header-ovic">
         <span>{{ g.etichetta }}</span>
-        <span class="conteggio">{% if g.totale %}{{ g.fatte }} di {{ g.totale }}{% if g.completa %} <i class="bi bi-check-circle-fill" aria-hidden="true"></i>{% endif %}{% else %}facoltative{% endif %}{% if g.facoltative_caricate %} · +{{ g.facoltative_caricate }} facoltativ{{ g.facoltative_caricate|pluralize:"a,e" }}{% endif %}</span>
+        <span class="conteggio">{% if g.totale %}{% if tavolo and g.pieni != g.fatte %}{{ g.pieni }} di {{ g.totale }} con un file ({{ g.fatte }} confermat{{ g.fatte|pluralize:"o,i" }}){% else %}{{ g.fatte }} di {{ g.totale }}{% endif %}{% if g.completa %} <i class="bi bi-check-circle-fill" aria-hidden="true"></i>{% endif %}{% else %}facoltative{% endif %}{% if g.facoltative_caricate %} · +{{ g.facoltative_caricate }} facoltativ{{ g.facoltative_caricate|pluralize:"a,e" }}{% endif %}</span>
         <i class="bi bi-chevron-down" aria-hidden="true"></i>
       </summary>
       <div class="card-body-ovic">
@@ -127,9 +174,13 @@ catalogo, raggruppate per finestra acustica, e in fondo i filmati liberi.
   </div>
 </div>
 
+{% if tavolo %}<form id="form-conferma" method="post" action="{% url 'consulti:smistamento_conferma' richiesta.pk %}">{% csrf_token %}</form>{% endif %}
 <div class="percorso-barra">
   <div class="principale">
-    {% if mancanti %}
+    {% if tavolo and modifiche_da_confermare %}
+      <button type="submit" form="form-conferma" class="btn-nuova"><i class="bi bi-check2-square"></i> Confermo lo smistamento</button>
+      <span class="perche">{{ modifiche_da_confermare }} file propost{{ modifiche_da_confermare|pluralize:"o,i" }} o spostat{{ modifiche_da_confermare|pluralize:"o,i" }} da confermare: nulla va al collega finche' non confermi.{% if righe_vuote_obbligatorie %} Poi restano {{ righe_vuote_obbligatorie }} righe obbligatorie da riempire.{% endif %}</span>
+    {% elif mancanti %}
       <button type="button" class="btn-nuova" disabled aria-describedby="perche-fermo">Avanti <i class="bi bi-arrow-right"></i></button>
       <span class="perche" id="perche-fermo"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>{{ perche_fermo }}</span>
     {% else %}
@@ -159,5 +210,10 @@ catalogo, raggruppate per finestra acustica, e in fondo i filmati liberi.
 </div>
 {% endblock %}
 {% block js %}
+<script src="{% static 'consulti/js/anteprime.js' %}"></script>
 <script src="{% static 'consulti/js/carica.js' %}"></script>
+{% if tavolo %}
+<script src="{% static 'consulti/js/cartella.js' %}"></script>
+<script src="{% static 'consulti/js/tavolo.js' %}"></script>
+{% endif %}
 {% endblock %}

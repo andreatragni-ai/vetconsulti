@@ -337,6 +337,13 @@ def percorso_allegato(allegato, nome):
     return f'allegati/{anno}/{codice}/{allegato.categoria.lower()}_{timezone.now():%H%M%S%f}{ext}'
 
 
+def percorso_anteprima(allegato, nome):
+    """Accanto agli allegati della richiesta, in anteprime/: sempre JPEG."""
+    codice = allegato.richiesta.codice
+    anno = codice.split('-')[1]
+    return f'allegati/{anno}/{codice}/anteprime/{timezone.now():%H%M%S%f}.jpg'
+
+
 class Allegato(models.Model):
     richiesta = models.ForeignKey(Richiesta, on_delete=models.CASCADE, related_name='allegati')
     categoria = models.CharField(max_length=20, choices=CategoriaAllegato.choices, db_index=True)
@@ -349,6 +356,12 @@ class Allegato(models.Model):
     caricato_da = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     caricato_il = models.DateTimeField(auto_now_add=True)
+    # Miniatura JPEG (lato lungo al massimo 800 px): per un filmato il
+    # fotogramma a meta' durata, per un'immagine l'immagine ridotta. La fa il
+    # browser mentre carica; se non c'e' la fa il server (consulti/anteprime.py:
+    # Pillow per le immagini, ffmpeg per i filmati se installato). Serve allo
+    # smistamento automatico dell'eco e agli elenchi dei file: `url_anteprima`.
+    anteprima = models.ImageField(upload_to=percorso_anteprima, blank=True, max_length=300)
 
     class Meta:
         verbose_name = 'Allegato'
@@ -357,6 +370,15 @@ class Allegato(models.Model):
 
     def __str__(self):
         return f'{self.richiesta.codice} — {self.get_categoria_display()} — {self.nome_originale or self.file.name}'
+
+    @property
+    def url_anteprima(self):
+        """L'indirizzo della miniatura (view protetta, stessi permessi del
+        file: core.views_media.anteprima_allegato), o None se non c'e'."""
+        if not self.anteprima:
+            return None
+        from django.urls import reverse
+        return reverse('anteprima_allegato', args=[self.pk])
 
     @property
     def genere(self):

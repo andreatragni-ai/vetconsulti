@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views, views_decisione, views_percorso
+from . import views, views_decisione, views_percorso, views_smistamento
 
 app_name = 'consulti'
 
@@ -14,6 +14,11 @@ urlpatterns = [
     path('<int:pk>/esame/', views_percorso.passo_esame, name='passo_esame'),
     path('<int:pk>/carica/', views_percorso.passo_carica, name='passo_carica'),
     path('<int:pk>/riepilogo/', views_percorso.passo_riepilogo, name='passo_riepilogo'),
+    # Eco: tavolo di smistamento del passo 3 (eco/smistamento/).
+    path('<int:pk>/smistamento/avvia/', views_smistamento.avvia, name='smistamento_avvia'),
+    path('<int:pk>/smistamento/stato/', views_smistamento.stato, name='smistamento_stato'),
+    path('<int:pk>/smistamento/sposta/', views_smistamento.sposta, name='smistamento_sposta'),
+    path('<int:pk>/smistamento/conferma/', views_smistamento.conferma, name='smistamento_conferma'),
     path('<int:pk>/', views.dettaglio, name='dettaglio'),
     path('<int:pk>/allegato/', views.carica_allegato, name='carica_allegato'),
     path('<int:pk>/allegato/<int:allegato_pk>/elimina/', views.elimina_allegato, name='elimina_allegato'),

@@ -192,6 +192,7 @@ class LettoreClaude:
         self.paralleli = max(1, paralleli)
         self.prezzi = prezzi or {}
         self._client = client
+        self.modello_senza_fallback = False
 
     # ── client ──────────────────────────────────────────────────────────
     def _crea_client(self):
@@ -217,7 +218,7 @@ class LettoreClaude:
             output_config={'effort': self.effort, 'format': {'type': 'json_schema', 'schema': formato}},
             messages=[{'role': 'user', 'content': contenuto_gruppo(gruppo, self.taglio_alto)}],
         )
-        if self.modello in MODELLI_CON_FALLBACK:
+        if self.modello in MODELLI_CON_FALLBACK and not self.modello_senza_fallback:
             parametri.update(betas=[BETA_FALLBACK], fallbacks='default')
         inizio = time.monotonic()
         risposta = client.beta.messages.create(**parametri)
@@ -245,7 +246,16 @@ class LettoreClaude:
         modello) risalgono come LetturaNonDisponibile."""
         import anthropic
         try:
-            return self._chiedi(client, sistema, formato, gruppo)
+            try:
+                return self._chiedi(client, sistema, formato, gruppo)
+            except anthropic.BadRequestError as e:
+                # Il fallback lato server e' in beta: se l'API non lo accetta
+                # insieme al resto, si riprova una volta senza.
+                if self.modello not in MODELLI_CON_FALLBACK or 'fallback' not in str(e).lower():
+                    raise
+                logger.warning('Smistamento: fallback rifiutato dall\'API, riprovo senza: %s', e)
+                self.modello_senza_fallback = True
+                return self._chiedi(client, sistema, formato, gruppo)
         except anthropic.AuthenticationError:
             raise LetturaNonDisponibile('La lettura automatica non e\' disponibile (chiave rifiutata): '
                                         'smista i file a mano.')

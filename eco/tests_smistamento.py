@@ -387,3 +387,42 @@ def test_modello_senza_fallback_non_lo_chiede():
     client = ClientFinto([_risposta([])])
     LettoreClaude('claude-sonnet-5', client=client).leggi(_da_leggere(1), _righe()[:9])
     assert 'fallbacks' not in client.parametri[0] and 'betas' not in client.parametri[0]
+
+
+# ── Comando di valutazione (con un lettore finto: niente API) ────────────────
+
+def test_comando_valuta_smistamento_riporta_i_numeri(monkeypatch, tmp_path):
+    """Il comando costruisce il banco dal catalogo senza copiare immagini e
+    riporta accuratezza, sicuri sbagliati, costo. Qui il lettore finto
+    «indovina» dalla dimensione dell'immagine, per provare il rapporto."""
+    from io import StringIO
+    from django.core.management import call_command
+    from eco.management.commands import valuta_smistamento as comando
+
+    per_dimensione = {}
+    for nome, giuste, genere, gruppo, _s in comando.BANCO:
+        with Image.open(IMG / nome) as im:
+            im.thumbnail((800, 800))
+            per_dimensione[im.size] = giuste[0] if gruppo == 'principale' else None
+
+    class Finto:
+        def __init__(self, *a, **k):
+            pass
+
+        def leggi(self, da_leggere, righe_):
+            letture = {}
+            for d in da_leggere:
+                codice = per_dimensione.get(Image.open(io.BytesIO(d.anteprima)).size)
+                letture[d.file_id] = Lettura(codice if codice in d.candidati else None, confidenza='alta',
+                                             tracciato=next((r.tracciato for r in righe_ if r.codice == codice), ''))
+            return letture, {'richieste': 4, 'immagini': len(da_leggere), 'token_input': 20000, 'token_output': 3000,
+                             'token_cache_scrittura': 0, 'token_cache_lettura': 0, 'costo_usd': 0.2, 'errori': []}
+
+    monkeypatch.setattr(comando, 'LettoreClaude', Finto)
+    uscita = StringIO()
+    call_command('valuta_smistamento', '--json', str(tmp_path / 'r.json'), stdout=uscita)
+    testo = uscita.getvalue()
+    assert 'Gruppo principale (17 file)' in testo and 'Gruppo guida (9 file)' in testo
+    assert 'riga giusta fra le possibili 26/26' in testo and 'Per un esame da 27 file' in testo
+    assert json.loads((tmp_path / 'r.json').read_text())['file'][0]['neutro'].startswith('IMG_')
+    assert not list(IMG.parent.glob('IMG_*'))            # nessuna copia delle immagini

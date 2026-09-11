@@ -84,7 +84,9 @@ class PazienteForm(forms.ModelForm):
                                     'senza portare sul portale i dati del cliente.',
         }
         widgets = {
-            'nome': forms.TextInput(attrs={'autocomplete': 'off'}),
+            # autocapitalize: la tastiera di iPhone e iPad parte gia' con la maiuscola.
+            'nome': forms.TextInput(attrs={'autocomplete': 'off', 'autocapitalize': 'words'}),
+            'cognome_proprietario': forms.TextInput(attrs={'autocapitalize': 'words'}),
             # Combobox ARIA 1.2 (static/consulti/js/elenco_filtrato.js): l'elenco
             # e' quello della specie scelta, id dei dati e dei radio qui.
             'razza': forms.TextInput(attrs={
@@ -161,7 +163,7 @@ class EsameForm(forms.ModelForm):
         }
         help_texts = {
             'urgenza': 'Risposta entro 4 ore e il caso in cima alla lista del collega; costa un supplemento '
-                       '(i prezzi qui sotto si aggiornano). Si sceglie solo fra chi accetta le urgenze.',
+                       '(i prezzi qui sotto si aggiornano).',
             'quesito': 'Cosa vuoi sapere. Es. «Aritmia all\'auscultazione prima di una TPLO: '
                        'e\' idoneo all\'anestesia?»',
             'anamnesi': 'Sintomi, visita, esami gia\' fatti. Facoltativa.',

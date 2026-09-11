@@ -39,7 +39,8 @@ def _voce(allegato, pc=None):
         'genere': genere,
         'filmato': allegato.categoria == CategoriaAllegato.ECO_CLIP or genere == 'video',
         'proiezione': pc.proiezione.nome if pc else None,
-        'nota': pc.nota if pc else '',
+        # La nota di chi carica c'e' solo per i filmati liberi («cosa mostra / cosa chiedi»).
+        'nota': pc.nota if pc and pc.proiezione.libera else '',
         'miniatura': miniatura,
     }
 

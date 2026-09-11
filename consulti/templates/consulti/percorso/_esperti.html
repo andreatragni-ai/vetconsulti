@@ -35,7 +35,7 @@ manca, le sue iniziali su fondo neutro.
         {% else %}
           <span class="prezzo">Prezzo da definire</span>
         {% endif %}
-        <span class="tempo"><i class="bi bi-stopwatch me-1" aria-hidden="true"></i>{% if urgenza %}Risposta entro {{ e.tempo }} ore (urgente){% elif e.tempo %}Risposta in {{ e.tempo }} ore{% else %}Tempo di risposta non indicato{% endif %}</span>
+        {% if not e.no_urgenze %}<span class="tempo"><i class="bi bi-stopwatch me-1" aria-hidden="true"></i>{% if urgenza %}Risposta entro {{ e.tempo }} ore (urgente){% elif e.tempo %}Risposta in {{ e.tempo }} ore{% else %}Tempo di risposta non indicato{% endif %}</span>{% endif %}
         {% if r.messaggio %}<span class="nota">«{{ r.messaggio }}»</span>{% endif %}
         {% if e.no_urgenze %}<span class="assente no-urgenze"><i class="bi bi-lightning" aria-hidden="true"></i>Non accetta urgenze</span>{% endif %}
         {% if not e.disponibile %}<span class="assente"><i class="bi bi-calendar-x" aria-hidden="true"></i>Assente{% if e.rientro %}: rientra il {{ e.rientro|date:"j F" }}{% endif %}</span>{% endif %}

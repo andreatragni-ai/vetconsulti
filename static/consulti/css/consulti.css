@@ -683,8 +683,10 @@ a.riferimento:hover, a.riferimento:focus-visible { outline: 3px solid var(--ovic
   top: calc(100% + 2px);
   left: 0;
   right: 0;
-  z-index: 30;
+  /* Sopra la barra di «Avanti», che su telefono sta attaccata in basso (z-index 100). */
+  z-index: 110;
   max-height: 16rem;
+  max-height: min(16rem, 45vh);
   overflow-y: auto;
   margin: 0;
   padding: .25rem 0;

@@ -152,6 +152,45 @@ def test_eco_richiede_pdf_e_proiezioni_obbligatorie(richiedente, refertatore):
 
 
 @pytest.mark.django_db
+def test_elementi_obbligatori_sono_la_stessa_regola_della_frase(richiedente, refertatore):
+    """La lista con le caselle (passo «Carica gli esami») e la frase di
+    perche_non_puoi_inviare vengono dalla stessa funzione: stessi elementi,
+    stesso ordine, e a lista tutta spuntata corrisponde nessun blocco."""
+    CompetenzaRefertatore.objects.create(refertatore=refertatore, tipo_esame=TipoEsame.ECO, referente=True)
+    p1 = ProiezioneCatalogo.objects.create(codice='A', nome='Quattro camere', obbligatoria=True, ordine=2)
+    p2 = ProiezioneCatalogo.objects.create(codice='B', nome='Asse corto', obbligatoria=True, ordine=1)
+    ProiezioneCatalogo.objects.create(codice='C', nome='Facoltativa', obbligatoria=False, ordine=3)
+    r = _richiesta(richiedente, refertatore, tipo=TipoEsame.ECO)
+    elementi = regole.elementi_obbligatori(r)
+    assert [e.etichetta for e in elementi] == ['Referto dell\'ecografo (PDF)', 'Asse corto', 'Quattro camere']
+    assert [e.proiezione_id for e in elementi] == [None, p2.id, p1.id]
+    assert not any(e.fatto for e in elementi)
+    assert regole.allegati_mancanti(r) == [e.frase for e in elementi]
+    assert regole.perche_non_puoi_inviare(r) == 'Mancano: ' + '; '.join(e.frase for e in elementi) + '.'
+    _allega(r, CategoriaAllegato.ECO_REFERTO_PDF)
+    clip = _allega(r, CategoriaAllegato.ECO_CLIP, 'c.mp4', b'mp4')
+    ProiezioneCaricata.objects.create(richiesta=r, proiezione=p2, allegato=clip)
+    fatti = {e.chiave: e.fatto for e in regole.elementi_obbligatori(r)}
+    assert fatti == {'eco_referto': True, f'proiezione_{p2.id}': True, f'proiezione_{p1.id}': False}
+    assert regole.perche_non_puoi_inviare(r) == 'Manca la proiezione «Quattro camere».'
+    ProiezioneCaricata.objects.create(richiesta=r, proiezione=p1, allegato=clip)
+    assert all(e.fatto for e in regole.elementi_obbligatori(r))
+    assert regole.perche_non_puoi_inviare(r) is None
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('tipo, categoria', [(TipoEsame.ECG, CategoriaAllegato.ECG_IMMAGINE),
+                                             (TipoEsame.HOLTER, CategoriaAllegato.HOLTER_REFERTO)])
+def test_elementi_obbligatori_ecg_e_holter(richiedente, refertatore, tipo, categoria):
+    r = _richiesta(richiedente, refertatore, tipo=tipo)
+    [elemento] = regole.elementi_obbligatori(r)
+    assert not elemento.fatto and regole.perche_non_puoi_inviare(r) == f'Manca {elemento.frase}.'
+    _allega(r, categoria)
+    [elemento] = regole.elementi_obbligatori(r)
+    assert elemento.fatto and regole.perche_non_puoi_inviare(r) is None
+
+
+@pytest.mark.django_db
 def test_intestatario_clinica_e_libero_professionista(richiedente, libero_professionista):
     a = _richiesta(richiedente)
     assert a.intestatario() == richiedente.clinica

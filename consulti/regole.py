@@ -10,31 +10,66 @@ declinato che il richiedente gira a un altro esperto.
 `ore_risposta_dichiarate` e' il tempo di risposta che l'esperto ha promesso
 per quel tipo: lo mostra l'elenco dei casi ricevuti e lo usa
 `sorveglia_consulti` per il sollecito a meta' tempo.
+
+## Una regola sola per la frase e per la lista
+
+`elementi_obbligatori` dice, per il tipo di esame, quali file servono e se
+ci sono gia'. Da li' escono sia la frase di `perche_non_puoi_inviare` (via
+`allegati_mancanti`) sia la lista con le caselle del passo «Carica gli
+esami» della richiesta guidata: il template non riscrive la regola, la
+legge. Aggiungere un requisito qui lo aggiunge in entrambi i posti.
 """
+
+from dataclasses import dataclass
 
 from core.tipi import TipoEsame
 from .models import CategoriaAllegato, StatoRichiesta
 
 
-def allegati_mancanti(richiesta):
-    """Elenco di frasi, una per requisito non soddisfatto."""
+@dataclass(frozen=True)
+class Elemento:
+    """Un file obbligatorio per inviare. `frase` entra nel messaggio di
+    `perche_non_puoi_inviare` («Manca <frase>.»), `etichetta` e' la voce
+    della lista con le caselle; `proiezione_id` e' valorizzato per le
+    proiezioni eco del catalogo."""
+
+    chiave: str
+    etichetta: str
+    frase: str
+    fatto: bool
+    proiezione_id: int | None = None
+
+
+def elementi_obbligatori(richiesta):
+    """Gli elementi obbligatori per il tipo della richiesta, in ordine, con
+    lo stato fatto/mancante. Gli allegati SCARTATO non contano per le
+    categorie; per le proiezioni conta la riga ProiezioneCaricata, come
+    prima del refactor (nessun cambiamento in cio' che blocca l'invio)."""
     categorie = set(richiesta.allegati.exclude(stato='SCARTATO').values_list('categoria', flat=True))
-    mancanti = []
+    elementi = []
     if richiesta.tipo_esame == TipoEsame.ECG:
-        if not categorie & {CategoriaAllegato.ECG_PDF, CategoriaAllegato.ECG_IMMAGINE}:
-            mancanti.append('il tracciato ECG (PDF o immagine)')
+        elementi.append(Elemento(
+            'ecg', 'Tracciato ECG (PDF o foto)', 'il tracciato ECG (PDF o immagine)',
+            bool(categorie & {CategoriaAllegato.ECG_PDF, CategoriaAllegato.ECG_IMMAGINE})))
     elif richiesta.tipo_esame == TipoEsame.HOLTER:
-        if CategoriaAllegato.HOLTER_REFERTO not in categorie:
-            mancanti.append('il referto Holter dell\'apparecchio')
+        elementi.append(Elemento(
+            'holter_referto', 'Referto del software Holter (PDF)', 'il referto Holter dell\'apparecchio',
+            CategoriaAllegato.HOLTER_REFERTO in categorie))
     elif richiesta.tipo_esame == TipoEsame.ECO:
-        if CategoriaAllegato.ECO_REFERTO_PDF not in categorie:
-            mancanti.append('il referto dell\'ecografo (PDF)')
+        elementi.append(Elemento(
+            'eco_referto', 'Referto dell\'ecografo (PDF)', 'il referto dell\'ecografo (PDF)',
+            CategoriaAllegato.ECO_REFERTO_PDF in categorie))
         from eco.models import ProiezioneCatalogo
         caricate = set(richiesta.proiezioni.values_list('proiezione_id', flat=True))
         for p in ProiezioneCatalogo.objects.filter(obbligatoria=True, attiva=True).order_by('ordine'):
-            if p.id not in caricate:
-                mancanti.append(f'la proiezione «{p.nome}»')
-    return mancanti
+            elementi.append(Elemento(f'proiezione_{p.id}', p.nome, f'la proiezione «{p.nome}»',
+                                     p.id in caricate, proiezione_id=p.id))
+    return elementi
+
+
+def allegati_mancanti(richiesta):
+    """Elenco di frasi, una per requisito non soddisfatto."""
+    return [e.frase for e in elementi_obbligatori(richiesta) if not e.fatto]
 
 
 def _perche_non_puo_richiedere(richiesta):

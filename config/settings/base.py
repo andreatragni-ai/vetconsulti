@@ -167,6 +167,30 @@ ALLEGATO_MAX_BYTE = int(os.environ.get('ALLEGATO_MAX_BYTE', 50 * 1024 * 1024))
 # freno e' il peso: 100 MB bastano per 10 s anche in DICOM poco compresso.
 ECO_CLIP_MAX_BYTE = int(os.environ.get('ECO_CLIP_MAX_BYTE', 100 * 1024 * 1024))
 
+# ── Smistamento automatico dei file dell'eco (eco/smistamento/) ──────────────
+# La lettura AI delle miniature usa l'API Anthropic con la chiave in
+# ANTHROPIC_API_KEY (ambiente; MAI nel repo). Senza chiave, o con
+# CONSULTI_SMISTAMENTO_AI=False, lo smistamento si ferma a formato e colore
+# e le righe le sceglie chi carica.
+CONSULTI_SMISTAMENTO_AI = os.environ.get('CONSULTI_SMISTAMENTO_AI', 'True') == 'True'
+# Modello con visione: Claude Opus 5. Misure e costi per esame sul banco di
+# prova: `manage.py valuta_smistamento` (docstring del comando e docs/BACKLOG.md).
+CONSULTI_MODELLO_SMISTAMENTO = os.environ.get('CONSULTI_MODELLO_SMISTAMENTO', 'claude-opus-5')
+CONSULTI_SMISTAMENTO_EFFORT = os.environ.get('CONSULTI_SMISTAMENTO_EFFORT', 'medium')
+CONSULTI_SMISTAMENTO_TIMEOUT = float(os.environ.get('CONSULTI_SMISTAMENTO_TIMEOUT', '90'))
+# Frazione dell'altezza tolta in alto alla miniatura prima di mandarla all'AI
+# (intestazione dell'ecografo: nome del paziente, codice). 0 = niente taglio.
+CONSULTI_SMISTAMENTO_TAGLIO_ALTO = float(os.environ.get('CONSULTI_SMISTAMENTO_TAGLIO_ALTO', '0.08'))
+CONSULTI_SMISTAMENTO_PER_RICHIESTA = 8          # miniature per richiesta all'API
+CONSULTI_SMISTAMENTO_IN_THREAD = True           # i test lo spengono (conftest.py)
+# Prezzi in dollari per milione di token (ingresso, uscita), per la stima del
+# costo nella telemetria. Da aggiornare se cambiano i listini.
+CONSULTI_PREZZI_MODELLI = {
+    'claude-opus-5': (5.0, 25.0),
+    'claude-sonnet-5': (2.0, 10.0),
+    'claude-haiku-4-5': (1.0, 5.0),
+}
+
 # Django usa il tag 'error', Bootstrap la classe 'danger': senza questa
 # mappatura il messaggio di errore e' invisibile.
 from django.contrib.messages import constants as _msg  # noqa: E402

@@ -8,6 +8,8 @@ pytest==9.0.2
 pytest-django==4.11.1
 boto3==1.42.9
 django-storages==1.14.6
+# Lettura AI delle miniature per lo smistamento dei file dell'eco (eco/smistamento/lettore.py).
+anthropic==1.5.0
 
 # Strato grafico condiviso (template base, CSS, vendor). Riga COMMENTATA:
 # il server non ha il pacchetto da repo e un `pip install -r` con questa riga

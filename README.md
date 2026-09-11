@@ -46,6 +46,11 @@ comunque grazie al ripiego in `config/settings/base.py`, ma la variabile e'
 il modo documentato. Il test che genera il PDF vero salta con un messaggio
 chiaro se le librerie non si trovano.
 
+Il catalogo delle proiezioni eco sta in `eco/catalogo/` (JSON + immagini
+di riferimento) e `seed_demo` lo carica se il catalogo e' vuoto; dopo
+averlo modificato: `venv/bin/python manage.py carica_catalogo_eco`
+(idempotente, disattiva le voci tolte dal file).
+
 `seed_demo` crea `admin/admin`, i refertatori `rferrari` (ECG+Holter) e
 `lmonti` (eco), i richiedenti `gbianchi` (clinica) e `mrossi` (libero
 professionista), password `prova12345`, e due casi gia' INVIATI da
@@ -53,6 +58,11 @@ professionista), password `prova12345`, e due casi gia' INVIATI da
 `lmonti` con il referto dell'ecografo e tutte le proiezioni obbligatorie.
 Gli allegati sono finti (PDF segnati DIMOSTRATIVO, PNG segnaposto:
 `core/demo.py`). Un caso demo nuovo nasce solo se non ce n'e' uno aperto.
+
+Collaudo della richiesta guidata (F2): come `gbianchi`, «Nuova richiesta»
+-> paziente -> esame ed esperto (la bozza nasce qui) -> carica gli esami
+(trascinare o toccare le zone; per l'eco una riga per proiezione) ->
+riepilogo e invio. L'email «caso arrivato» esce in console.
 
 `manage.py` usa `config.settings.dev` (sqlite `db_dev.sqlite3`, email in
 console). In produzione `DJANGO_SETTINGS_MODULE=config.settings.prod` con le
@@ -84,8 +94,9 @@ Come lo usa il portale:
 - `templates/base.html` e' l'host sopra `vetway_ui/base.html`: testata
   (`.consulti-testata`), navbar con il partial `_navbar.html` del pacchetto
   e le voci da `core.context_processors.navigazione`, avviso "completa i
-  dati di fatturazione" nel blocco `avvisi`, footer con `_footer.html`
-  (`privacy_url`, `prodotto="VetWay Consulti"`) piu' i termini;
+  dati di fatturazione" nel blocco `avvisi`, footer con lo stesso markup
+  di `_footer.html` (`.ovic-footer`) ma senza «Django + PostgreSQL», con
+  privacy e termini (torna all'include quando vetway-ui 0.3.0 lo permette);
   `data-sessione-minuti` da `core.context_processors.sessione_minuti`.
 - `templates/auth_base.html` e' l'host sopra `vetway_ui/auth_base.html`
   (login, scelta registrazione, reset password, esiti).
@@ -115,8 +126,8 @@ WeasyPrint su macOS vuole le librerie Homebrew (`brew install pango`);
 | `core/` | `TipoEsame`, context processor del profilo e della navbar (contatore dei casi da decidere), consegna protetta dei file (`scarica_allegato`, `?inline=1` per il visore), `seed_demo` e i file finti di `demo.py` |
 | `accounts/` | Refertatore + competenze, Clinica, DatiFatturazione (validazioni in `fiscale.py`; un solo soggetto fra clinica e richiedente), Richiedente (CLINICA / LIBERO_PROFESSIONISTA), Consenso; login, registrazione a due passi con conferma email, reset password, profili, area staff (refertatori, richiedenti da approvare) |
 | `listino/` | VoceListino, Supplemento, `prezzi.prezzo_effettivo()` |
-| `consulti/` | Richiesta (codice `TC-AAAA-NNNN`, transizioni con audit, `riassegna` dopo un declino), Paziente, Allegato, Commento, EventoAudit append-only; `regole.py` (invio, riassegnazione, tempo di risposta), `permessi.py` (chi agisce), `motivi.py` (frasi per declinare / non refertabile), `racconto.py` (audit leggibile), `views_decisione.py` (casi ricevuti, prendi in carico, declina, non refertabile), `upload_chunk.py`, comando `sorveglia_consulti` (rilascio + sollecito a meta' tempo) |
-| `eco/` | catalogo proiezioni (fixture `proiezioni_bozza.json`, **da confermare**), ProiezioneCaricata, `transcodifica.py` |
+| `consulti/` | Richiesta (codice `TC-AAAA-NNNN`, `titolo` «Luna · Ecocardiografia», transizioni con audit, `riassegna` dopo un declino), Paziente, Allegato, Commento, EventoAudit append-only; richiesta guidata in quattro passi (`percorso.py`, `views_percorso.py`, template `percorso/`, `static/consulti/js/carica.js`), `caricamento.py` (zona + tipo di file -> categoria, ProiezioneCaricata, sostituzione), `regole.py` (invio con `elementi_obbligatori`, riassegnazione, tempo di risposta), `permessi.py` (chi agisce), `motivi.py` (frasi per declinare / non refertabile), `racconto.py` (audit leggibile), `views_decisione.py` (casi ricevuti, prendi in carico, declina, non refertabile), `upload_chunk.py`, comando `sorveglia_consulti` (rilascio + sollecito a meta' tempo) |
+| `eco/` | catalogo proiezioni (`catalogo/catalogo_eco.json` + `catalogo/img/`, comando `carica_catalogo_eco`; finestre acustiche, filmati liberi, ImmagineRiferimento), ProiezioneCaricata, `transcodifica.py` |
 | `referti/` | Referto (copia di lavoro) con `firma()` e `rettifica()`, VersioneReferto (istantanea firmata + PDF), `blocchi.py` (voci per tipo: il punto di aggancio delle misure ECG), pagina di refertazione con visore allegati e bozza automatica, PDF WeasyPrint, stampa protetta delle versioni |
 | `registro/` | Prestazione immutabile (`clinica` nulla per il libero professionista, `intestatario()`), StatoFatturazione, `registra_prestazione()`, comando `esporta_prestazioni` (colonne `intestatario`, `tipo_richiedente`) |
 | `notifiche/` | InvioEmail e le email quando la palla cambia mano: caso arrivato, sollecito, rilascio (al refertatore); referto pronto e rettificato con il PDF allegato, caso declinato, non refertabile (al richiedente). Testi in `templates/notifiche/*.txt` |
@@ -128,9 +139,9 @@ I file caricati non sono mai serviti come statici: passano da
 
 ## Cosa manca (fasi successive)
 
-- **F2 — Flusso di caricamento per tipo**: pagina guidata per ECG / Holter /
-  Eco (catalogo proiezioni con istruzioni e immagini di riferimento, clip a
-  pezzi con transcodifica in background), commenti con allegati.
+- **F2 — Richiesta guidata**: costruita (branch `feat/richiesta-guidata`),
+  in attesa delle conferme di Andre in `docs/BACKLOG.md`. Mancano i
+  commenti con allegati.
 - **F3 — Refertazione**: costruita (branch `feat/refertazione`), in attesa
   delle conferme di Andre elencate in `docs/BACKLOG.md`. Mancano le misure
   ECG strutturate, che arriveranno dal lettore SEIVA di VetCardio.

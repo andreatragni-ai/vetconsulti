@@ -5,11 +5,29 @@ spunta. Le idee grosse hanno un file loro in `docs/`.
 
 ## Adesso
 
-- [2026-09-08] **F2 — Flusso di caricamento per tipo**: pagina guidata
-  ECG / Holter / Eco (catalogo proiezioni con istruzioni e immagini di
-  riferimento, clip a pezzi con transcodifica in background), commenti con
-  allegati. Fatto = un richiedente `seed_demo` completa un invio per ciascun
-  tipo con test verdi.
+- [2026-09-11] **F2 — Andre prova la richiesta guidata e conferma le scelte**
+  (branch `feat/richiesta-guidata`, da `fix/esperto-per-tipo`; collaudo
+  con `seed_demo` come `gbianchi`). Fatto: quattro passi (Paziente, Esame
+  ed esperto, Carica gli esami, Invia) con indicatore, bozza che nasce al
+  passo 2 e si riprende dal primo passo incompleto; caricamento per tipo
+  con categoria dedotta dal file (`consulti/caricamento.py`); eco con una
+  riga per voce del catalogo, a gruppi per finestra, immagini di
+  riferimento, filmati liberi con nota, clip a pezzi con limite di peso
+  (`ECO_CLIP_MAX_BYTE`) e transcodifica dopo il commit; riepilogo con
+  prezzo e «Modifica»; il caso si chiama come il paziente. Criterio di
+  fatto verde: `consulti/tests_percorso.py::test_criterio_di_fatto_f2`.
+  Da confermare: (a) testi di etichette, suggerimenti e zone
+  (`consulti/forms.py`, `consulti/views_percorso.py`, template in
+  `consulti/templates/consulti/percorso/`); (b) «Motivo dell'esame» tolto
+  dal form (colonna rimasta, vuota); (c) obbligatori solo nome, specie,
+  sesso e quesito; eta' come data OPPURE anni interi; (d) una riga
+  accetta solo cio' che il catalogo si aspetta (filmato o immagine; DICOM
+  in entrambe), il referto Holter e quello dell'ecografo solo in PDF;
+  (e) nota del filmato libero obbligatoria; (f) cambiare tipo di esame
+  con file gia' caricati e' bloccato; (g) un esperto diventato assente
+  dopo il passo 2 non blocca l'invio: il riepilogo lo segnala.
+  Restano fuori: commenti con allegati; la pagina del refertatore con il
+  visore piu' grande (passo successivo).
 - [2026-09-11] **F3 — Andre conferma le scelte della refertazione**
   (branch `feat/refertazione`, da provare su `runserver` con `seed_demo`):
   (a) blocco per tipo minimo — ECG solo rischio anestesiologico con le voci
@@ -20,10 +38,21 @@ spunta. Le idee grosse hanno un file loro in `docs/`.
   `consulti/motivi.py`; (d) tempo di risposta non dichiarato = 48 h, 4 h
   se urgente (`regole.ore_risposta_dichiarate`). Fatto = scelte confermate
   o corrette, poi merge in `main`.
-- [2026-09-08] **Confermare il catalogo proiezioni eco** (D6): Andre rivede
-  `eco/fixtures/proiezioni_bozza.json` e fornisce le immagini di riferimento.
+- [2026-09-11] **Catalogo eco: le ultime lacune** (D6). Il catalogo di
+  Andre e' in `eco/catalogo/catalogo_eco.json` (27 righe, 25 obbligatorie,
+  62 immagini collegate; `manage.py carica_catalogo_eco`). Mancano le
+  immagini di riferimento di SUB_B e SUB_C, quelle di SUB_LVOT_* e D2_PVPA
+  sono parziali (vedi `nota_riferimento`), e le `istruzioni` sono punti
+  elenco incollati senza punteggiatura: da rileggere nel file.
 
 ## Prossimo
+
+- [2026-09-11] Commenti con allegati sul caso (resto di F2).
+- [2026-09-11] vetway-ui 0.3.0: portare nel pacchetto i componenti nati
+  in `static/consulti/css/consulti.css` per F2 (`.passi`, `.schede-scelta`,
+  `.zona-carica`, `.lista-controllo`, `.percorso-barra`) e una variabile
+  del footer per togliere «Django + PostgreSQL»; poi il portale torna a
+  usare l'include del pacchetto.
 
 - [2026-09-11] Misure ECG strutturate nel referto: quando il lettore SEIVA
   di VetCardio e' pronto, le sue voci entrano nel blocco ECG di

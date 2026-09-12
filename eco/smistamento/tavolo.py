@@ -209,10 +209,10 @@ def conferma(richiesta, utente, note=None):
     for p in proposte:
         if p.proiezione_id and p.proiezione_id in note:
             p.nota = (note[p.proiezione_id] or '').strip()[:200]
-        if p.proiezione_id and p.proiezione.libera and not p.nota.strip():
-            raise SmistamentoNonValido(
-                f'Scrivi in breve cosa mostra «{p.allegato.nome_originale}» nel «{p.proiezione.nome}», '
-                f'oppure toglilo dalla riga.')
+        # La nota di un filmato libero e' FACOLTATIVA (decisione di Andre del
+        # 12/09): un filmato libero non e' obbligatorio, e pretendere la nota
+        # lo rendeva tale — chi aveva messo un file li' non poteva confermare
+        # finche' non scriveva qualcosa.
     with transaction.atomic():
         voluto = {p.allegato_id: p for p in proposte if p.proiezione_id}
         for pc in list(richiesta.proiezioni.all()):

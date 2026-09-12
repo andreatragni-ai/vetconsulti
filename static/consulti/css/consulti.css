@@ -405,8 +405,17 @@
   flex-wrap: wrap;
   gap: .75rem;
   margin-top: 1rem;
+  /* Sempre attaccata in basso, non solo su telefono: con 27 righe di
+     proiezioni il pulsante principale («Confermo lo smistamento») restava in
+     fondo alla pagina e chi caricava non sapeva che esistesse (collaudo del
+     12/09). */
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  background: var(--bs-body-bg);
   padding: .75rem 0;
   border-top: 1px solid var(--ovic-bordo);
+  box-shadow: 0 -6px 12px -10px rgba(0, 0, 0, .35);
 }
 .percorso-barra .principale { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: .3rem; }
 .percorso-barra .btn-nuova,
@@ -435,9 +444,6 @@
 .percorso-barra .perche { font-size: .82rem; color: var(--bs-secondary-color); text-align: right; max-width: 30rem; }
 @media (max-width: 767.98px) {
   .percorso-barra {
-    position: sticky;
-    bottom: 0;
-    z-index: 100;
     background: var(--ovic-grigio);
     padding: .6rem 0;
     flex-wrap: nowrap;

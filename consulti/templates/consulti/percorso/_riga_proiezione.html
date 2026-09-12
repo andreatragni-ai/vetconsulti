@@ -60,7 +60,7 @@ suo bollino (_posto.html), la riga e' un bersaglio per il trascinamento
     {% if riga.posto %}
       {% include "consulti/percorso/_posto.html" with posto=riga.posto %}
       {% if p.libera %}
-      <label class="form-label small fw-semibold mt-2 mb-1" for="nota-libera-{{ p.pk }}">Cosa mostra / cosa chiedi <span class="text-danger">*</span></label>
+      <label class="form-label small fw-semibold mt-2 mb-1" for="nota-libera-{{ p.pk }}">Cosa mostra / cosa chiedi <span class="text-body-secondary fw-normal">(facoltativo)</span></label>
       <input type="text" name="nota_{{ p.pk }}" id="nota-libera-{{ p.pk }}" form="form-conferma" class="form-control" maxlength="200"
              value="{{ riga.posto.proposta.nota }}" placeholder="es. «jet sospetto sulla valvola aortica, lo vedi anche tu?»">
       {% endif %}

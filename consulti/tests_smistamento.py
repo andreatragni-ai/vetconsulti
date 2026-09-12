@@ -247,14 +247,18 @@ def test_sposta_scambia_e_rispetta_il_tipo_di_file(loggato, esame_caricato, cata
     assert not ProiezioneCaricata.objects.exists()
 
 
-def test_filmato_libero_vuole_la_nota_alla_conferma(loggato, esame_caricato, catalogo):
+def test_filmato_libero_si_conferma_anche_senza_nota(loggato, esame_caricato, catalogo):
+    """Un filmato libero non e' obbligatorio, e nemmeno la sua nota (12/09):
+    pretenderla bloccava la conferma e rendeva obbligatorio il facoltativo."""
     libero = catalogo['libero']
     _sposta(loggato, esame_caricato, _allegato(esame_caricato, 'IMG_0003.mp4'), f'proiezione:{libero.pk}')
-    r = loggato.post(reverse('consulti:smistamento_conferma', args=[esame_caricato.pk]), follow=True)
-    assert 'Scrivi in breve cosa mostra' in _t(r) and not ProiezioneCaricata.objects.exists()
+    loggato.post(reverse('consulti:smistamento_conferma', args=[esame_caricato.pk]))
+    pc = ProiezioneCaricata.objects.get(proiezione=libero)
+    assert pc.nota == ''
+    # La nota resta possibile, e si salva.
     loggato.post(reverse('consulti:smistamento_conferma', args=[esame_caricato.pk]),
                  {f'nota_{libero.pk}': 'versamento pericardico?'})
-    pc = ProiezioneCaricata.objects.get(proiezione=libero)
+    pc.refresh_from_db()
     assert pc.nota == 'versamento pericardico?'
 
 

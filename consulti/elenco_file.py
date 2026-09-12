@@ -85,15 +85,19 @@ def gruppi_file(richiesta):
 
     gruppi = []
     if referti:
-        gruppi.append({'etichetta': 'Referto dell\'ecografo', 'voci': [_voce(a) for a in referti]})
+        gruppi.append({'etichetta': 'Referto dell\'ecografo', 'chiave': 'referto',
+                       'voci': [_voce(a) for a in referti]})
     for finestra in ORDINE_FINESTRE:
         if per_finestra.get(finestra):
             etichetta = 'Altre proiezioni' if finestra == Finestra.ALTRO else Finestra(finestra).label
-            gruppi.append({'etichetta': etichetta, 'voci': in_ordine(per_finestra[finestra])})
+            gruppi.append({'etichetta': etichetta, 'chiave': finestra.lower(),
+                           'voci': in_ordine(per_finestra[finestra])})
     if liberi:
-        gruppi.append({'etichetta': Finestra.ALTRO.label, 'voci': in_ordine(liberi)})
+        gruppi.append({'etichetta': Finestra.ALTRO.label, 'chiave': 'liberi',
+                       'voci': in_ordine(liberi)})
     if altri:
-        gruppi.append({'etichetta': 'Altri file', 'voci': [_voce(a) for a in altri]})
+        gruppi.append({'etichetta': 'Altri file', 'chiave': 'altri',
+                       'voci': [_voce(a) for a in altri]})
     return gruppi
 
 

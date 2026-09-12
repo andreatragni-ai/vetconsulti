@@ -20,6 +20,7 @@ non parte finche' non la si guarda.
     {% if voci_visore %}
     <div class="visore-elenco">
       {% for g in gruppi_visore %}
+      <div class="visore-blocco{% if g.chiave %} blocco-{{ g.chiave }}{% endif %}{% if not g.etichetta %} senza-titolo{% endif %}">
       {% if g.etichetta %}<div class="visore-gruppo" id="visore-gruppo-{{ forloop.counter }}">{{ g.etichetta }} <span class="conta">{{ g.voci|length }}</span></div>{% endif %}
       <div class="visore-schede" role="tablist"{% if g.etichetta %} aria-labelledby="visore-gruppo-{{ forloop.counter }}"{% else %} aria-label="Allegati del caso"{% endif %}>
         {% for v in g.voci %}
@@ -35,6 +36,7 @@ non parte finche' non la si guarda.
         </button>
         {% endfor %}
       </div>
+      </div>{# /visore-blocco #}
       {% endfor %}
     </div>
     <div class="visore-scena">

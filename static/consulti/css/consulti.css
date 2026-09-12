@@ -92,6 +92,29 @@
 .visore-gruppo:first-child { margin-top: 0; }
 .visore-gruppo .conta { font-weight: 600; color: var(--bs-secondary-color); letter-spacing: 0; }
 .visore-schede { display: flex; flex-wrap: wrap; gap: .35rem; }
+
+/* ── Gruppi di allegati nel visore: un riquadro per finestra acustica, con la
+   sua striscia di colore. Dal collaudo del 12/09: con 27 file i titoli di
+   gruppo da soli non bastavano a separare le finestre a colpo d'occhio.
+   Colori solo dalle variabili di Bootstrap, nessun esadecimale. ── */
+.visore-blocco {
+  border: 1px solid var(--ovic-bordo);
+  border-left: 4px solid var(--bs-secondary-border-subtle);
+  border-radius: 6px;
+  padding: .5rem .6rem .6rem;
+  margin-bottom: .6rem;
+  background: var(--bs-tertiary-bg);
+}
+.visore-blocco:last-child { margin-bottom: 0; }
+.visore-blocco.senza-titolo { border: 0; padding: 0; background: none; }
+.visore-blocco .visore-gruppo { margin-top: 0; }
+.visore-blocco.blocco-referto { border-left-color: var(--bs-secondary-border-subtle); }
+.visore-blocco.blocco-parasternale_destra { border-left-color: var(--bs-primary-border-subtle); }
+.visore-blocco.blocco-sottoxifoidea { border-left-color: var(--bs-warning-border-subtle); }
+.visore-blocco.blocco-parasternale_sinistra { border-left-color: var(--bs-success-border-subtle); }
+.visore-blocco.blocco-liberi,
+.visore-blocco.blocco-altro { border-left-color: var(--bs-info-border-subtle); }
+.visore-blocco.blocco-altri { border-left-color: var(--bs-danger-border-subtle); }
 .visore-scheda {
   display: flex;
   align-items: center;

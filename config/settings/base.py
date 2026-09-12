@@ -154,7 +154,7 @@ CONSULTI_ORE_PRESA_IN_CARICO = int(os.environ.get('CONSULTI_ORE_PRESA_IN_CARICO'
 # cambiare la data qui, e da quel momento il consenso va richiesto di nuovo.
 # La lettera dopo la data: secondo cambiamento del testo nello stesso giorno
 # (12/09: le miniature dell'eco al mattino, il testo dettato al pomeriggio).
-VERSIONE_PRIVACY = '2026-09-12'
+VERSIONE_PRIVACY = '2026-09-12b'
 VERSIONE_TERMINI = '2026-09-02'
 
 # Binario ffmpeg per la transcodifica delle clip eco. Se manca, eco.transcodifica

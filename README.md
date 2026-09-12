@@ -78,14 +78,14 @@ poi `DJANGO_SETTINGS_MODULE=config.settings.prod manage.py check --deploy`.
 
 Lo strato grafico (Bootstrap, Icons e HTMX serviti in locale, `vetway.css`,
 template base, partial generici) e' il pacchetto condiviso **vetway-ui**,
-repo fratello in `../vetway-ui`, agganciato al tag `v0.1.0`:
+repo fratello in `../vetway-ui`, agganciato al tag `v0.3.0`:
 
 ```bash
 venv/bin/pip install -e ../vetway-ui      # in sviluppo
 ```
 
 `"vetway_ui"` sta in `INSTALLED_APPS` prima delle app del portale. In
-`requirements.txt` la riga `vetway-ui @ git+ssh://...@v0.1.0` e' commentata
+`requirements.txt` la riga `vetway-ui @ git+ssh://...@v0.3.0` e' commentata
 (TODO: URL del repo); sul server `deploy/deploy.sh` copia `../vetway-ui` in
 `/home/consulti/vetway-ui` e fa `pip install -e` prima di `migrate`.
 

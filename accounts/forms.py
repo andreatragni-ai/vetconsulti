@@ -54,7 +54,9 @@ class RegistrazioneForm(UserCreationForm):
     email = forms.EmailField(label='Email')
     telefono = forms.CharField(label='Telefono', max_length=30, required=False)
     ruolo = forms.ChoiceField(label='Ruolo', choices=RuoloRichiedente.choices)
-    numero_iscrizione = forms.CharField(label='N. iscrizione all\'Ordine', max_length=30, required=False)
+    numero_iscrizione = forms.CharField(
+        label='N. iscrizione all\'Ordine', max_length=30, required=False,
+        help_text='Se sei iscritto. Un tecnico puo\' lasciarlo vuoto.')
     ordine_provinciale = forms.CharField(label='Ordine provinciale', max_length=100, required=False)
     clinica = forms.ModelChoiceField(
         label='Clinica', queryset=Clinica.objects.filter(approvata=True), required=False,
@@ -92,10 +94,11 @@ class RegistrazioneForm(UserCreationForm):
         if tipo == TipoRichiedente.LIBERO_PROFESSIONISTA:
             for nome in ('clinica', 'nuova_clinica', 'nuova_clinica_comune', 'nuova_clinica_provincia'):
                 del self.fields[nome]
-            # Un libero professionista e' per forza un veterinario iscritto.
+            # Il ruolo piu' probabile, non un obbligo: il numero e l'Ordine
+            # restano facoltativi anche qui (decisione del 12/09). Chi carica
+            # gli esami puo' essere un tecnico, che all'Ordine non e' iscritto,
+            # e il referto lo firma comunque il veterinario che lo supervisiona.
             self.fields['ruolo'].initial = RuoloRichiedente.VETERINARIO
-            self.fields['numero_iscrizione'].required = True
-            self.fields['ordine_provinciale'].required = True
         # Le label delle caselle portano ai testi, in una scheda nuova: chi
         # si registra deve poterli leggere senza perdere il form compilato.
         self.fields['accetto_privacy'].label = format_html(

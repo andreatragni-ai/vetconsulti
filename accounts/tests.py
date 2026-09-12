@@ -307,3 +307,18 @@ def test_privacy_dice_dello_smistamento_automatico(client):
     assert "Smistamento automatico dei file dell'ecocardiografia" in testo
     assert 'intelligenza artificiale' in testo and 'ritaglia' in testo
     assert 'da validare dal legale' in testo
+
+
+@pytest.mark.django_db
+def test_libero_professionista_senza_albo_si_registra(client):
+    """Chi carica gli esami puo' essere un tecnico, che all'Ordine non e'
+    iscritto: numero e Ordine restano facoltativi (decisione del 12/09)."""
+    from django.urls import reverse
+    from accounts.models import RuoloRichiedente
+    dati = _post_registrazione(numero_iscrizione='', ordine_provinciale='',
+                               ruolo=RuoloRichiedente.TECNICO)
+    risp = client.post(reverse('accounts:registrati_tipo', args=['libero-professionista']), dati)
+    assert risp.status_code == 200 and b'conferma' in risp.content
+    r = Richiedente.objects.get(user__username='lp')
+    assert r.numero_iscrizione == '' and r.ordine_provinciale == ''
+    assert r.ruolo == RuoloRichiedente.TECNICO

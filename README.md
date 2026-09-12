@@ -128,8 +128,8 @@ WeasyPrint su macOS vuole le librerie Homebrew (`brew install pango`);
 | `core/` | `TipoEsame`, context processor del profilo e della navbar (contatore dei casi da decidere), consegna protetta dei file (`scarica_allegato`, `?inline=1` per il visore), `seed_demo` e i file finti di `demo.py` |
 | `accounts/` | Refertatore (con foto, `foto.py` la riduce; servita da `core.views_media.foto_refertatore`) + competenze (prezzo, tempo di risposta, `accetta_urgenze`), Clinica, DatiFatturazione (validazioni in `fiscale.py`; un solo soggetto fra clinica e richiedente), Richiedente (CLINICA / LIBERO_PROFESSIONISTA), Consenso; login, registrazione a due passi con conferma email, reset password, profili, area staff (refertatori, richiedenti da approvare) |
 | `listino/` | VoceListino, Supplemento, `prezzi.prezzo_effettivo()` |
-| `consulti/` | Richiesta (codice `TC-AAAA-NNNN`, `titolo` «Luna · Ecocardiografia», transizioni con audit, `riassegna` dopo un declino), Paziente, Allegato, Commento, EventoAudit append-only; richiesta guidata in quattro passi (`percorso.py`, `views_percorso.py`, template `percorso/`, `static/consulti/js/carica.js`), `razze.py` (razze per specie copiate da VetCardio, campo con `static/consulti/js/elenco_filtrato.js`), `nomi.py` (maiuscole su nome e cognome), `caricamento.py` (zona + tipo di file -> categoria, ProiezioneCaricata, sostituzione), `elenco_file.py` (i file di un caso in ordine di catalogo per il visore e la pagina del caso), `regole.py` (invio con `elementi_obbligatori`, riassegnazione, tempo di risposta: 4 ore se urgente, urgenze solo a chi le accetta), `permessi.py` (chi agisce), `motivi.py` (frasi per declinare / non refertabile), `racconto.py` (audit leggibile), `views_decisione.py` (casi ricevuti, prendi in carico, declina, non refertabile), `upload_chunk.py`, comando `sorveglia_consulti` (rilascio + sollecito a meta' tempo) |
-| `eco/` | catalogo proiezioni (`catalogo/catalogo_eco.json` + `catalogo/img/`, comando `carica_catalogo_eco`; finestre acustiche, filmati liberi, ImmagineRiferimento), ProiezioneCaricata, `transcodifica.py`, **smistamento automatico** dei file dell'eco (`smistamento/`: formato, colore dai pixel, lettura AI delle miniature, ordine di acquisizione, assegnazione; `tavolo.py` proposte e conferma; comando `valuta_smistamento` per misurarlo sul banco), protocollo stampabile delle proiezioni (`views.py`, `/eco/protocollo/` e `.pdf`) |
+| `consulti/` | Richiesta (codice `TC-AAAA-NNNN`, `titolo` «Luna · Ecocardiografia», transizioni con audit, `riassegna` dopo un declino), Paziente, Allegato, Commento, EventoAudit append-only; richiesta guidata in quattro passi (`percorso.py`, `views_percorso.py`, template `percorso/`, `static/consulti/js/carica.js`), `razze.py` (razze per specie copiate da VetCardio, campo con `static/consulti/js/elenco_filtrato.js`), `nomi.py` (maiuscole su nome e cognome), `caricamento.py` (zona + tipo di file -> categoria, ProiezioneCaricata, sostituzione), `elenco_file.py` (i file di un caso in ordine di catalogo per il visore e la pagina del caso), `regole.py` (invio con `elementi_obbligatori`, riassegnazione, tempo di risposta: 4 ore se urgente, urgenze solo a chi le accetta), `permessi.py` (chi agisce), `motivi.py` (frasi per declinare / non refertabile), `racconto.py` (audit leggibile), `views_decisione.py` (casi ricevuti, prendi in carico, declina, non refertabile), `upload_chunk.py`, comando `sorveglia_consulti` (rilascio + sollecito a meta' tempo), **dettatura vocale** (`dettatura.py` + `views_dettatura.py`: microfono del browser in `static/consulti/js/dettatura.js`, «Ripulisci» con l'AI sul solo testo, glossario in `glossario_dettatura.py`, prompt in `prompts/it/ripulitura_dettatura.md`) |
+| `eco/` | catalogo proiezioni (`catalogo/catalogo_eco.json` + `catalogo/img/`, comando `carica_catalogo_eco`; finestre acustiche, filmati liberi, ImmagineRiferimento), ProiezioneCaricata, `transcodifica.py`, **smistamento automatico** dei file dell'eco (`smistamento/`: formato, colore dai pixel, lettura AI delle miniature, ordine di acquisizione, assegnazione; `tavolo.py` proposte e conferma; comando `valuta_smistamento` per misurarlo sul banco, `esiti.py` + EsitoSmistamento + comando `accuratezza_smistamento` per misurarlo sugli esami veri, dalle conferme dei colleghi), protocollo stampabile delle proiezioni (`views.py`, `/eco/protocollo/` e `.pdf`) |
 | `referti/` | Referto (copia di lavoro) con `firma()` e `rettifica()`, VersioneReferto (istantanea firmata + PDF), `blocchi.py` (voci per tipo: il punto di aggancio delle misure ECG), pagina di refertazione con visore allegati e bozza automatica, PDF WeasyPrint, stampa protetta delle versioni |
 | `registro/` | Prestazione immutabile (`clinica` nulla per il libero professionista, `intestatario()`), StatoFatturazione, `registra_prestazione()`, comando `esporta_prestazioni` (colonne `intestatario`, `tipo_richiedente`) |
 | `notifiche/` | InvioEmail e le email quando la palla cambia mano: caso arrivato, sollecito, rilascio (al refertatore); referto pronto e rettificato con il PDF allegato, caso declinato, non refertabile (al richiedente). Testi in `templates/notifiche/*.txt` |
@@ -146,6 +146,25 @@ l'API Anthropic con `ANTHROPIC_API_KEY` nell'ambiente (mai nel repo) e il
 modello di `CONSULTI_MODELLO_SMISTAMENTO`; senza chiave si ferma a formato e
 colore e le righe le sceglie chi carica. Nulla diventa `ProiezioneCaricata`
 senza «Confermo lo smistamento».
+
+Quanto ci prende davvero lo dicono gli esami veri: ogni «Confermo lo
+smistamento» e' una correzione umana, cioe' la verita', e resta in
+`EsitoSmistamento` (nessun dato del paziente: codici interni). I conti li fa
+`manage.py accuratezza_smistamento [--da AAAA-MM-GG] [--json file]`, che
+guarda soprattutto quanti «sicuro» erano sbagliati; senza esami veri lo dice,
+invece di stampare zeri.
+
+I campi di testo si possono **dettare a voce**: quesito, anamnesi e terapia
+del passo 2, le tre caselle del referto, il motivo del declino. Il microfono
+e' il riconoscimento vocale del browser (lingua `it-IT`), quindi l'audio non
+esce dal computer del collega e non costa nulla; dove l'API non c'e'
+(Firefox) il pulsante non compare e un aiuto rimanda alla dettatura del
+sistema operativo. Il pulsante «Ripulisci» accanto al campo manda **solo il
+testo** a Claude (`CONSULTI_MODELLO_DETTATURA`, `ANTHROPIC_API_KEY`
+nell'ambiente) e ne sistema la forma — punteggiatura, sigle dettate a voce,
+unita' di misura — senza toccare il contenuto clinico; dopo c'e' sempre
+«Annulla ripulitura», e niente viene salvato finche' il collega non salva il
+form.
 
 ## Cosa manca (fasi successive)
 

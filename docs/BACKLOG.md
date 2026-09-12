@@ -81,6 +81,34 @@ spunta. Le idee grosse hanno un file loro in `docs/`.
   **acquisire nell'ordine del protocollo** porta la riga giusta dal 61 %
   al 76 % e gli errori da 2,7 a 1: e' il singolo miglioramento piu' grande,
   e non costa niente.
+  **Dettatura vocale ibrida** (12/09/2026, decisa da Andre: microfono del
+  BROWSER, gratis e senza audio ai fornitori, piu' un pulsante che ripulisce
+  il testo con l'AI; NON la pipeline di VetCardio con ElevenLabs Scribe a
+  0,10 $/minuto, che resta l'alternativa se un giorno la qualita' non
+  bastasse). Fatto: si dettano quesito, anamnesi e terapia del passo 2, le
+  tre caselle del referto e il motivo del declino
+  (`templates/_campo_dettatura.html` + `_dettatura_barra.html`,
+  `static/consulti/js/dettatura.js`); «Ripulisci» manda solo il testo
+  (`consulti/dettatura.py`, prompt in `prompts/it/ripulitura_dettatura.md`,
+  glossario copiato da VetCardio in `consulti/glossario_dettatura.py`) e si
+  torna indietro con «Annulla ripulitura». Prova vera del 12/09: «soffio
+  sistolico tre sesti emme emme vi di stadio be due serve terapia» ->
+  «Soffio sistolico 3/6. MMVD stadio B2, serve terapia.».
+  Da confermare ad Andre: (m) il modello `CONSULTI_MODELLO_DETTATURA` —
+  oggi **Sonnet 5** perche' e' sola forma su poche righe e si aspetta
+  davanti allo schermo; con Opus 5 costerebbe due volte e mezzo per
+  qualcosa che il collega rilegge comunque; (n) i termini del glossario e
+  le sigle dettate (`glossario_dettatura.py`): quali mancano di quelle che
+  dice davvero; (o) la frase nell'informativa privacy sul testo dettato
+  (da far validare al legale) e VERSIONE_PRIVACY a `2026-09-12b`, che fa
+  richiedere di nuovo il consenso; (p) se serve il microfono anche nella
+  nota del filmato libero del tavolo di smistamento (oggi no: e' una riga
+  corta dentro una pagina che si ricarica spesso).
+  Limiti noti: su Firefox il microfono non c'e' (nessuna API), su iOS
+  l'ascolto si interrompe a ogni pausa e riparte da solo, e la dettatura
+  del browser passa comunque dai server del browser (Google per Chrome):
+  e' una scelta del collega, non nostra, ma va detta.
+
 - [2026-09-11] **F3 — Andre conferma le scelte della refertazione**
   (branch `feat/refertazione`, da provare su `runserver` con `seed_demo`):
   (a) blocco per tipo minimo — ECG solo rischio anestesiologico con le voci
@@ -99,6 +127,18 @@ spunta. Le idee grosse hanno un file loro in `docs/`.
   elenco incollati senza punteggiatura: da rileggere nel file.
 
 ## Prossimo
+
+- [2026-09-12] **Con 3-4 esami veri, rilanciare `manage.py
+  accuratezza_smistamento` e decidere**. Dal 12/09 ogni «Confermo lo
+  smistamento» lascia una riga per file (EsitoSmistamento: proposta,
+  confidenza, «sicuro», riga confermata, se l'umano ha corretto), quindi la
+  misura si fa da sola mentre si lavora. Il comando vuole `--da` con la data
+  del primo esame vero, per lasciare fuori il collaudo. Cosa si decide su
+  quei numeri: la **soglia di «sicuro»** (oggi 0,85 — si guarda quanti
+  «sicuro» sono stati spostati dal collega: sul banco erano zero in cinque
+  giri con Opus 5) e il **modello** (Opus 5 ~$ 0,2 a esame contro Sonnet 5
+  ~$ 0,13). Serve anche a sapere se l'ordine di acquisizione del protocollo
+  lo rispettano davvero.
 
 - [2026-09-12] **Banco di prova migliore**: oggi le 26 immagini vengono
   dalle stesse immagini di riferimento del catalogo, quindi per misurare

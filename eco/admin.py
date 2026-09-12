@@ -1,7 +1,7 @@
 from django.contrib import admin
 
-from .models import (ImmagineRiferimento, ProiezioneCaricata, ProiezioneCatalogo, PropostaSmistamento,
-                     Smistamento)
+from .models import (EsitoSmistamento, ImmagineRiferimento, ProiezioneCaricata, ProiezioneCatalogo,
+                     PropostaSmistamento, Smistamento)
 
 
 class ImmagineRiferimentoInline(admin.TabularInline):
@@ -56,3 +56,16 @@ class PropostaSmistamentoAdmin(admin.ModelAdmin):
     list_filter = ('fonte', 'sicura', 'colore')
     list_select_related = ('richiesta', 'proiezione', 'allegato')
     search_fields = ('richiesta__codice', 'allegato__nome_originale')
+
+
+@admin.register(EsitoSmistamento)
+class EsitoSmistamentoAdmin(admin.ModelAdmin):
+    """La misura sul campo: cosa proponeva l'automatismo e cosa ha confermato
+    l'umano. Sola lettura, e i conti li fa `manage.py accuratezza_smistamento`:
+    qui si guarda il singolo file."""
+
+    list_display = ('codice_richiesta', 'proposta', 'finale', 'corretto', 'sicura', 'fonte', 'confidenza',
+                    'tracciato', 'confermato_il')
+    list_filter = ('corretto', 'sicura', 'fonte', 'modello')
+    search_fields = ('codice_richiesta', 'proposta', 'finale')
+    readonly_fields = [c.name for c in EsitoSmistamento._meta.fields]

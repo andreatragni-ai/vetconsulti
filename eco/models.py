@@ -237,3 +237,84 @@ class PropostaSmistamento(models.Model):
     @property
     def da_smistare(self):
         return self.proiezione_id is None and not self.referto
+
+
+class EsitoSmistamento(models.Model):
+    """Cosa aveva proposto lo smistamento automatico e cosa ha confermato
+    l'umano, per un file di un esame vero.
+
+    ## Perche' esiste
+
+    Il banco di prova di `manage.py valuta_smistamento` e' fatto con le
+    immagini di riferimento del catalogo, che vengono da una presentazione:
+    sono piu' pulite e meglio intitolate dei file di un esame vero. La
+    domanda di Andre — «con file veri, senza un'intestazione coerente,
+    quanti ne prende?» — a quel banco non si puo' chiedere.
+
+    Ma ogni «Confermo lo smistamento» e' **una correzione umana**, cioe' la
+    verita': chi ha caricato i file sa dove vanno. Qui si tiene traccia
+    della proposta e della conferma, e `manage.py accuratezza_smistamento`
+    legge questa tabella.
+
+    ## Sopravvivenza
+
+    Le PropostaSmistamento vengono consumate (uno spostamento a mano
+    riscrive `fonte` e `proiezione`, e la conferma successiva le supera):
+    per questo la **proposta si fotografa qui appena lo smistamento
+    finisce** (eco/smistamento/esiti.py), e la conferma riempie i campi
+    `finale_*`. Una riga per file e per richiesta: un secondo giro di
+    smistamento la riscrive, una seconda conferma aggiorna l'esito.
+
+    ## Niente dati del paziente
+
+    Solo identificativi interni (codice della richiesta, id dell'allegato) e
+    codici del catalogo: niente nomi, niente file, niente testo del caso.
+    """
+
+    richiesta = models.ForeignKey(Richiesta, on_delete=models.SET_NULL, null=True, blank=True,
+                                 related_name='esiti_smistamento')
+    codice_richiesta = models.CharField(max_length=15, blank=True,
+                                        help_text='Identificativo interno del caso: resta se la richiesta sparisce.')
+    smistamento = models.ForeignKey(Smistamento, on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name='esiti')
+    # Non e' una chiave esterna: cosi' l'esito resta anche se il file sparisce.
+    allegato_interno = models.BigIntegerField(help_text='id interno dell\'allegato.')
+    modello = models.CharField(max_length=60, blank=True)
+    # ── Cosa proponeva lo smistamento automatico ──
+    proposta = models.CharField(max_length=30, blank=True, help_text='Codice della riga proposta; vuoto = nessuna.')
+    proposta_referto = models.BooleanField(default=False)
+    fonte = models.CharField(max_length=10, blank=True, help_text='FORMATO / AI / ORDINE (FonteProposta).')
+    confidenza = models.FloatField(null=True, blank=True)
+    sicura = models.BooleanField(default=False)
+    tracciato = models.CharField(max_length=20, blank=True, help_text='Tipo di tracciato letto dalla AI.')
+    seconda_scelta = models.CharField(max_length=30, blank=True)
+    proposto_il = models.DateTimeField(auto_now_add=True)
+    # ── Cosa ha confermato l'umano ──
+    confermato_il = models.DateTimeField(null=True, blank=True)
+    finale = models.CharField(max_length=30, blank=True, help_text='Codice della riga confermata; vuoto = nessuna.')
+    finale_referto = models.BooleanField(default=False)
+    corretto = models.BooleanField(default=False, help_text='L\'umano ha spostato il file altrove.')
+
+    class Meta:
+        verbose_name = 'Esito dello smistamento'
+        verbose_name_plural = 'Esiti dello smistamento'
+        ordering = ['-proposto_il', 'pk']
+        constraints = [
+            models.UniqueConstraint(fields=['richiesta', 'allegato_interno'], name='un_esito_per_file'),
+        ]
+
+    def __str__(self):
+        return f'{self.codice_richiesta} — {self.proposta or "nessuna"} -> {self.finale or "nessuna"}'
+
+    @property
+    def confermato(self):
+        return self.confermato_il is not None
+
+    @property
+    def dove_proponeva(self):
+        """La destinazione proposta in una parola sola, per i conti."""
+        return self.proposta or ('referto' if self.proposta_referto else '')
+
+    @property
+    def dove_e_finito(self):
+        return self.finale or ('referto' if self.finale_referto else '')

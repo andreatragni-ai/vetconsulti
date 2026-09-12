@@ -236,6 +236,10 @@ def conferma(richiesta, utente, note=None):
             a.save(update_fields=['categoria'])
         Allegato.objects.filter(pk__in=referti).update(categoria=CategoriaAllegato.ECO_REFERTO_PDF)
         da_smistare = sum(1 for p in proposte if p.da_smistare)
+        # Ogni conferma e' una correzione umana, cioe' la verita': si registra
+        # per la misura dello smistamento (eco/smistamento/esiti.py).
+        from . import esiti
+        esiti.registra_conferma(richiesta, proposte)
         richiesta.registra('SMISTAMENTO_CONFERMATO', utente, righe=len(voluto), referto=bool(referti),
                            da_smistare=da_smistare)
     return len(voluto), da_smistare

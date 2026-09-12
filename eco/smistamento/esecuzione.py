@@ -21,7 +21,7 @@ from consulti import anteprime
 from consulti.caricamento import genere_file
 
 from . import lettore as lettore_ai
-from . import motore, righe as righe_catalogo, tavolo
+from . import esiti, motore, righe as righe_catalogo, tavolo
 from .dati import FileEsame
 
 logger = logging.getLogger('eco')
@@ -131,6 +131,9 @@ def esegui(smistamento_id, lettore=USA_SETTINGS):
                 p.tracciato = r.tracciato or ''
                 p.colore = r.colore or ''
                 p.save()
+            # La misura sul campo: la proposta si fotografa adesso, prima che
+            # uno spostamento a mano la riscriva (eco/smistamento/esiti.py).
+            esiti.fotografa(s, mobili)
             s.stato = StatoSmistamento.FATTO
             s.lettura_ai = risultato.lettura_ai
             s.messaggio = risultato.messaggio

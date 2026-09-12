@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% comment %}
 Pagina di refertazione (referti/views.py:refertazione), solo per il
 refertatore assegnato. A sinistra (sopra, su mobile) il visore degli
@@ -108,6 +109,8 @@ sono rotte diverse: la firma passa dalla modale di conferma del pacchetto.
 {% endblock %}
 
 {% block js %}
+{# Dettatura vocale delle tre caselle del referto e del motivo del declino. #}
+<script src="{% static 'consulti/js/dettatura.js' %}" defer></script>
 <script>
 (function () {
   'use strict';

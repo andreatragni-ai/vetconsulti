@@ -13,6 +13,8 @@ che poi gira il caso a un altro esperto.
   </div>
   <textarea name="motivo" id="motivo-declina" rows="3" class="form-control mb-2" maxlength="1000" required
             placeholder="Es. non referto gatti; assente fino al 24/09.">{{ form_declina.motivo.value|default:'' }}</textarea>
-  <div class="form-text mb-2">{{ form_declina.motivo.help_text }}</div>
+  <div class="form-text">{{ form_declina.motivo.help_text }}</div>
+  {# Anche il motivo del declino si detta (js/dettatura.js, caricato dalla pagina). #}
+  {% include "_dettatura_barra.html" with campo_id="motivo-declina" caso=richiesta.pk %}
   <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-arrow-return-left me-1"></i>Declina</button>
 </form>

@@ -29,6 +29,13 @@ def sessione_minuti(request):
     return {'sessione_minuti': settings.SESSION_COOKIE_AGE // 60}
 
 
+def dettatura(request):
+    """Se ha senso mostrare il pulsante «Ripulisci» della dettatura vocale
+    (templates/_campo_dettatura.html): serve la chiave AI sul server. Il
+    microfono del browser funziona comunque, perche' non passa da noi."""
+    return {'dettatura_ai': settings.CONSULTI_DETTATURA_AI}
+
+
 def regole_password(request):
     """Le regole di AUTH_PASSWORD_VALIDATORS in italiano, per il partial
     vetway_ui/partials/_regole_password.html accanto ai campi password."""

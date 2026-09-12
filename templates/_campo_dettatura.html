@@ -1,0 +1,17 @@
+{% comment %}
+Campo di FORM che si puo' DETTARE: _campo_form.html piu' la barra della
+dettatura vocale (_dettatura_barra.html, mossa da js/dettatura.js). Il
+microfono e' quello del browser (niente audio ai fornitori); «Ripulisci» manda
+solo il testo all'AI per la forma, e «Annulla ripulitura» torna indietro.
+
+La pagina che lo usa deve caricare il JS una volta sola, nel blocco js:
+  <script src="{% static 'consulti/js/dettatura.js' %}" defer></script>
+
+Uso: {% include "_campo_dettatura.html" with campo=form.quesito caso=richiesta.pk %}
+Variabili: campo (obbligatoria), caso (pk della richiesta, se esiste gia': al
+passo 2 di una richiesta nuova la bozza nasce solo premendo «Avanti»).
+{% endcomment %}
+<div class="campo-dettatura">
+  {% include "_campo_form.html" with campo=campo %}
+  {% include "_dettatura_barra.html" with campo_id=campo.id_for_label caso=caso %}
+</div>

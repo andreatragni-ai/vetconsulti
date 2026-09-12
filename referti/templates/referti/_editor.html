@@ -13,9 +13,10 @@ data-rotta-firma dice al JS quale, per salvare prima di confermare.
       data-rotta-firma="{{ url_firma }}">{% csrf_token %}
   {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors|join:" " }}</div>{% endif %}
   {% if modo == "rettifica" %}{% include "_campo_form.html" with campo=form.motivo_rettifica %}{% endif %}
-  {% include "_campo_form.html" with campo=form.descrizione %}
-  {% include "_campo_form.html" with campo=form.conclusioni %}
-  {% include "_campo_form.html" with campo=form.raccomandazioni %}
+  {# Le tre caselle si possono dettare: microfono del browser + «Ripulisci» (_campo_dettatura.html). #}
+  {% include "_campo_dettatura.html" with campo=form.descrizione caso=richiesta.pk %}
+  {% include "_campo_dettatura.html" with campo=form.conclusioni caso=richiesta.pk %}
+  {% include "_campo_dettatura.html" with campo=form.raccomandazioni caso=richiesta.pk %}
   {% include form.blocco.partial %}
 
   <div class="referto-barra barra-azioni-testata mt-2">

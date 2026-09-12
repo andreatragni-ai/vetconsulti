@@ -76,6 +76,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'core.context_processors.profilo',
                 'core.context_processors.sessione_minuti',
+                'core.context_processors.dettatura',
                 'core.context_processors.navigazione',
                 'core.context_processors.regole_password',
             ],
@@ -151,6 +152,8 @@ CONSULTI_ORE_PRESA_IN_CARICO = int(os.environ.get('CONSULTI_ORE_PRESA_IN_CARICO'
 # Versione dei testi legali (core/templates/core/privacy.html e termini.html).
 # E' il valore che finisce in Consenso.versione: cambiare il testo vuol dire
 # cambiare la data qui, e da quel momento il consenso va richiesto di nuovo.
+# La lettera dopo la data: secondo cambiamento del testo nello stesso giorno
+# (12/09: le miniature dell'eco al mattino, il testo dettato al pomeriggio).
 VERSIONE_PRIVACY = '2026-09-12'
 VERSIONE_TERMINI = '2026-09-02'
 
@@ -166,6 +169,24 @@ ALLEGATO_MAX_BYTE = int(os.environ.get('ALLEGATO_MAX_BYTE', 50 * 1024 * 1024))
 # massimo 10 secondi; senza ffmpeg la durata non si misura, quindi il
 # freno e' il peso: 100 MB bastano per 10 s anche in DICOM poco compresso.
 ECO_CLIP_MAX_BYTE = int(os.environ.get('ECO_CLIP_MAX_BYTE', 100 * 1024 * 1024))
+
+# ── Dettatura vocale: «Ripulisci» con l'AI (consulti/dettatura.py) ───────────
+# Il riconoscimento vocale e' quello del BROWSER (gratis, l'audio non esce dal
+# computer del collega): all'API va SOLO il testo, per la forma. Senza chiave
+# in ANTHROPIC_API_KEY, o con CONSULTI_DETTATURA_AI=False, il pulsante
+# «Ripulisci» non compare e il microfono funziona comunque.
+CONSULTI_DETTATURA_AI = os.environ.get('CONSULTI_DETTATURA_AI', 'True') == 'True'
+# Claude Sonnet 5 e non Opus 5 (il modello dello smistamento): qui non ci sono
+# immagini ne' giudizio clinico — punteggiatura, sigle e unita' di misura su
+# poche righe — e il collega aspetta davanti allo schermo, quindi contano
+# latenza e costo ($ 2/$ 10 per milione di token contro $ 5/$ 25: una
+# ripulitura sta sotto il decimo di centesimo). Il rischio di un modello piu'
+# piccolo e' diverso da quello dello smistamento: la' un «sicuro» sbagliato
+# puo' sfuggire, qui il collega rilegge il proprio testo e ha «Annulla
+# ripulitura». Da confermare ad Andre dopo la prova sul campo.
+CONSULTI_MODELLO_DETTATURA = os.environ.get('CONSULTI_MODELLO_DETTATURA', 'claude-sonnet-5')
+CONSULTI_DETTATURA_EFFORT = os.environ.get('CONSULTI_DETTATURA_EFFORT', 'low')
+CONSULTI_DETTATURA_TIMEOUT = float(os.environ.get('CONSULTI_DETTATURA_TIMEOUT', '60'))
 
 # ── Smistamento automatico dei file dell'eco (eco/smistamento/) ──────────────
 # La lettura AI delle miniature usa l'API Anthropic con la chiave in

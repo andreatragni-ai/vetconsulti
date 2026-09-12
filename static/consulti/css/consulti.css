@@ -972,3 +972,48 @@ a.riferimento:hover, a.riferimento:focus-visible { outline: 3px solid var(--ovic
   .protocollo-immagine { grid-column: 2; }
   .protocollo-testo { grid-column: 2; }
 }
+
+/* ── Dettatura vocale (templates/_campo_dettatura.html + js/dettatura.js) ──
+   Il campo resta quello di _campo_form.html: qui sotto solo la barra dei
+   pulsanti, il testo parziale di cio' che si sta dicendo e lo stato. */
+.dettatura { margin-bottom: 1rem; }
+.campo-dettatura > .mb-3 { margin-bottom: .35rem !important; }
+.dettatura-barra { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
+.dettatura-pulsante { --bs-btn-padding-y: .2rem; --bs-btn-font-size: .82rem; }
+.dettatura-pulsante.in-ascolto {
+  color: var(--bs-danger-text-emphasis);
+  border-color: var(--bs-danger-border-subtle);
+  background: var(--bs-danger-bg-subtle);
+  animation: dettatura-pulsa 1.4s ease-in-out infinite;
+}
+@keyframes dettatura-pulsa { 50% { border-color: var(--bs-danger); } }
+@media (prefers-reduced-motion: reduce) { .dettatura-pulsante.in-ascolto { animation: none; } }
+.dettatura-annulla {
+  --bs-btn-font-size: .82rem;
+  --bs-btn-padding-y: .2rem;
+  text-decoration: none;
+  color: var(--ovic-blu);
+}
+.dettatura-parziale:empty { display: none; }
+.dettatura-parziale {
+  margin-top: .35rem;
+  padding: .3rem .5rem;
+  border-left: 3px solid var(--bs-danger-border-subtle);
+  background: var(--bs-tertiary-bg);
+  font-size: .85rem;
+  font-style: italic;
+  color: var(--bs-secondary-color);
+}
+.dettatura-stato:empty { display: none; }
+.dettatura-stato { margin-top: .3rem; font-size: .82rem; color: var(--bs-secondary-color); }
+.dettatura-stato.ascolto { color: var(--bs-danger-text-emphasis); font-weight: 600; }
+.dettatura-stato.attesa { color: var(--ovic-blu); }
+.dettatura-stato.fatto { color: var(--bs-success-text-emphasis); }
+.dettatura-stato.errore { color: var(--bs-danger-text-emphasis); font-weight: 600; }
+.dettatura-aiuto { margin-top: .3rem; }
+
+@media (max-width: 767.98px) {
+  /* Touch: 44 px anche per i pulsanti piccoli della barra. */
+  .dettatura-barra .btn { min-height: 44px; --bs-btn-font-size: .9rem; }
+  .dettatura-stato, .dettatura-parziale { font-size: .9rem; }
+}

@@ -1,0 +1,36 @@
+{% comment %}
+La barra della dettatura vocale per UN campo di testo gia' disegnato altrove:
+microfono del browser, «Ripulisci» con l'AI, «Annulla ripulitura», stato.
+La muove static/consulti/js/dettatura.js, che cerca [data-dettatura] e il
+campo con l'id in data-campo. La pagina deve caricare il JS una volta sola.
+
+Uso (campo scritto a mano nel template):
+  {% include "_dettatura_barra.html" with campo_id="motivo-declina" caso=richiesta.pk %}
+Per un campo di form c'e' _campo_dettatura.html, che disegna anche il campo.
+Variabili: campo_id (obbligatoria), caso (pk della richiesta, se esiste).
+{% endcomment %}
+<div class="dettatura" data-dettatura data-campo="{{ campo_id }}"{% if caso %} data-caso="{{ caso }}"{% endif %}>
+  <div class="dettatura-barra">
+    <button type="button" class="btn btn-outline-secondary btn-sm dettatura-pulsante" data-microfono hidden
+            aria-pressed="false" title="Detta con la voce (riconoscimento del browser)">
+      <i class="bi bi-mic" aria-hidden="true"></i> <span class="etichetta">Detta</span>
+    </button>
+    {% if dettatura_ai %}
+    <button type="button" class="btn btn-outline-secondary btn-sm dettatura-pulsante" data-ripulisci hidden
+            data-url="{% url 'consulti:ripulisci' %}"
+            title="Punteggiatura, sigle e unita' di misura: il contenuto non si tocca">
+      <i class="bi bi-stars" aria-hidden="true"></i> Ripulisci
+    </button>
+    {% endif %}
+    <button type="button" class="btn btn-link btn-sm dettatura-annulla" data-annulla hidden>
+      <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Annulla ripulitura
+    </button>
+  </div>
+  <div class="dettatura-parziale" data-parziale aria-hidden="true"></div>
+  <div class="dettatura-stato" data-stato aria-live="polite"></div>
+  <p class="form-text dettatura-aiuto" data-aiuto hidden>
+    <i class="bi bi-info-circle me-1" aria-hidden="true"></i>Questo browser non ha il riconoscimento vocale
+    (lo hanno Chrome, Edge e Safari): puoi dettare con la dettatura del sistema operativo — su iPhone e iPad
+    il microfono della tastiera, su Mac e Windows la dettatura di sistema — e poi premere «Ripulisci».
+  </p>
+</div>

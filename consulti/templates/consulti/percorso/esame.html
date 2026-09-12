@@ -1,8 +1,11 @@
 {% extends "base.html" %}
+{% load static %}
 {% comment %}
 Passo 2 della richiesta guidata: tipo di esame (tre schede), esperto (schede
 dei soli referenti per quel tipo, gli assenti visibili ma non scegliibili),
-urgenza (aggiorna i prezzi via htmx), testi per il collega.
+urgenza (aggiorna i prezzi via htmx), testi per il collega — i tre testi si
+possono DETTARE (_campo_dettatura.html): al primo giro la bozza non esiste
+ancora, quindi `caso` e' vuoto e la ripulitura vale come richiedente.
 Viste: consulti/views_percorso.py:nuova_esame (la bozza nasce qui) e
 passo_esame. «Avanti» e' il primo pulsante di invio del form (Invio da
 tastiera = Avanti), «Indietro» viene mostrato a sinistra con order:-1.
@@ -42,10 +45,10 @@ tastiera = Avanti), «Indietro» viene mostrato a sinistra con order:-1.
 </div></div>
 
 <div class="ovic-card"><div class="card-header-ovic">Per il collega</div><div class="card-body-ovic">
-  {% include "_campo_form.html" with campo=form.quesito %}
+  {% include "_campo_dettatura.html" with campo=form.quesito caso=richiesta.pk %}
   <div class="row">
-    <div class="col-md-6">{% include "_campo_form.html" with campo=form.anamnesi %}</div>
-    <div class="col-md-6">{% include "_campo_form.html" with campo=form.terapia %}</div>
+    <div class="col-md-6">{% include "_campo_dettatura.html" with campo=form.anamnesi caso=richiesta.pk %}</div>
+    <div class="col-md-6">{% include "_campo_dettatura.html" with campo=form.terapia caso=richiesta.pk %}</div>
   </div>
 </div></div>
 
@@ -58,6 +61,7 @@ tastiera = Avanti), «Indietro» viene mostrato a sinistra con order:-1.
 </form>
 {% endblock %}
 {% block js %}
+<script src="{% static 'consulti/js/dettatura.js' %}" defer></script>
 <script>
 (function () {
   // Tipo di esame o urgenza cambiati: htmx ricarica le schede degli esperti

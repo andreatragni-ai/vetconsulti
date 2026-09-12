@@ -158,9 +158,15 @@
           prima = campo.value;
           campo.value = esito.dati.testo;
           campo.dispatchEvent(new Event('input', {bubbles: true}));
-          var quante = (esito.dati.correzioni || []).length;
-          dillo('Testo ripulito' + (quante ? ' · ' + (esito.dati.correzioni || []).join(' · ') : '') +
+          // Le correzioni si mostrano, ma tre bastano: su un referto dettato
+          // sono dieci e riempirebbero mezzo schermo del telefono. Tutte
+          // nel titolo, per chi vuole vederle.
+          var correzioni = esito.dati.correzioni || [];
+          var elenco = correzioni.slice(0, 3).join(' · ') +
+                       (correzioni.length > 3 ? ' · e altre ' + (correzioni.length - 3) : '');
+          dillo('Testo ripulito' + (correzioni.length ? ' · ' + elenco : '') +
                 '. Rileggilo: la firma e\' tua.', 'fatto');
+          stato.title = correzioni.join('\n');
           btnAnnulla.hidden = false;
         }).catch(function () {
           btnRipulisci.disabled = false;

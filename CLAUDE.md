@@ -19,8 +19,9 @@ sessioni brevi: ogni sessione deve lasciare il repo in uno stato ripartibile.
   immagini di riferimento in `eco/catalogo/img/` (dalla sua presentazione). Si
   ricarica con `manage.py carica_catalogo_eco`. Le decisioni e i punti aperti
   stanno nella sua nota Obsidian "Telemedicina" (vault Second brain).
-- F3 (refertazione) costruita sul branch `feat/refertazione` l'11/09/2026,
-  non ancora in `main`: aspetta le conferme elencate in `docs/BACKLOG.md`.
+- F2 (richiesta guidata, smistamento eco, dettatura), F3 (refertazione),
+  iscrizione e Gestione sono in `main` dal 13/09/2026 (fast-forward di
+  `feat/gestione`). Le conferme ancora aperte stanno in `docs/BACKLOG.md`.
 - Iscrizione, deciso con Andre il 12/09/2026: i dati di fatturazione si
   possono saltare (si chiedono prima del primo invio), l'approvazione resta
   sul soggetto fiscale, e un collega si invita con un link firmato che vale

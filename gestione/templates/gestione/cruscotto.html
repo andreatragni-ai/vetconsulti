@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Gestione — VetWay Consulti{% endblock %}
+{% block content %}
+{% include "gestione/_sezioni.html" %}
+
+{% if not in_ritardo and not urgenti and not declinati and not iscrizioni and not email_ko %}
+<div class="ovic-card"><div class="card-body-ovic text-center py-4">
+  <i class="bi bi-check2-circle fs-3 d-block mb-2 text-success"></i>
+  <strong>Niente da fare adesso.</strong>
+  <p class="text-muted mb-0 small">{{ n_aperti }} cas{{ n_aperti|pluralize:"o aperto,i aperti" }}, tutt{{ n_aperti|pluralize:"o,i" }} nei tempi. <a href="{% url 'gestione:casi' %}">Vedi i casi</a></p>
+</div></div>
+{% endif %}
+
+{% if in_ritardo %}
+<div class="ovic-card"><div class="card-header-ovic"><i class="bi bi-alarm me-1"></i>In ritardo · {{ in_ritardo|length }}</div>
+  <div class="card-body-ovic small text-muted pb-0">Oltre il tempo di risposta. Se l'esperto non risponde, affida il caso a un altro dalla sua scheda.</div>
+  <div class="table-responsive"><table class="tbl-risultati align-middle">
+    <thead><tr><th>Paziente</th><th>Esame</th><th>Chi chiede</th><th>Esperto</th><th>Stato</th><th>Scadenza</th></tr></thead>
+    <tbody>{% for r in in_ritardo %}{% include "gestione/_riga_caso.html" %}{% endfor %}</tbody>
+  </table></div>
+</div>
+{% endif %}
+
+{% if urgenti %}
+<div class="ovic-card"><div class="card-header-ovic"><i class="bi bi-lightning me-1"></i>Urgenti in corso · {{ urgenti|length }}</div>
+  <div class="table-responsive"><table class="tbl-risultati align-middle">
+    <thead><tr><th>Paziente</th><th>Esame</th><th>Chi chiede</th><th>Esperto</th><th>Stato</th><th>Scadenza</th></tr></thead>
+    <tbody>{% for r in urgenti %}{% include "gestione/_riga_caso.html" %}{% endfor %}</tbody>
+  </table></div>
+</div>
+{% endif %}
+
+<div class="row">
+  {% if iscrizioni %}
+  <div class="col-md-6"><div class="ovic-card"><div class="card-header-ovic"><i class="bi bi-person-check me-1"></i>Iscrizioni da approvare</div><div class="card-body-ovic">
+    <p class="mb-2">{{ iscrizioni }} in attesa: finche' non le approvi possono preparare le richieste ma non inviarle.</p>
+    <a class="btn-nuova" href="{% url 'accounts:admin_richiedenti' %}">Approva</a>
+  </div></div></div>
+  {% endif %}
+
+  {% if declinati %}
+  <div class="col-md-6"><div class="ovic-card"><div class="card-header-ovic"><i class="bi bi-arrow-return-left me-1"></i>Declinati, fermi dal richiedente</div><div class="card-body-ovic">
+    <p class="small text-muted">Tocca a chi ha chiesto sceglierne un altro esperto. Se aspetta da troppo, puoi farlo tu dalla scheda.</p>
+    <ul class="mb-0">{% for r in declinati %}<li><a href="{% url 'gestione:caso' r.pk %}">{{ r.titolo }}</a> <span class="codice-caso">{{ r.codice }} · da {{ r.chiusa_il|timesince }}</span></li>{% endfor %}</ul>
+  </div></div></div>
+  {% endif %}
+
+  {% if email_ko %}
+  <div class="col-md-6"><div class="ovic-card"><div class="card-header-ovic"><i class="bi bi-envelope-exclamation me-1"></i>Email non partite · ultimi 7 giorni</div><div class="card-body-ovic">
+    <p class="small text-muted">Il portale e' andato avanti, ma il destinatario non sa niente: una telefonata risolve.</p>
+    <ul class="mb-0 small">{% for e in email_ko %}<li>{{ e.inviata_il|date:"d/m H:i" }} · {{ e.get_tipo_display }} → {{ e.destinatario|default:"(nessun indirizzo)" }}{% if e.richiesta %} · <a href="{% url 'gestione:caso' e.richiesta.pk %}">{{ e.richiesta.codice }}</a>{% endif %}</li>{% endfor %}</ul>
+  </div></div></div>
+  {% endif %}
+
+  {% if assenti %}
+  <div class="col-md-6"><div class="ovic-card"><div class="card-header-ovic"><i class="bi bi-calendar-x me-1"></i>Esperti assenti oggi</div><div class="card-body-ovic">
+    <ul class="mb-0">{% for r in assenti %}<li>{{ r }}{% if r.assente_al %} <span class="text-muted small">rientra il {{ r.assente_al|date:"d/m" }}</span>{% endif %}</li>{% endfor %}</ul>
+  </div></div></div>
+  {% endif %}
+</div>
+{% endblock %}

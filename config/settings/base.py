@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'referti',
     'registro',
     'notifiche',
+    'gestione',
 ]
 
 MIDDLEWARE = [

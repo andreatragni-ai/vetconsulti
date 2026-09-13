@@ -1,0 +1,7 @@
+Gentile {{ refertatore.nome_completo }},
+
+il caso {{ richiesta.codice }} ({{ richiesta.get_tipo_esame_display }}, paziente {{ richiesta.paziente }}) e' stato affidato a un altro esperto dalla gestione del portale.
+
+Non devi fare altro: non lo trovi piu' fra i tuoi casi, e l'eventuale bozza di referto non firmata e' stata eliminata. Per qualunque domanda rispondi a questa email.
+
+VetWay Consulti

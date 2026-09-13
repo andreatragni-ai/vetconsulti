@@ -72,7 +72,7 @@ def home(request):
     if hasattr(request.user, 'richiedente') or hasattr(request.user, 'refertatore'):
         return redirect('consulti:mie_richieste')
     if request.user.is_staff:
-        return redirect('accounts:admin_refertatori')
+        return redirect('gestione:cruscotto')
     return render(request, 'accounts/senza_profilo.html')
 
 

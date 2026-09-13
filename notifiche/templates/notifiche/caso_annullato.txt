@@ -1,0 +1,11 @@
+Gentile {{ destinatario }},
+
+il caso {{ richiesta.codice }} ({{ richiesta.get_tipo_esame_display }}, paziente {{ richiesta.paziente }}) e' stato annullato dalla gestione del portale.
+
+Motivo: {{ motivo }}
+
+{% if al_richiedente %}Il consulto non ti viene addebitato. Se serve ancora, puoi preparare una nuova richiesta dal portale:{% else %}Non devi fare altro: il caso e' chiuso e non va refertato.{% endif %}
+
+  {{ link }}
+
+VetWay Consulti

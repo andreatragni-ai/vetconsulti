@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}{{ richiesta.titolo }} — Gestione — VetWay Consulti{% endblock %}
+{% block content %}
+{% include "gestione/_sezioni.html" %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+  <div>
+    <a class="small" href="{% url 'gestione:casi' %}"><i class="bi bi-arrow-left"></i> Tutti i casi</a>
+    <h5 class="mb-0 mt-1">{{ richiesta.titolo }}{% if richiesta.urgenza %} <i class="bi bi-lightning-fill text-danger" title="Urgente"></i>{% endif %}</h5>
+    <span class="codice-caso">{{ richiesta.codice }}</span>
+    <span class="pill-stato{% if richiesta.tono_stato %} pill-stato--{{ richiesta.tono_stato }}{% endif %} ms-1">{{ richiesta.get_stato_display }}</span>
+    {% if richiesta.in_ritardo %}<span class="caso-in-ritardo ms-1">in ritardo</span>{% endif %}
+  </div>
+  <a class="btn-testata-ghost" href="{% url 'consulti:dettaglio' richiesta.pk %}"><i class="bi bi-folder2-open"></i> File e referto</a>
+</div>
+
+<div class="row">
+  <div class="col-lg-7">
+    <div class="ovic-card"><div class="card-header-ovic">Il caso</div><div class="card-body-ovic">
+      <div class="row">
+        <div class="col-sm-6">
+          {% include "_dato.html" with label="Chi chiede" val=richiesta.richiedente.user.get_full_name %}
+          {% include "_dato.html" with label="Per" val=richiesta.intestatario.denominazione %}
+          {% include "_dato.html" with label="Email" val=richiesta.richiedente.user.email %}
+          {% if richiesta.richiedente.telefono %}{% include "_dato.html" with label="Telefono" val=richiesta.richiedente.telefono %}{% endif %}
+        </div>
+        <div class="col-sm-6">
+          {% include "_dato.html" with label="Esperto" val=richiesta.refertatore|default:"" %}
+          {% if richiesta.refertatore %}{% include "_dato.html" with label="Email esperto" val=richiesta.refertatore.user.email %}{% endif %}
+          {% include "_dato.html" with label="Inviato" val=richiesta.inviata_il|date:"d/m/Y H:i" %}
+          {% if richiesta.scadenza %}{% include "_dato.html" with label="Risposta entro" val=richiesta.scadenza|date:"d/m/Y H:i" %}{% endif %}
+        </div>
+      </div>
+      {% if richiesta.motivo_rifiuto %}{% include "_dato.html" with label="Motivo dell'esperto" val=richiesta.motivo_rifiuto multiline=True %}{% endif %}
+      {% include "_dato.html" with label="Quesito" val=richiesta.quesito multiline=True %}
+    </div></div>
+
+    {% if spostabile %}
+    <div class="ovic-card"><div class="card-header-ovic"><i class="bi bi-life-preserver me-1"></i>Emergenza</div><div class="card-body-ovic">
+      <p class="small text-muted">Da usare quando il caso e' fermo e il collega non risponde. Ogni azione chiede un motivo, resta nella storia del caso e manda le email a chi deve saperlo.</p>
+
+      <details class="azioni-secondarie mb-3"{% if not richiesta.refertatore or richiesta.in_ritardo %} open{% endif %}>
+        <summary>Affida a un altro esperto</summary>
+        <form method="post" action="{% url 'gestione:sposta' richiesta.pk %}" data-conferma="Affidare {{ richiesta.codice }} all'esperto scelto? Il tempo di risposta riparte da adesso.">{% csrf_token %}
+          {% for v in esperti %}
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="refertatore" value="{{ v.refertatore.pk }}" id="esp-{{ v.refertatore.pk }}" {% if v.ostacolo %}disabled{% endif %} required>
+            <label class="form-check-label" for="esp-{{ v.refertatore.pk }}">{{ v.refertatore }}
+              {% if v.assente %}<span class="text-muted small">· assente{% if v.rientro %} fino al {{ v.rientro|date:"d/m" }}{% endif %}</span>{% endif %}
+              {% if v.ostacolo %}<span class="text-muted small">· {{ v.ostacolo }}</span>{% endif %}
+            </label>
+          </div>
+          {% empty %}
+          <p class="text-muted small">Nessun altro esperto referta {{ richiesta.get_tipo_esame_display }}.</p>
+          {% endfor %}
+          {% if esperti %}
+          <label class="form-label mt-2" for="motivo-sposta">Motivo <span class="text-danger">*</span></label>
+          <textarea class="form-control mb-2" id="motivo-sposta" name="motivo" rows="2" maxlength="500" required placeholder="Es. il dott. Ferrari e' in ospedale; nessuna risposta al telefono."></textarea>
+          <div class="form-text mb-2">Resta nella storia del caso. Chi ha chiesto vede solo a chi e' passato, non il motivo.</div>
+          <button class="btn-nuova" type="submit"><i class="bi bi-arrow-left-right me-1"></i>Affida</button>
+          {% endif %}
+        </form>
+      </details>
+
+      <details class="azioni-secondarie">
+        <summary>Annulla il caso</summary>
+        <form method="post" action="{% url 'gestione:annulla' richiesta.pk %}" data-conferma="Annullare {{ richiesta.codice }}? Il caso si chiude senza referto e senza addebito.">{% csrf_token %}
+          <label class="form-label" for="motivo-annulla">Motivo <span class="text-danger">*</span></label>
+          <textarea class="form-control mb-2" id="motivo-annulla" name="motivo" rows="2" maxlength="500" required placeholder="Es. il richiedente ha telefonato: il paziente e' deceduto."></textarea>
+          <div class="form-text mb-2">Lo riceve per email chi ha chiesto{% if richiesta.refertatore and richiesta.stato != 'DECLINATA' %}, e anche {{ richiesta.refertatore }}{% endif %}.</div>
+          <button class="btn btn-outline-danger btn-sm" type="submit"><i class="bi bi-x-circle me-1"></i>Annulla il caso</button>
+        </form>
+      </details>
+    </div></div>
+    {% endif %}
+
+    {% if decisioni %}
+    <div class="ovic-card"><div class="card-header-ovic">Decisioni della gestione</div><div class="card-body-ovic small">
+      {% for e in decisioni %}<div class="mb-1"><span class="text-muted">{{ e.quando|date:"d/m/Y H:i" }}</span> · {{ e.utente.get_full_name|default:e.utente.username }}: {% if e.azione == 'ANNULLATA_DA_GESTIONE' %}annullato{% else %}affidato ad altro esperto{% endif %} — «{{ e.dettaglio.motivo }}»</div>{% endfor %}
+    </div></div>
+    {% endif %}
+  </div>
+
+  <div class="col-lg-5">
+    <div class="ovic-card"><div class="card-header-ovic">Cronologia</div><div class="card-body-ovic">
+      {% include "consulti/_racconto.html" %}
+    </div></div>
+    <div class="ovic-card"><div class="card-header-ovic">Email di questo caso</div><div class="card-body-ovic small">
+      {% for e in email %}
+      <div class="mb-1">{% if e.esito == 'OK' %}<i class="bi bi-check2 text-success"></i>{% else %}<i class="bi bi-exclamation-triangle text-danger" title="{{ e.errore }}"></i>{% endif %}
+        <span class="text-muted">{{ e.inviata_il|date:"d/m H:i" }}</span> · {{ e.get_tipo_display }} → {{ e.destinatario|default:"(nessun indirizzo)" }}</div>
+      {% empty %}<span class="text-muted">Nessuna email.</span>{% endfor %}
+    </div></div>
+  </div>
+</div>
+{% endblock %}
+{% block js %}
+<script>
+  document.querySelectorAll('form[data-conferma]').forEach(function (f) {
+    f.addEventListener('submit', function (e) {
+      if (!window.confirm(f.getAttribute('data-conferma'))) { e.preventDefault(); }
+    });
+  });
+</script>
+{% endblock %}

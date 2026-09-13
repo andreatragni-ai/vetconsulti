@@ -11,6 +11,7 @@ urlpatterns = [
     path('', include('accounts.urls')),
     path('consulti/', include('consulti.urls')),
     path('referti/', include('referti.urls')),
+    path('gestione/', include('gestione.urls')),
     # Consegna protetta dei file: MAI static(MEDIA_URL) qui, nemmeno in DEBUG.
     path('allegati/<int:pk>/scarica/', views_media.scarica_allegato, name='scarica_allegato'),
     path('allegati/<int:pk>/anteprima/', views_media.anteprima_allegato, name='anteprima_allegato'),

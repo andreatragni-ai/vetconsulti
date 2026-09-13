@@ -1,0 +1,12 @@
+{% comment %}
+Le sezioni della Gestione, in testa a ogni pagina. Contesto: `sezione`
+(cruscotto | casi | iscrizioni | refertatori | listino | prestazioni).
+Le voci si aggiungono qui quando la pagina esiste davvero.
+{% endcomment %}
+<div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
+  <h4 class="mb-0">Gestione</h4>
+</div>
+<ul class="nav nav-tabs ovic-tabs mb-3">
+  <li class="nav-item"><a class="nav-link{% if sezione == 'cruscotto' %} active{% endif %}" href="{% url 'gestione:cruscotto' %}"><i class="bi bi-speedometer2 me-1"></i>Da fare</a></li>
+  <li class="nav-item"><a class="nav-link{% if sezione == 'casi' %} active{% endif %}" href="{% url 'gestione:casi' %}"><i class="bi bi-inbox me-1"></i>Casi</a></li>
+</ul>

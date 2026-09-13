@@ -1,0 +1,9 @@
+Gentile {{ richiedente.user.get_full_name }},
+
+il caso {{ richiesta.codice }} ({{ richiesta.get_tipo_esame_display }}, paziente {{ richiesta.paziente }}) e' stato affidato a {{ richiesta.refertatore.nome_completo }}: l'esperto scelto prima non poteva seguirlo nei tempi previsti.
+
+Non devi fare nulla, gli allegati sono gli stessi.{% if scadenza %} La risposta e' attesa entro il {{ scadenza|date:"d/m/Y" }} alle {{ scadenza|date:"H:i" }}.{% endif %}
+
+  {{ link }}
+
+VetWay Consulti

@@ -5,6 +5,9 @@ Le email del portale: partono quando la palla cambia mano.
   a meta' del tempo di risposta, presa in carico rilasciata per inattivita';
 - al richiedente: referto pronto (con il PDF allegato), referto rettificato
   (con il PDF nuovo), caso declinato e caso non refertabile (deve agire);
+- dalla Gestione, nelle emergenze: caso affidato a un altro esperto (al
+  richiedente e a chi lo aveva; il nuovo riceve «caso arrivato») e caso
+  annullato (al richiedente e all'esperto, se c'era);
 - fuori dal singolo caso: al gestore quando qualcuno si iscrive (deve
   approvarlo) e al richiedente quando l'approvazione arriva (puo' inviare).
 
@@ -153,6 +156,48 @@ def avvisa_non_refertabile(richiesta):
     return _invia(TipoInvio.NON_REFERTABILE, richiesta.richiedente.user.email,
                   f'[VetWay Consulti] {_caso(richiesta)} non refertabile',
                   'notifiche/non_refertabile.txt', {'richiedente': richiesta.richiedente}, richiesta)
+
+
+# ── Emergenze decise dalla Gestione ────────────────────────────────────────
+
+def avvisa_caso_tolto(richiesta, refertatore):
+    """A chi aveva il caso: non e' piu' suo, non ci lavori. Il motivo non si
+    scrive — «sei stato lento» non si dice per email; se serve, telefona Andre."""
+    if refertatore is None:
+        return False
+    return _invia(TipoInvio.CASO_TOLTO, refertatore.user.email,
+                  f'[VetWay Consulti] {_caso(richiesta)} affidato a un altro esperto',
+                  'notifiche/caso_tolto.txt', {'refertatore': refertatore}, richiesta,
+                  link=settings.CONSULTI_BASE_URL)
+
+
+def avvisa_richiedente_spostato(richiesta):
+    return _invia(TipoInvio.CASO_SPOSTATO, richiesta.richiedente.user.email,
+                  f'[VetWay Consulti] {_caso(richiesta)} affidato a {richiesta.refertatore.nome_completo}',
+                  'notifiche/caso_spostato.txt',
+                  {'richiedente': richiesta.richiedente, 'scadenza': _scadenza(richiesta)}, richiesta)
+
+
+def avvisa_caso_annullato(richiesta, motivo, refertatore=None):
+    """Al richiedente sempre; all'esperto se ne aveva uno, perche' smetta di
+    lavorarci. Torna quante email sono partite."""
+    partite = int(_invia(TipoInvio.CASO_ANNULLATO, richiesta.richiedente.user.email,
+                         f'[VetWay Consulti] {_caso(richiesta)} annullato',
+                         'notifiche/caso_annullato.txt',
+                         {'destinatario': richiesta.richiedente.user.get_full_name(), 'motivo': motivo,
+                          'al_richiedente': True}, richiesta))
+    if refertatore is not None:
+        partite += int(_invia(TipoInvio.CASO_ANNULLATO, refertatore.user.email,
+                              f'[VetWay Consulti] {_caso(richiesta)} annullato',
+                              'notifiche/caso_annullato.txt',
+                              {'destinatario': refertatore.nome_completo, 'motivo': motivo,
+                               'al_richiedente': False}, richiesta, link=settings.CONSULTI_BASE_URL))
+    return partite
+
+
+def _scadenza(richiesta):
+    from consulti import regole
+    return regole.scadenza(richiesta)
 
 
 # ── Iscrizione: al gestore e al richiedente ─────────────────────────────────

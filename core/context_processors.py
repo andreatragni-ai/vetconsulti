@@ -80,15 +80,15 @@ def navigazione(request):
                           'passo_riepilogo')))
         voci.append(voce('consulti:nuova', 'Nuova richiesta', 'plus-circle', ('nuova', 'nuova_esame')))
         voci.append(voce('accounts:profilo_richiedente', 'Profilo', 'person'))
-    elif utente.is_staff:
-        voci.append(voce('consulti:mie_richieste', 'Richieste', 'inbox', ('mie_richieste', 'dettaglio')))
     if refertatore:
         voci.append(voce('accounts:profilo_refertatore', 'Profilo refertatore', 'person-badge'))
     if utente.is_staff:
-        voci.append(voce('accounts:admin_refertatori', 'Refertatori', 'people',
-                         ('admin_refertatori', 'admin_refertatore_aggiungi')))
-        voci.append(voce('accounts:admin_richiedenti', 'Richiedenti', 'person-check'))
-        voci.append({'url': reverse('admin:index'), 'label': 'Admin', 'icona': 'gear', 'attiva': False})
+        # Una voce sola: dentro, le sezioni (gestione/_sezioni.html). L'admin
+        # di Django non sta piu' nella barra (13/09/2026): e' per le
+        # riparazioni, si raggiunge da /admin/ a mano.
+        namespace = getattr(getattr(request, 'resolver_match', None), 'namespace', '')
+        voci.append({'url': reverse('gestione:cruscotto'), 'label': 'Gestione', 'icona': 'speedometer2',
+                     'attiva': namespace == 'gestione' or corrente.startswith('admin_')})
 
     if richiedente:
         utente_url = reverse('accounts:profilo_richiedente')

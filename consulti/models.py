@@ -247,6 +247,67 @@ class Richiesta(models.Model):
         self.save(update_fields=['stato', 'chiusa_il'])
         self.registra('ANNULLATA', utente)
 
+    # ── Emergenze: solo dalla Gestione ────────────────────────────────
+
+    STATI_SPOSTABILI = (StatoRichiesta.INVIATA, StatoRichiesta.PRESA_IN_CARICO, StatoRichiesta.DECLINATA)
+
+    def sposta_da_gestione(self, refertatore, motivo, utente):
+        """La gestione affida un caso aperto a un altro esperto: quello
+        assegnato si e' ammalato, non risponde, o il caso non era il suo.
+
+        Da INVIATA, PRESA_IN_CARICO o DECLINATA si torna INVIATA al nuovo
+        esperto, con il tempo di risposta che riparte da adesso (anche il
+        sollecito, che guarda `inviata_il`). Valgono le stesse regole di chi
+        sceglie l'esperto: referente per quel tipo, e disposto alle urgenze
+        se il caso e' urgente. Una bozza di referto non firmata del collega
+        precedente si butta, come nella riassegnazione.
+
+        Il motivo e' obbligatorio e resta nell'audit: e' l'unica traccia del
+        perche' qualcuno ha tolto un caso a un collega.
+        """
+        from . import regole
+        self._pretendi_stato(*self.STATI_SPOSTABILI)
+        if not (motivo or '').strip():
+            raise TransizioneNonValida('Serve un motivo: resta scritto nella storia del caso.')
+        if refertatore is None:
+            raise TransizioneNonValida('Scegli l\'esperto a cui affidare il caso.')
+        if refertatore.pk == self.refertatore_id and self.stato != StatoRichiesta.DECLINATA:
+            raise TransizioneNonValida(f'Il caso e\' gia\' di {refertatore}.')
+        if not refertatore.referta(self.tipo_esame):
+            raise TransizioneNonValida(
+                f'{refertatore} non e\' referente per {self.get_tipo_esame_display()}.')
+        rifiuto = regole.rifiuta_urgenza(refertatore, self.tipo_esame, self.urgenza)
+        if rifiuto:
+            raise TransizioneNonValida(rifiuto)
+        precedente = self.refertatore_id
+        bozza = getattr(self, 'referto', None)
+        if bozza is not None and not bozza.firmato:
+            bozza.delete()
+        self.refertatore = refertatore
+        self.stato = StatoRichiesta.INVIATA
+        self.inviata_il = timezone.now()
+        self.presa_in_carico_il = None
+        self.chiusa_il = None
+        self.motivo_rifiuto = ''
+        self.save(update_fields=['refertatore', 'stato', 'inviata_il', 'presa_in_carico_il', 'chiusa_il',
+                                 'motivo_rifiuto'])
+        self.registra('SPOSTATA_DA_GESTIONE', utente, da=precedente, refertatore=refertatore.id,
+                      motivo=motivo.strip())
+        return precedente
+
+    def annulla_da_gestione(self, motivo, utente):
+        """La gestione chiude un caso che non deve andare avanti (inviato per
+        sbaglio, paziente morto, richiedente che chiama per ritirarlo quando
+        l'esperto ci sta gia' lavorando). Nessuna prestazione: non c'e' un
+        referto firmato. Il motivo arriva per email a chi ha chiesto."""
+        self._pretendi_stato(*self.STATI_SPOSTABILI)
+        if not (motivo or '').strip():
+            raise TransizioneNonValida('Serve un motivo: lo legge chi ha chiesto il consulto.')
+        self.stato = StatoRichiesta.ANNULLATA
+        self.chiusa_il = timezone.now()
+        self.save(update_fields=['stato', 'chiusa_il'])
+        self.registra('ANNULLATA_DA_GESTIONE', utente, motivo=motivo.strip())
+
     def segna_refertata(self, utente=None):
         """Chiamata da Referto.firma(): non si referta da fuori."""
         self._pretendi_stato(StatoRichiesta.PRESA_IN_CARICO)

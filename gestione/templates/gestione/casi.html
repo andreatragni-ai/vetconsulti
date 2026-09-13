@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Casi — Gestione — VetWay Consulti{% endblock %}
+{% block content %}
+{% include "gestione/_sezioni.html" %}
+<form method="get" class="d-flex flex-wrap gap-2 align-items-center mb-3">
+  <div class="btn-group btn-group-sm" role="group" aria-label="Quali casi">
+    {% for chiave, etichetta in filtri.items %}
+    <a class="btn {% if filtro == chiave %}btn-secondary{% else %}btn-outline-secondary{% endif %}" href="?filtro={{ chiave }}{% if cerca %}&q={{ cerca|urlencode }}{% endif %}">{{ etichetta }}</a>
+    {% endfor %}
+  </div>
+  <input type="hidden" name="filtro" value="{{ filtro }}">
+  <input class="form-control form-control-sm" style="max-width:18rem" type="search" name="q" value="{{ cerca }}" placeholder="Paziente, codice, clinica, esperto" aria-label="Cerca">
+  <button class="btn btn-outline-secondary btn-sm" type="submit"><i class="bi bi-search"></i></button>
+</form>
+<div class="ovic-card"><div class="table-responsive">
+<table class="tbl-risultati align-middle">
+  <thead><tr><th>Paziente</th><th>Esame</th><th>Chi chiede</th><th>Esperto</th><th>Stato</th><th>Risposta entro</th></tr></thead>
+  <tbody>
+  {% for r in righe %}{% include "gestione/_riga_caso.html" %}
+  {% empty %}<tr><td colspan="6" class="text-center text-muted py-5">Nessun caso{% if cerca %} per «{{ cerca }}»{% endif %}.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div></div>
+{% endblock %}

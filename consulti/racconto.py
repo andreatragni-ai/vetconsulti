@@ -42,6 +42,11 @@ def _frase(evento, refertatori):
         'RIASSEGNATA': f'ha girato il caso a {ref()}',
         'NON_REFERTABILE': f'ha segnato il caso come non refertabile{motivo}',
         'ANNULLATA': 'ha annullato la richiesta',
+        # Il motivo di uno spostamento («e' malato», «non risponde») e' della
+        # gestione: chi ha chiesto vede solo a chi e' passato il caso. Lo staff
+        # lo legge nella scheda del caso in Gestione, dall'audit.
+        'SPOSTATA_DA_GESTIONE': f'la gestione ha affidato il caso a {ref()}',
+        'ANNULLATA_DA_GESTIONE': f'la gestione ha annullato il caso{motivo}',
         'REFERTATA': 'caso refertato',
         'REFERTO_FIRMATO': f'ha firmato il referto (versione {d.get("versione", 1)})',
         'REFERTO_RETTIFICATO': f'ha emesso la rettifica, versione {d.get("versione", "?")}{motivo}',

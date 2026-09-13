@@ -1,0 +1,10 @@
+{% comment %}Una riga dell'elenco casi della Gestione. Contesto: r (con scadenza e in_ritardo, gestione/casi.py).{% endcomment %}
+{% url 'gestione:caso' r.pk as url_caso %}
+<tr class="riga-cliccabile" onclick="window.location='{{ url_caso }}'">
+  <td>{% include "consulti/_cella_paziente.html" with url_caso=url_caso %}</td>
+  <td>{{ r.get_tipo_esame_display }}</td>
+  <td>{{ r.intestatario.denominazione }}<br><span class="codice-caso">{{ r.richiedente.user.get_full_name }}</span></td>
+  <td>{{ r.refertatore|default:"—" }}</td>
+  <td><span class="pill-stato{% if r.tono_stato %} pill-stato--{{ r.tono_stato }}{% endif %}">{{ r.get_stato_display }}</span></td>
+  <td class="num-tab">{% if r.scadenza %}<span class="{% if r.in_ritardo %}caso-in-ritardo{% else %}text-muted{% endif %}">{{ r.scadenza|date:"d/m H:i" }}{% if r.in_ritardo %} · in ritardo{% endif %}</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+</tr>

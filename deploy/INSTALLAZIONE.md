@@ -6,8 +6,10 @@ deploy successivi sono `./deploy/deploy.sh`.
 
 ## 1. DNS
 
-Record `A` per `consulti.vetway.it` → IP pubblico del server. Aspettare la
-propagazione prima di Certbot (`dig +short consulti.vetway.it`).
+Record `A` per `consulti.vetway.it` → `167.233.170.45` (lo stesso di
+`vetway.it` e `anest.vetway.it`), dal pannello di register.it (i DNS di
+vetway.it stanno li'). Aspettare la propagazione prima di Certbot
+(`dig +short consulti.vetway.it`).
 
 ## 2. Utente di sistema e cartelle
 
@@ -17,6 +19,8 @@ mkdir -p /home/consulti/app /home/consulti/vetway-ui /home/consulti/backup /etc/
 chown -R consulti:consulti /home/consulti
 apt install -y python3-venv python3-dev libpq-dev ffmpeg \
     libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0   # WeasyPrint
+# Verificato il 13/09/2026: sul server mancavano solo ffmpeg (clip eco) e
+# libharfbuzz-subset0; il resto c'era gia' per VetCardio e VetAnest.
 ```
 
 ## 3. Variabili d'ambiente
@@ -26,7 +30,8 @@ cp deploy/env.example /etc/consulti/env
 cp deploy/secrets.env.example /etc/consulti/secrets.env
 chown root:consulti /etc/consulti/*.env
 chmod 640 /etc/consulti/*.env
-# compilare secrets.env: DJANGO_SECRET_KEY, DJANGO_DB_PASSWORD, EMAIL_HOST_USER/PASSWORD
+# compilare secrets.env: DJANGO_SECRET_KEY, DJANGO_DB_PASSWORD, EMAIL_HOST_USER/PASSWORD,
+# ANTHROPIC_API_KEY. Con `set -a; . file` i valori con spazi vanno fra virgolette.
 ```
 
 ## 4. Database Postgres 16 (locale)
@@ -34,9 +39,13 @@ chmod 640 /etc/consulti/*.env
 ```bash
 sudo -u postgres psql <<'SQL'
 CREATE USER consulti WITH PASSWORD '<la stessa di DJANGO_DB_PASSWORD>';
-CREATE DATABASE consulti_db OWNER consulti ENCODING 'UTF8' LC_COLLATE 'it_IT.UTF-8' LC_CTYPE 'it_IT.UTF-8' TEMPLATE template0;
+CREATE DATABASE consulti_db OWNER consulti ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8' TEMPLATE template0;
 SQL
 ```
+
+`en_US.UTF-8` come vetcardio_db e vetanest_db: il locale `it_IT` sul server
+non e' installato e il CREATE fallirebbe. L'ordinamento alfabetico dei nomi
+italiani non cambia in modo visibile.
 
 ## 5. Primo deploy e superuser
 
@@ -55,8 +64,13 @@ set -a; . /etc/consulti/env; . /etc/consulti/secrets.env; set +a
 DJANGO_SUPERUSER_USERNAME=admin DJANGO_SUPERUSER_EMAIL=admin@vetway.it \
 DJANGO_SUPERUSER_PASSWORD='<password>' \
 sudo -E -u consulti venv/bin/python manage.py createsuperuser --noinput
-sudo -E -u consulti venv/bin/python manage.py loaddata eco/fixtures/proiezioni_bozza.json
+sudo -E -u consulti venv/bin/python manage.py carica_catalogo_eco
 ```
+
+Il listino parte vuoto: senza un prezzo per tipo di esame un referto non si
+firma. Si compila da **Gestione → Listino** entrando come admin (un prezzo
+nuovo puo' partire da oggi). I refertatori si aggiungono da
+**Gestione → Refertatori**: ricevono l'invito per email.
 
 ## 6. systemd
 
@@ -83,7 +97,9 @@ Poi:
 ```bash
 cp deploy/nginx-consulti.conf /etc/nginx/sites-available/consulti
 # Prima di Certbot commentare temporaneamente il blocco `listen 443 ssl` e le
-# righe ssl_*: Certbot le riscrive lui.
+# righe ssl_*, e il secondo blocco server (il redirect): senza certificato
+# `nginx -t` fallisce e il reload lascerebbe giu' anche VetCardio e VetAnest.
+# Certbot le riscrive lui.
 ln -s /etc/nginx/sites-available/consulti /etc/nginx/sites-enabled/consulti
 nginx -t && systemctl reload nginx
 certbot --nginx -d consulti.vetway.it

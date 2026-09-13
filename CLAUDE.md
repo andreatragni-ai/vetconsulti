@@ -13,7 +13,8 @@ sessioni brevi: ogni sessione deve lasciare il repo in uno stato ripartibile.
   nginx con password nginx davanti (`/etc/nginx/consulti.htpasswd`) e
   noindex, cron di sorveglianza e backup. SMTP e chiave AI sono per ora
   quelli di VetCardio (copiati in `/etc/consulti/secrets.env`). Non
-  pubblicizzata, nessun dato vero. I deploy successivi: `./deploy/deploy.sh`.
+  pubblicizzata, nessun dato vero. HTTPS Let's Encrypt (rinnovo automatico
+  provato), DNS su register.it. I deploy successivi: `./deploy/deploy.sh`.
   Attenzione: da qui in poi rigenerare le migrazioni vuol dire ricreare
   anche `consulti_db` sul server (finche' non ci sono dati veri si puo').
 - Obiettivo: poche cliniche amiche entro 1-2 mesi (ottobre-novembre 2026).

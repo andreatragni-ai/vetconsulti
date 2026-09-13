@@ -6,7 +6,7 @@ firmato e il racconto dell'audit. I quattro passi della richiesta guidata
 stanno in `views_percorso.py`; il lato del refertatore in
 `views_decisione.py` e in `referti/views.py`.
 
-Lo staff vede tutto in lettura e non agisce (consulti/permessi.py).
+Lo staff qui vede tutto in lettura; le emergenze le gestisce da gestione/ (consulti/permessi.py).
 """
 
 import logging

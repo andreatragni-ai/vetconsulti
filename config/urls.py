@@ -20,6 +20,7 @@ urlpatterns = [
     path('eco/', include('eco.urls')),
 ]
 
-admin.site.site_header = 'VetWay Consulti — amministrazione'
+admin.site.site_header = 'VetWay Consulti — riparazioni'
 admin.site.site_title = 'VetWay Consulti'
-admin.site.index_title = 'Gestione del portale'
+admin.site.index_title = 'Solo per riparazioni: il lavoro di tutti i giorni sta in Gestione (/gestione/)'
+admin.site.site_url = '/gestione/'

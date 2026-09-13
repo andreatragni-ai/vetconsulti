@@ -147,6 +147,19 @@ spunta. Le idee grosse hanno un file loro in `docs/`.
   (r) 14 giorni e' la durata giusta per un invito; (s) il link di invito sta
   bene nel profilo o vorrebbe generarlo lui dall'area di gestione.
 
+- [2026-09-13] **Gestione — Andre la prova** (branch `feat/gestione`, da
+  `feat/richiesta-guidata`; collaudo come `admin`). Fatto: «Da fare»
+  (ritardi, urgenti, declinati fermi, iscrizioni, email non partite,
+  assenti), «Casi» con scheda ed emergenze (affida ad altro esperto,
+  annulla), «Iscrizioni», «Refertatori» con scheda completa, «Listino» con
+  cambi programmati, «Prestazioni» del mese con CSV e stato della fattura;
+  admin di Django da 25 a 16 voci, casi/referti/listino/prestazioni in sola
+  lettura. Da confermare: (t) i testi delle tre email di emergenza
+  (`caso_tolto`, `caso_spostato`, `caso_annullato`); (u) che al richiedente
+  NON arrivi il motivo di uno spostamento; (v) che un caso declinato si
+  possa affidare anche dalla Gestione senza aspettare il richiedente;
+  (w) le sezioni in quest'ordine e con questi nomi.
+
 ## Prossimo
 
 - [2026-09-12] **Un invito non si revoca**: e' una firma a tempo, non una

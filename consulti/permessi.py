@@ -5,8 +5,11 @@ Chi puo' fare cosa su un caso. Una regola in un posto solo:
   referta, firma, rettifica);
 - **richiedente**: il suo caso; annulla solo prima della presa in carico,
   riassegna un caso declinato;
-- **staff**: vede tutto in lettura e non agisce; ogni volta che apre un
-  caso che non e' suo resta un EventoAudit ACCESSO_STAFF;
+- **staff**: vede tutto; ogni volta che apre un caso che non e' suo resta
+  un EventoAudit ACCESSO_STAFF. Sui casi agisce SOLO dalla Gestione e solo
+  nelle emergenze (gestione/views.py: affidare a un altro esperto,
+  annullare), con le transizioni *_da_gestione del modello: mai dalle
+  pagine del richiedente o del refertatore, mai dall'admin di Django;
 - **tutti gli altri**: 404, non 403 (non si conferma che il caso esista).
 """
 

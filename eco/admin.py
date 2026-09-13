@@ -1,7 +1,8 @@
 from django.contrib import admin
 
-from .models import (EsitoSmistamento, ImmagineRiferimento, ProiezioneCaricata, ProiezioneCatalogo,
-                     PropostaSmistamento, Smistamento)
+from core.admin_sola_lettura import SolaLettura
+
+from .models import EsitoSmistamento, ImmagineRiferimento, ProiezioneCatalogo, Smistamento
 
 
 class ImmagineRiferimentoInline(admin.TabularInline):
@@ -33,14 +34,8 @@ class ProiezioneCatalogoAdmin(admin.ModelAdmin):
         return obj.immagini.count()
 
 
-@admin.register(ProiezioneCaricata)
-class ProiezioneCaricataAdmin(admin.ModelAdmin):
-    list_display = ('richiesta', 'proiezione', 'allegato', 'nota')
-    list_select_related = ('richiesta', 'proiezione', 'allegato')
-
-
 @admin.register(Smistamento)
-class SmistamentoAdmin(admin.ModelAdmin):
+class SmistamentoAdmin(SolaLettura, admin.ModelAdmin):
     """Per guardare com'e' andato uno smistamento: stato, messaggio e
     telemetria (token, costo, errori). Sola lettura: lo scrive il portale."""
 
@@ -50,16 +45,8 @@ class SmistamentoAdmin(admin.ModelAdmin):
     readonly_fields = [c.name for c in Smistamento._meta.fields]
 
 
-@admin.register(PropostaSmistamento)
-class PropostaSmistamentoAdmin(admin.ModelAdmin):
-    list_display = ('richiesta', 'allegato', 'proiezione', 'referto', 'fonte', 'confidenza', 'sicura', 'colore')
-    list_filter = ('fonte', 'sicura', 'colore')
-    list_select_related = ('richiesta', 'proiezione', 'allegato')
-    search_fields = ('richiesta__codice', 'allegato__nome_originale')
-
-
 @admin.register(EsitoSmistamento)
-class EsitoSmistamentoAdmin(admin.ModelAdmin):
+class EsitoSmistamentoAdmin(SolaLettura, admin.ModelAdmin):
     """La misura sul campo: cosa proponeva l'automatismo e cosa ha confermato
     l'umano. Sola lettura, e i conti li fa `manage.py accuratezza_smistamento`:
     qui si guarda il singolo file."""

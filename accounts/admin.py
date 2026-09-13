@@ -1,5 +1,8 @@
 from django import forms
 from django.contrib import admin
+from django.contrib.auth.models import Group
+
+from core.admin_sola_lettura import SolaLettura
 
 from .forms import FotoInput
 from .models import (Clinica, CompetenzaRefertatore, Consenso, DatiFatturazione, Refertatore,
@@ -49,12 +52,6 @@ class ClinicaAdmin(admin.ModelAdmin):
         queryset.update(approvata=True)
 
 
-@admin.register(DatiFatturazione)
-class DatiFatturazioneAdmin(admin.ModelAdmin):
-    list_display = ('intestatario', 'partita_iva', 'clinica', 'richiedente', 'predefinita', 'codice_sdi')
-    search_fields = ('intestatario', 'partita_iva')
-
-
 @admin.register(Richiedente)
 class RichiedenteAdmin(admin.ModelAdmin):
     list_display = ('__str__', 'tipo', 'clinica', 'approvato', 'ruolo', 'creato_il')
@@ -69,9 +66,11 @@ class RichiedenteAdmin(admin.ModelAdmin):
 
 
 @admin.register(Consenso)
-class ConsensoAdmin(admin.ModelAdmin):
+class ConsensoAdmin(SolaLettura, admin.ModelAdmin):
+    """Prova di cosa ha accettato chi e quando: non si modifica."""
     list_display = ('user', 'tipo', 'versione', 'accettato_il')
     list_filter = ('tipo', 'versione')
 
 
-admin.site.register(CompetenzaRefertatore)
+# Il portale non usa i gruppi di Django: i permessi sono is_staff e i profili.
+admin.site.unregister(Group)

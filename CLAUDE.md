@@ -25,6 +25,9 @@ sessioni brevi: ogni sessione deve lasciare il repo in uno stato ripartibile.
   possono saltare (si chiedono prima del primo invio), l'approvazione resta
   sul soggetto fiscale, e un collega si invita con un link firmato che vale
   14 giorni (`accounts/inviti.py`).
+- Amministrazione, deciso con Andre il 13/09/2026: tutto il lavoro dello
+  staff sta nella Gestione del portale (`/gestione/`), che vede tutti i casi
+  inviati e interviene nelle emergenze. Referto eco senza ACVIM.
 
 ## Avvio e collaudo
 
@@ -90,6 +93,15 @@ Senza librerie il test del PDF vero salta con un messaggio che lo dice.
   `?inline=1` li mostra nel visore (iframe della stessa origine, SAMEORIGIN).
 - `consulti/permessi.py`: solo il refertatore assegnato agisce, il
   richiedente sul suo caso, lo staff legge e lascia ACCESSO_STAFF, gli altri 404.
+  Eccezione voluta (13/09/2026): dalla Gestione lo staff affida un caso a
+  un altro esperto o lo annulla, con motivo obbligatorio, audit ed email
+  (`Richiesta.sposta_da_gestione`, `annulla_da_gestione`, test in
+  `gestione/tests.py` per ogni stato).
+- `gestione/`: le pagine dello staff (casi, iscrizioni, refertatori, listino,
+  prestazioni). L'admin di Django e' solo per riparazioni, fuori dalla barra:
+  casi, referti, email, listino, prestazioni e consensi li' sono in SOLA
+  LETTURA (`core/admin_sola_lettura.py`). Un campo nuovo che lo staff deve
+  cambiare va in una pagina di `gestione/`, non riaprendo l'admin.
 - `referti/models.py`: salvare la bozza non firma MAI; `firma()` e
   `rettifica()` sono le sole strade per una `VersioneReferto` (immutabile);
   la prestazione si registra una volta sola, alla prima firma. Il JS della

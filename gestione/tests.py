@@ -262,3 +262,65 @@ def test_iscrizioni_in_attesa_prima(client, mondo):
     html = client.get(reverse('gestione:iscrizioni')).content.decode()
     attesa, approvati = html.split('Gia\' approvati')
     assert 'Clinica Nuova' in attesa and 'Clinica Rossi' in approvati
+
+
+# ── Listino ─────────────────────────────────────────────────────────────────
+
+def test_cambia_prezzo_chiude_il_vecchio_e_non_tocca_il_passato(mondo):
+    from datetime import date
+    from decimal import Decimal
+    from listino.cambi import CambioNonValido, cambia_prezzo
+    from listino.models import VoceListino
+    from listino.prezzi import prezzo_effettivo
+    oggi = timezone.localdate()
+    dal = oggi + timedelta(days=10)
+    cambia_prezzo('ECG', Decimal('45.00'), Decimal('22'), dal)
+    vecchia = VoceListino.objects.get(tipo_esame='ECG', valido_dal=date(2020, 1, 1))
+    assert vecchia.valido_al == dal - timedelta(days=1)
+    assert prezzo_effettivo('ECG', giorno=oggi).imponibile == Decimal('40.00')
+    assert prezzo_effettivo('ECG', giorno=dal).imponibile == Decimal('45.00')
+    with pytest.raises(CambioNonValido, match='passato'):
+        cambia_prezzo('ECG', Decimal('1'), Decimal('22'), oggi - timedelta(days=1))
+    with pytest.raises(CambioNonValido, match='gia'):
+        cambia_prezzo('ECG', Decimal('1'), Decimal('22'), dal)
+
+
+def test_cambia_supplemento(mondo):
+    from decimal import Decimal
+    from listino.cambi import cambia_supplemento
+    from listino.models import Supplemento
+    s = Supplemento.objects.create(codice='URG', descrizione='Urgenza', tipo='URGENZA',
+                                   percentuale=Decimal('50'), valido_dal=timezone.localdate() - timedelta(days=30))
+    dal = timezone.localdate() + timedelta(days=1)
+    nuovo = cambia_supplemento(s, dal, percentuale=Decimal('60'))
+    s.refresh_from_db()
+    assert s.valido_al == timezone.localdate() and nuovo.percentuale == Decimal('60')
+    assert nuovo.codice.startswith('URGENZA-')
+
+
+def test_pagina_listino_programma_un_prezzo(client, mondo):
+    client.force_login(mondo.staff)
+    assert '40,00' in client.get(reverse('gestione:listino')).content.decode()
+    dal = (timezone.localdate() + timedelta(days=3)).isoformat()
+    risp = client.post(reverse('gestione:listino_cambia', args=['ECG']),
+                       {'prezzo': '42,50', 'aliquota': '22', 'dal': dal}, follow=True)
+    assert '42,50' in risp.content.decode()
+
+
+# ── Prestazioni ─────────────────────────────────────────────────────────────
+
+def test_prestazioni_del_mese_csv_e_stato(client, caso_in_carico, mondo):
+    from registro.servizi import registra_prestazione
+    p = registra_prestazione(caso_in_carico)
+    client.force_login(mondo.staff)
+    mese = f'{p.data:%Y-%m}'
+    html = client.get(reverse('gestione:prestazioni'), {'mese': mese}).content.decode()
+    assert caso_in_carico.codice in html and str(p.totale).replace('.', ',') in html
+    csv = client.get(reverse('gestione:prestazioni'), {'mese': mese, 'csv': 1})
+    assert csv['Content-Type'].startswith('text/csv') and caso_in_carico.codice in csv.content.decode()
+    risp = client.post(reverse('gestione:fatturazione_cambia', args=[p.pk]),
+                       {'stato': 'FATTURATA', 'numero_fattura': '12/2026', 'data_fattura': '2026-09-30',
+                        'torna': 'https://altrove.example'})
+    assert risp.url == f'{reverse("gestione:prestazioni")}?mese={mese}'     # mai un indirizzo dal form
+    p.fatturazione.refresh_from_db()
+    assert p.fatturazione.stato == 'FATTURATA' and p.fatturazione.numero_fattura == '12/2026'

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Prestazioni — Gestione — VetWay Consulti{% endblock %}
+{% block content %}
+{% include "gestione/_sezioni.html" %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <div class="d-flex align-items-center gap-2">
+    <a class="btn btn-outline-secondary btn-sm" href="?mese={{ mese_prima }}" aria-label="Mese prima"><i class="bi bi-chevron-left"></i></a>
+    <h5 class="mb-0 text-capitalize">{{ titolo_mese }}</h5>
+    <a class="btn btn-outline-secondary btn-sm" href="?mese={{ mese_dopo }}" aria-label="Mese dopo"><i class="bi bi-chevron-right"></i></a>
+  </div>
+  <div class="d-flex flex-wrap gap-2 align-items-center">
+    <form method="get" class="d-flex gap-2"><input type="hidden" name="mese" value="{{ mese }}">
+      <select class="form-select form-select-sm" name="stato" onchange="this.form.submit()" aria-label="Stato della fatturazione">
+        <option value="">Tutti gli stati</option>
+        {% for v, e in stati %}<option value="{{ v }}"{% if stato == v %} selected{% endif %}>{{ e }}</option>{% endfor %}
+      </select>
+    </form>
+    <a class="btn-testata-ghost" href="?mese={{ mese }}&csv=1"><i class="bi bi-download"></i> Scarica CSV</a>
+  </div>
+</div>
+
+{% if totali %}
+<div class="row">
+  {% for t in totali %}
+  <div class="col-md-6"><div class="ovic-card"><div class="card-body-ovic">
+    <div class="small text-muted">Fattura {% if t.soggetto_emittente == 'SOCIETA' %}la societa' (VetWay){% else %}il refertatore in proprio{% endif %}</div>
+    {# Sum su sqlite torna un float (237,900000000000): due decimali a mano. #}
+    <div class="fs-5 fw-semibold num-tab">€ {{ t.totale|floatformat:2 }}</div>
+    <div class="small text-muted num-tab">imponibile € {{ t.imponibile|floatformat:2 }} · esclusi gli stornati</div>
+  </div></div></div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="ovic-card"><div class="table-responsive">
+<table class="tbl-risultati align-middle">
+  <thead><tr><th>Data</th><th>Caso</th><th>A chi si fattura</th><th>Esperto</th><th class="text-end">Totale</th><th>Fatturazione</th></tr></thead>
+  <tbody>
+  {% for p in righe %}
+    <tr>
+      <td class="num-tab">{{ p.data|date:"d/m" }}</td>
+      <td><a href="{% url 'gestione:caso' p.richiesta_id %}">{{ p.richiesta.titolo }}</a><br><span class="codice-caso">{{ p.richiesta.codice }}</span></td>
+      <td>{{ p.intestatario.denominazione }}</td>
+      <td>{{ p.refertatore }}{% if p.soggetto_emittente == 'REFERTATORE' %}<br><span class="codice-caso">fattura in proprio</span>{% endif %}</td>
+      <td class="text-end num-tab">€ {{ p.totale }}{% if p.supplementi %}<br><span class="codice-caso">+ suppl. € {{ p.supplementi }}</span>{% endif %}</td>
+      <td>
+        <form method="post" action="{% url 'gestione:fatturazione_cambia' p.pk %}" class="d-flex flex-wrap gap-1 align-items-center">{% csrf_token %}
+          <select class="form-select form-select-sm w-auto" name="stato" aria-label="Stato">
+            {% for v, e in stati %}<option value="{{ v }}"{% if p.fatturazione.stato == v %} selected{% endif %}>{{ e }}</option>{% endfor %}
+          </select>
+          <input class="form-control form-control-sm w-auto" name="numero_fattura" size="8" placeholder="N. fattura" value="{{ p.fatturazione.numero_fattura }}" aria-label="Numero fattura">
+          <input class="form-control form-control-sm w-auto" type="date" name="data_fattura" value="{{ p.fatturazione.data_fattura|date:'Y-m-d' }}" aria-label="Data fattura">
+          <button class="btn btn-outline-secondary btn-sm" type="submit" title="Salva"><i class="bi bi-check2"></i></button>
+        </form>
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="6" class="text-center text-muted py-5">Nessuna prestazione {% if stato %}in questo stato {% endif %}a {{ titolo_mese }}.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div></div>
+{% endblock %}

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views, views_persone
+from . import views, views_persone, views_soldi
 
 app_name = 'gestione'
 
@@ -17,4 +17,9 @@ urlpatterns = [
     path('refertatori/nuovo/', views_persone.refertatore_nuovo, name='refertatore_nuovo'),
     path('refertatori/<int:pk>/', views_persone.refertatore, name='refertatore'),
     path('refertatori/<int:pk>/invito/', views_persone.refertatore_invito, name='refertatore_invito'),
+    path('listino/', views_soldi.listino, name='listino'),
+    path('listino/<str:tipo>/cambia/', views_soldi.listino_cambia, name='listino_cambia'),
+    path('listino/supplemento/<int:pk>/cambia/', views_soldi.supplemento_cambia, name='supplemento_cambia'),
+    path('prestazioni/', views_soldi.prestazioni, name='prestazioni'),
+    path('prestazioni/<int:pk>/fatturazione/', views_soldi.fatturazione_cambia, name='fatturazione_cambia'),
 ]

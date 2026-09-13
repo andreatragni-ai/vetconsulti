@@ -34,6 +34,16 @@
         <button class="btn-nuova" name="salva" value="clinica">Salva</button>
       </form>
     </div></div>
+    {% if link_invito %}
+    <div class="ovic-card"><div class="card-header-ovic">Invita un collega</div><div class="card-body-ovic">
+      <p class="small text-muted">Chi apre questo link si iscrive dentro «{{ clinica.denominazione }}»: non deve scegliere la clinica ne' ricompilare i dati di fatturazione. Vale {{ giorni_invito }} giorni; se scade, basta ricaricare questa pagina per averne uno nuovo.</p>
+      <div class="d-flex align-items-center gap-2 flex-wrap" data-copia-invito>
+        <input class="form-control form-control-sm flex-grow-1" id="link-invito" type="text" readonly value="{{ link_invito }}" aria-label="Link di invito">
+        <button type="button" class="btn btn-outline-secondary btn-sm js-copia"><i class="bi bi-clipboard me-1"></i>Copia</button>
+        <span class="js-esito small text-success"></span>
+      </div>
+    </div></div>
+    {% endif %}
   </div>
   {% endif %}
   <div class="col-lg-4">
@@ -47,4 +57,29 @@
     </div></div>
   </div>
 </div>
+{% endblock %}
+{% block js %}
+<script>
+  // Copia il link di invito. Sul dev locale (http) l'API appunti non esiste:
+  // invece di fingere che funzioni, si seleziona il testo e si dice di copiarlo.
+  (function () {
+    var blocco = document.querySelector('[data-copia-invito]');
+    if (!blocco) return;
+    var campo = blocco.querySelector('input');
+    var esito = blocco.querySelector('.js-esito');
+    blocco.querySelector('.js-copia').addEventListener('click', function () {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(campo.value).then(function () {
+          esito.textContent = 'Link copiato.';
+        }, function () {
+          campo.select();
+          esito.textContent = 'Copia non riuscita: e\' selezionato, copialo a mano.';
+        });
+      } else {
+        campo.select();
+        esito.textContent = 'Selezionato: copialo a mano.';
+      }
+    });
+  })();
+</script>
 {% endblock %}

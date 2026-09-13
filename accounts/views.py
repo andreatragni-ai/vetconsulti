@@ -8,6 +8,10 @@ refertatore usano il token monouso di Django (default_token_generator):
 scade, si invalida al primo uso perche' dipende da last_login e dalla
 password, e non richiede una tabella nostra.
 
+L'invito di un collega nella stessa clinica non puo' usare quel token —
+l'utente da invitare non esiste ancora — e usa una firma a tempo:
+`accounts/inviti.py`.
+
 ## Perche' il refertatore nasce con una password casuale
 
 PasswordResetForm.get_users() scarta chi ha una password inutilizzabile:
@@ -37,6 +41,9 @@ from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.decorators.http import require_POST
 
+from notifiche import servizi
+
+from . import inviti
 from .forms import (ClinicaForm, CompetenzaForm, DatiFatturazioneForm, NuovoRefertatoreForm,
                     RefertatoreProfiloForm, RegistrazioneForm, RichiedenteForm,
                     competenze_complete)
@@ -99,16 +106,39 @@ def registrati(request, tipo=None):
     if tipo is None:
         return render(request, 'accounts/registrati_scelta.html')
     if tipo not in TIPI_REGISTRAZIONE:
-                raise Http404
-    tipo_richiedente = TIPI_REGISTRAZIONE[tipo]
-    form = RegistrazioneForm(request.POST or None, tipo=tipo_richiedente)
+        raise Http404
+    return _registrazione(request, TIPI_REGISTRAZIONE[tipo])
+
+
+def registrati_invitato(request, token):
+    """Iscrizione da un link di invito: la clinica la decide il link.
+
+    Il collega non sceglie la struttura e non ne propone una nuova, quindi
+    non puo' sbagliare clinica ne' crearne un doppione. L'approvazione
+    resta quella del soggetto fiscale: se la clinica e' gia' approvata,
+    puo' inviare subito (decisione del 12/09/2026).
+    """
+    if request.user.is_authenticated:
+        return redirect('accounts:home')
+    try:
+        clinica, invitante = inviti.leggi(token)
+    except inviti.InvitoNonValido as e:
+        return render(request, 'accounts/invito_non_valido.html', {'motivo': str(e)}, status=400)
+    return _registrazione(request, TipoRichiedente.CLINICA,
+                          clinica_invito=clinica, invitante=invitante)
+
+
+def _registrazione(request, tipo_richiedente, clinica_invito=None, invitante=None):
+    """Il corpo dell'iscrizione, comune al percorso normale e all'invito."""
+    form = RegistrazioneForm(request.POST or None, tipo=tipo_richiedente,
+                             clinica_invito=clinica_invito)
     if request.method == 'POST' and form.is_valid():
         with transaction.atomic():
             utente = form.save(commit=False)
             utente.is_active = False  # finche' non conferma l'email
             utente.save()
-            clinica = None
-            if tipo_richiedente == TipoRichiedente.CLINICA:
+            clinica = clinica_invito
+            if clinica is None and tipo_richiedente == TipoRichiedente.CLINICA:
                 clinica = form.cleaned_data.get('clinica')
                 if clinica is None:
                     clinica = Clinica.objects.create(
@@ -122,8 +152,9 @@ def registrati(request, tipo=None):
                 ruolo=form.cleaned_data['ruolo'],
                 numero_iscrizione=form.cleaned_data.get('numero_iscrizione', ''),
                 ordine_provinciale=form.cleaned_data.get('ordine_provinciale', ''))
-            # Dati di fatturazione predefiniti sul soggetto giusto. None solo
-            # se ci si e' uniti a una clinica che li aveva gia'.
+            # Dati di fatturazione predefiniti sul soggetto giusto. None se il
+            # blocco e' stato saltato (si compila dal profilo prima del primo
+            # invio) o se la clinica li aveva gia'.
             dati = form.dati_fatturazione
             if dati is not None:
                 if tipo_richiedente == TipoRichiedente.CLINICA:
@@ -133,20 +164,28 @@ def registrati(request, tipo=None):
                 else:
                     dati.richiedente = richiedente
                 dati.save()
-            for tipo in (TipoConsenso.PRIVACY, TipoConsenso.TERMINI):
-                Consenso.objects.create(user=utente, tipo=tipo, versione=versione_consenso(tipo))
+            for tipo_consenso in (TipoConsenso.PRIVACY, TipoConsenso.TERMINI):
+                Consenso.objects.create(user=utente, tipo=tipo_consenso,
+                                        versione=versione_consenso(tipo_consenso))
 
-        link = _link_token(request, utente, 'accounts:conferma_email')
-        corpo = render_to_string('accounts/email_conferma.txt', {'utente': utente, 'link': link})
-        try:
-            EmailMessage(
-                subject='VetWay Consulti — conferma la tua email',
-                body=corpo, to=[utente.email],
-                reply_to=[settings.EMAIL_REPLY_TO]).send()
-        except Exception:
-            logger.exception('Invio conferma email fallito per %s', utente.username)
+        _invia_conferma_email(request, utente)
+        servizi.avvisa_gestore_iscrizione(richiedente, invitante=invitante)
         return render(request, 'accounts/registrazione_inviata.html', {'email': utente.email})
-    return render(request, 'accounts/registrati.html', {'form': form, 'tipo': tipo_richiedente})
+    return render(request, 'accounts/registrati.html', {
+        'form': form, 'tipo': tipo_richiedente,
+        'clinica_invito': clinica_invito, 'invitante': invitante})
+
+
+def _invia_conferma_email(request, utente):
+    link = _link_token(request, utente, 'accounts:conferma_email')
+    corpo = render_to_string('accounts/email_conferma.txt', {'utente': utente, 'link': link})
+    try:
+        EmailMessage(
+            subject='VetWay Consulti — conferma la tua email',
+            body=corpo, to=[utente.email],
+            reply_to=[settings.EMAIL_REPLY_TO]).send()
+    except Exception:
+        logger.exception('Invio conferma email fallito per %s', utente.username)
 
 
 def conferma_email(request, uidb64, token):
@@ -215,10 +254,19 @@ def profilo_richiedente(request):
                 return redirect('accounts:profilo_richiedente')
 
     consensi = Consenso.objects.filter(user=request.user)
+    # Link per invitare un collega nella stessa clinica: si rigenera a ogni
+    # visita (e' una firma, non una riga da conservare) e vale 14 giorni.
+    # Solo per chi lavora in una struttura: un libero professionista non ha
+    # nessuno da far entrare.
+    link_invito = ''
+    if e_clinica and clinica is not None:
+        link_invito = request.build_absolute_uri(
+            reverse('accounts:registrati_invitato', args=[inviti.crea(clinica, request.user)]))
     return render(request, 'accounts/profilo_richiedente.html', {
         'richiedente': richiedente, 'form_r': form_r, 'form_c': form_c, 'form_f': form_f,
         'consensi': consensi, 'clinica': clinica, 'e_clinica': e_clinica,
         'intestatario': richiedente.soggetto_fatturazione,
+        'link_invito': link_invito, 'giorni_invito': inviti.GIORNI_VALIDITA,
     })
 
 
@@ -347,10 +395,22 @@ def admin_richiedenti(request):
 @solo_staff
 @require_POST
 def admin_clinica_approva(request, pk):
+    """Approvare la clinica abilita tutti i suoi colleghi in un colpo, quindi
+    l'avviso va a ognuno di loro e non solo a chi si e' iscritto per primo.
+
+    Chi non ha ancora confermato l'email resta fuori: «puoi inviare» a chi
+    non riesce nemmeno ad accedere e' un invito a sbattere contro il login.
+    Lo scopre da se' entrando, che e' comunque il passo successivo.
+    """
     clinica = get_object_or_404(Clinica, pk=pk)
     clinica.approvata = True
     clinica.save(update_fields=['approvata'])
-    messages.success(request, f'Clinica «{clinica.denominazione}» approvata.')
+    avvisati = 0
+    for richiedente in clinica.richiedenti.select_related('user').filter(user__is_active=True):
+        if servizi.avvisa_richiedente_approvato(richiedente):
+            avvisati += 1
+    messages.success(request, f'Clinica «{clinica.denominazione}» approvata. '
+                              f'Avvisat{"o" if avvisati == 1 else "i"} {avvisati} collegh{"a" if avvisati == 1 else "i"} per email.')
     return redirect('accounts:admin_richiedenti')
 
 
@@ -360,5 +420,9 @@ def admin_richiedente_approva(request, pk):
     richiedente = get_object_or_404(Richiedente, pk=pk, tipo=TipoRichiedente.LIBERO_PROFESSIONISTA)
     richiedente.approvato = True
     richiedente.save(update_fields=['approvato'])
-    messages.success(request, f'Richiedente «{richiedente.denominazione}» approvato.')
+    if servizi.avvisa_richiedente_approvato(richiedente):
+        messages.success(request, f'Richiedente «{richiedente.denominazione}» approvato e avvisato per email.')
+    else:
+        messages.warning(request, f'Richiedente «{richiedente.denominazione}» approvato, '
+                                  'ma l\'email di avviso non e\' partita.')
     return redirect('accounts:admin_richiedenti')

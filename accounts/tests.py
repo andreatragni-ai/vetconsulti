@@ -322,3 +322,205 @@ def test_libero_professionista_senza_albo_si_registra(client):
     r = Richiedente.objects.get(user__username='lp')
     assert r.numero_iscrizione == '' and r.ordine_provinciale == ''
     assert r.ruolo == RuoloRichiedente.TECNICO
+
+
+# ── Iscrizione con la fatturazione rimandata (decisione del 12/09/2026) ─────
+
+@pytest.mark.django_db
+def test_registrazione_senza_fatturazione_e_permessa(client):
+    """Blocco fiscale vuoto = «dopo»: l'account nasce, l'invio resta chiuso."""
+    from django.urls import reverse
+    dati = _post_registrazione(partita_iva='', indirizzo_sede='', cap='', comune='',
+                               provincia='', pec_fatturazione='', codice_sdi='0000000')
+    risp = client.post(reverse('accounts:registrati_tipo', args=['libero-professionista']), dati)
+    assert risp.status_code == 200 and b'conferma' in risp.content
+    r = Richiedente.objects.get(user__username='lp')
+    assert r.dati_fatturazione_predefiniti is None and not r.puo_richiedere
+    assert DatiFatturazione.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_intestatario_precompilato_non_obbliga_la_fatturazione(client):
+    """L'intestatario lo scrive il JS da nome e cognome: da solo non deve
+    far scattare la validazione del resto del blocco."""
+    from django.urls import reverse
+    dati = _post_registrazione(intestatario='Luca Verdi', partita_iva='', indirizzo_sede='',
+                               cap='', comune='', provincia='', pec_fatturazione='')
+    risp = client.post(reverse('accounts:registrati_tipo', args=['libero-professionista']), dati)
+    assert risp.status_code == 200 and b'conferma' in risp.content
+    assert not Richiedente.objects.get(user__username='lp').puo_richiedere
+
+
+@pytest.mark.django_db
+def test_fatturazione_a_meta_resta_un_errore(client):
+    """Chi comincia a compilarla la deve finire: meglio l'errore adesso che
+    una fattura senza indirizzo fra un mese."""
+    from django.urls import reverse
+    dati = _post_registrazione(indirizzo_sede='', cap='', comune='', provincia='')
+    risp = client.post(reverse('accounts:registrati_tipo', args=['libero-professionista']), dati)
+    assert risp.status_code == 200
+    assert 'indirizzo_sede' in risp.context['form'].errors
+    assert not User.objects.filter(username='lp').exists()
+
+
+# ── Invito di un collega nella stessa clinica ──────────────────────────────
+
+@pytest.mark.django_db
+def test_invito_porta_nella_clinica_di_chi_invita(client):
+    from django.urls import reverse
+    from accounts import inviti
+    c = Clinica.objects.create(denominazione='Clinica Rossi', comune='Milano', approvata=True)
+    _dati(clinica=c, predefinita=True).save()
+    capo = User.objects.create_user('capo', 'capo@x.it', 'pw', first_name='Gina', last_name='Bianchi')
+    Richiedente.objects.create(user=capo, tipo=TipoRichiedente.CLINICA, clinica=c)
+
+    url = reverse('accounts:registrati_invitato', args=[inviti.crea(c, capo)])
+    html = client.get(url).content.decode()
+    # La clinica non si sceglie e non si propone: la decide il link.
+    assert 'name="clinica"' not in html and 'name="nuova_clinica"' not in html
+    assert 'Clinica Rossi' in html and 'Gina Bianchi' in html
+    # Ha gia' i dati di fatturazione: il blocco fiscale non compare nemmeno.
+    assert 'name="partita_iva"' not in html
+
+    dati = _post_registrazione(username='collega', email='collega@x.it', partita_iva='',
+                               indirizzo_sede='', cap='', comune='', provincia='', pec_fatturazione='')
+    risp = client.post(url, dati)
+    assert risp.status_code == 200 and b'conferma' in risp.content
+    r = Richiedente.objects.get(user__username='collega')
+    assert r.clinica == c and r.tipo == TipoRichiedente.CLINICA
+    assert DatiFatturazione.objects.count() == 1      # eredita quelli della clinica
+    assert r.puo_richiedere and r.approvazione_ok()   # clinica approvata: invia subito
+
+
+@pytest.mark.django_db
+def test_invito_manomesso_o_scaduto(client, monkeypatch):
+    from django.urls import reverse
+    from accounts import inviti
+    c = Clinica.objects.create(denominazione='Clinica Rossi', approvata=True)
+    capo = User.objects.create_user('capo', 'capo@x.it', 'pw')
+
+    assert client.get(reverse('accounts:registrati_invitato', args=['non-un-token'])).status_code == 400
+
+    token = inviti.crea(c, capo)
+    monkeypatch.setattr(inviti, '_MAX_AGE', -1)       # come se fosse scaduto
+    risp = client.get(reverse('accounts:registrati_invitato', args=[token]))
+    assert risp.status_code == 400 and 'scaduto' in risp.content.decode()
+
+
+@pytest.mark.django_db
+def test_invito_di_una_clinica_cancellata(client):
+    from accounts import inviti
+    c = Clinica.objects.create(denominazione='Clinica Sparita')
+    capo = User.objects.create_user('capo', 'capo@x.it', 'pw')
+    token = inviti.crea(c, capo)
+    c.delete()
+    with pytest.raises(inviti.InvitoNonValido):
+        inviti.leggi(token)
+
+
+@pytest.mark.django_db
+def test_link_invito_solo_per_chi_ha_una_clinica(client):
+    """Un libero professionista non ha nessuno da far entrare."""
+    from django.urls import reverse
+    u = User.objects.create_user('lp', 'lp@x.it', 'pw')
+    Richiedente.objects.create(user=u, tipo=TipoRichiedente.LIBERO_PROFESSIONISTA)
+    client.force_login(u)
+    assert client.get(reverse('accounts:profilo_richiedente')).context['link_invito'] == ''
+
+    c = Clinica.objects.create(denominazione='Clinica Rossi', approvata=True)
+    u2 = User.objects.create_user('vet', 'vet@x.it', 'pw')
+    Richiedente.objects.create(user=u2, tipo=TipoRichiedente.CLINICA, clinica=c)
+    client.force_login(u2)
+    risp = client.get(reverse('accounts:profilo_richiedente'))
+    link = risp.context['link_invito']
+    assert '/registrati/invito/' in link
+    assert 'Invita un collega' in risp.content.decode()
+
+
+# ── Le email dell'iscrizione, attaccate al percorso vero ───────────────────
+
+@pytest.mark.django_db
+def test_iscriversi_avvisa_il_gestore(client, settings):
+    from django.core import mail
+    from django.urls import reverse
+    settings.EMAIL_GESTORE = 'andre@vetway.it'
+    client.post(reverse('accounts:registrati_tipo', args=['libero-professionista']),
+                _post_registrazione())
+    destinatari = [d for e in mail.outbox for d in e.to]
+    assert 'lp@x.it' in destinatari          # conferma email a chi si iscrive
+    assert 'andre@vetway.it' in destinatari  # avviso a chi approva
+
+
+@pytest.mark.django_db
+def test_approvare_la_clinica_avvisa_i_colleghi(client):
+    """Un ok, tanti abilitati: l'email va a ognuno. Chi non ha confermato
+    l'email resta fuori — non potrebbe nemmeno accedere."""
+    from django.core import mail
+    from django.urls import reverse
+    c = Clinica.objects.create(denominazione='Clinica Blu')
+    dentro = User.objects.create_user('dentro', 'dentro@x.it', 'pw')
+    fuori = User.objects.create_user('fuori', 'fuori@x.it', 'pw', is_active=False)
+    for u in (dentro, fuori):
+        Richiedente.objects.create(user=u, tipo=TipoRichiedente.CLINICA, clinica=c)
+    staff = User.objects.create_user('staff', 'staff@x.it', 'pw', is_staff=True)
+
+    client.force_login(staff)
+    mail.outbox.clear()
+    risp = client.post(reverse('accounts:admin_clinica_approva', args=[c.pk]))
+    assert risp.status_code == 302
+    c.refresh_from_db()
+    assert c.approvata
+    assert [d for e in mail.outbox for d in e.to] == ['dentro@x.it']
+
+
+@pytest.mark.django_db
+def test_approvare_il_libero_professionista_lo_avvisa(client):
+    from django.core import mail
+    from django.urls import reverse
+    u = User.objects.create_user('lp', 'lp@x.it', 'pw')
+    r = Richiedente.objects.create(user=u, tipo=TipoRichiedente.LIBERO_PROFESSIONISTA)
+    client.force_login(User.objects.create_user('staff', 'staff@x.it', 'pw', is_staff=True))
+    mail.outbox.clear()
+    assert client.post(reverse('accounts:admin_richiedente_approva', args=[r.pk])).status_code == 302
+    r.refresh_from_db()
+    assert r.approvato
+    assert [d for e in mail.outbox for d in e.to] == ['lp@x.it']
+
+
+# ── Pagine di errore ───────────────────────────────────────────────────────
+
+@pytest.mark.django_db
+def test_pagina_404_del_portale(client):
+    risp = client.get('/questa-pagina-non-esiste/')
+    assert risp.status_code == 404
+    assert 'Questa pagina non c\'e\'' in risp.content.decode()
+
+
+def test_pagina_500_si_rende_senza_request():
+    """django.views.defaults.server_error la rende SENZA request e senza
+    context processor: se un giorno passasse a estendere base.html, il
+    crash si vedrebbe qui e non in produzione."""
+    from django.template.loader import get_template
+    for nome in ('500.html', '400.html'):
+        html = get_template(nome).render()
+        assert 'VetWay Consulti' in html
+    assert 'Qualcosa si e\' rotto' in get_template('500.html').render()
+
+
+@pytest.mark.django_db
+def test_invito_in_clinica_senza_dati_chiede_la_fatturazione(client):
+    """Se la clinica non ha ancora i dati fiscali, il collega invitato li
+    vede e quelli che compila finiscono sulla clinica, non su di lui."""
+    from django.urls import reverse
+    from accounts import inviti
+    c = Clinica.objects.create(denominazione='Clinica Blu', approvata=True)
+    capo = User.objects.create_user('capo', 'capo@x.it', 'pw')
+    Richiedente.objects.create(user=capo, tipo=TipoRichiedente.CLINICA, clinica=c)
+    url = reverse('accounts:registrati_invitato', args=[inviti.crea(c, capo)])
+    assert 'name="partita_iva"' in client.get(url).content.decode()
+
+    risp = client.post(url, _post_registrazione(username='collega', email='collega@x.it'))
+    assert risp.status_code == 200 and b'conferma' in risp.content
+    d = Clinica.objects.get(pk=c.pk).dati_fatturazione_predefiniti
+    assert d is not None and d.richiedente is None and d.intestatario == 'Clinica Blu'
+    assert Richiedente.objects.get(user__username='collega').puo_richiedere

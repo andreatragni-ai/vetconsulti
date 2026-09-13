@@ -1,0 +1,12 @@
+{% extends "auth_base.html" %}
+{% block auth_title %}Invito non valido · VetWay Consulti{% endblock %}
+{% block auth_content %}
+<div class="auth-head">
+  <div class="ico"><i class="bi bi-envelope-exclamation"></i></div>
+  <h2>Invito non valido</h2>
+  <p>{{ motivo }}</p>
+</div>
+<div class="text-center">
+  Puoi anche <a class="auth-link" href="{% url 'accounts:registrati' %}">iscriverti da solo</a>: scegli la tua clinica dall'elenco.
+</div>
+{% endblock %}

@@ -21,6 +21,10 @@ sessioni brevi: ogni sessione deve lasciare il repo in uno stato ripartibile.
   stanno nella sua nota Obsidian "Telemedicina" (vault Second brain).
 - F3 (refertazione) costruita sul branch `feat/refertazione` l'11/09/2026,
   non ancora in `main`: aspetta le conferme elencate in `docs/BACKLOG.md`.
+- Iscrizione, deciso con Andre il 12/09/2026: i dati di fatturazione si
+  possono saltare (si chiedono prima del primo invio), l'approvazione resta
+  sul soggetto fiscale, e un collega si invita con un link firmato che vale
+  14 giorni (`accounts/inviti.py`).
 
 ## Avvio e collaudo
 
@@ -66,6 +70,15 @@ Senza librerie il test del PDF vero salta con un messaggio che lo dice.
 
 - `accounts/fiscale.py`: validazioni CF/P.IVA/SDI; un solo soggetto fiscale
   fra clinica e richiedente. `Richiedente.tipo` decide a chi si fattura.
+- `accounts/forms.py`, blocco fiscale dell'iscrizione: e' facoltativo, e
+  «facoltativo» dipende solo da `CAMPI_FATTURAZIONE_DIGITATI`. Non
+  aggiungerci `intestatario`, `codice_sdi` o `regime_iva`: arrivano
+  compilati da soli (il primo dal JavaScript della pagina) e il blocco
+  risulterebbe sempre compilato, quindi impossibile da saltare.
+- `templates/500.html` e `400.html`: Django le rende SENZA request e senza
+  context processor, quindi estendono `auth_base.html` e non `base.html`.
+  Un `{% extends "base.html" %}` la' dentro si vede solo in produzione, al
+  primo guasto vero (test: `test_pagina_500_si_rende_senza_request`).
 - `consulti/regole.py`: transizioni di stato della Richiesta con
   `EventoAudit` append-only. Non aggiungere stati senza un test per ogni
   transizione. Un caso urgente scade in 4 ore e va solo a chi accetta le

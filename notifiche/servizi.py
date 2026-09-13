@@ -4,7 +4,9 @@ Le email del portale: partono quando la palla cambia mano.
 - al refertatore: caso arrivato (anche dopo una riassegnazione), sollecito
   a meta' del tempo di risposta, presa in carico rilasciata per inattivita';
 - al richiedente: referto pronto (con il PDF allegato), referto rettificato
-  (con il PDF nuovo), caso declinato e caso non refertabile (deve agire).
+  (con il PDF nuovo), caso declinato e caso non refertabile (deve agire);
+- fuori dal singolo caso: al gestore quando qualcuno si iscrive (deve
+  approvarlo) e al richiedente quando l'approvazione arriva (puo' inviare).
 
 Nessuna email per la presa in carico: il richiedente la vede sul caso.
 
@@ -151,3 +153,34 @@ def avvisa_non_refertabile(richiesta):
     return _invia(TipoInvio.NON_REFERTABILE, richiesta.richiedente.user.email,
                   f'[VetWay Consulti] {_caso(richiesta)} non refertabile',
                   'notifiche/non_refertabile.txt', {'richiedente': richiesta.richiedente}, richiesta)
+
+
+# ── Iscrizione: al gestore e al richiedente ─────────────────────────────────
+
+def avvisa_gestore_iscrizione(richiedente, invitante=None):
+    """Qualcuno si e' iscritto: chi approva lo deve sapere senza guardare la
+    pagina di gestione ogni mattina.
+
+    Parte anche se il soggetto e' gia' approvato (un collega invitato in una
+    clinica approvata): vale come «c'e' una persona nuova nel portale», che
+    e' un'informazione da avere comunque. Il testo dice se serve un ok o no.
+    """
+    approvato = richiedente.approvazione_ok()
+    soggetto = richiedente.soggetto_fatturazione
+    return _invia(TipoInvio.ISCRIZIONE, settings.EMAIL_GESTORE,
+                  '[VetWay Consulti] Nuova iscrizione{}: {}'.format(
+                      '' if approvato else ' DA APPROVARE', richiedente.denominazione),
+                  'notifiche/iscrizione.txt',
+                  {'richiedente': richiedente, 'soggetto': soggetto, 'approvato': approvato,
+                   'invitante': invitante},
+                  link=_assoluto(reverse('accounts:admin_richiedenti')))
+
+
+def avvisa_richiedente_approvato(richiedente):
+    """L'ok e' arrivato: da adesso le sue richieste partono. Il link porta
+    alla nuova richiesta, non al profilo: e' quello che vuole fare."""
+    return _invia(TipoInvio.APPROVAZIONE, richiedente.user.email,
+                  '[VetWay Consulti] Il tuo profilo e\' attivo',
+                  'notifiche/approvazione.txt',
+                  {'richiedente': richiedente, 'puo_richiedere': richiedente.puo_richiedere},
+                  link=_assoluto(reverse('consulti:nuova')))

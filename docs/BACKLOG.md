@@ -112,7 +112,9 @@ spunta. Le idee grosse hanno un file loro in `docs/`.
 - [2026-09-11] **F3 — Andre conferma le scelte della refertazione**
   (branch `feat/refertazione`, da provare su `runserver` con `seed_demo`):
   (a) blocco per tipo minimo — ECG solo rischio anestesiologico con le voci
-  di VetCardio, Holter ed eco solo le tre caselle (`referti/blocchi.py`);
+  di VetCardio, Holter ed eco solo le tre caselle (`referti/blocchi.py`;
+  per l'eco confermato da Andre il 13/09: niente stadio ACVIM ne' misure
+  principali nel referto);
   (b) "non refertabile" chiude il caso SENZA prestazione, e l'email dice
   "non ti viene addebitato"; (c) testi delle email in
   `notifiche/templates/notifiche/*.txt` e frasi rapide in
@@ -125,8 +127,34 @@ spunta. Le idee grosse hanno un file loro in `docs/`.
   immagini di riferimento di SUB_B e SUB_C, quelle di SUB_LVOT_* e D2_PVPA
   sono parziali (vedi `nota_riferimento`), e le `istruzioni` sono punti
   elenco incollati senza punteggiatura: da rileggere nel file.
+  Andre (13/09): le immagini di riferimento le aggiorna lui, e qualche riga
+  del catalogo potrebbe sparire. Niente lavoro sulle immagini finche' non
+  arriva il set nuovo (compresa quella del CW transmitralico).
+
+- [2026-09-12] **Iscrizione — Andre conferma le tre scelte del 12/09**
+  (decise con lui a inizio sessione). (a) I dati di fatturazione si possono
+  **saltare all'iscrizione** e si chiedono prima del primo invio (il blocco
+  vuoto vale «dopo»; compilato a meta' da' errore subito). (b)
+  L'approvazione resta **sul soggetto fiscale** — la clinica una volta, il
+  libero professionista — quindi un collega di una clinica gia' approvata
+  invia subito senza passare da Andre. (c) **Invito di un collega** dal
+  profilo: link firmato che vale 14 giorni (`accounts/inviti.py`), la
+  clinica la decide il link e i dati fiscali si ereditano. Aggiunte le due
+  email che mancavano (al gestore a ogni iscrizione, al collega quando
+  l'approvazione arriva: `EMAIL_GESTORE`, `notifiche/servizi.py`) e le
+  pagine 400/403/404/500. Da confermare: (q) i testi delle due email nuove
+  (`notifiche/templates/notifiche/iscrizione.txt` e `approvazione.txt`);
+  (r) 14 giorni e' la durata giusta per un invito; (s) il link di invito sta
+  bene nel profilo o vorrebbe generarlo lui dall'area di gestione.
 
 ## Prossimo
+
+- [2026-09-12] **Un invito non si revoca**: e' una firma a tempo, non una
+  riga nel database (`accounts/inviti.py` spiega perche'). Chi ha il link
+  puo' iscriversi a quella clinica per 14 giorni, e non si sa chi ha
+  invitato chi. Va bene con poche cliniche amiche; se un giorno serve
+  revocare un invito, sapere chi l'ha accettato, o mandarlo per email dal
+  portale invece di copiarlo a mano, quel modulo diventa un modello.
 
 - [2026-09-12] **Con 3-4 esami veri, rilanciare `manage.py
   accuratezza_smistamento` e decidere**. Dal 12/09 ogni «Confermo lo

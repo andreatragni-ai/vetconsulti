@@ -2,13 +2,21 @@
 {% block title %}Registrazione — VetWay Consulti{% endblock %}
 {% block content %}
 <div class="row justify-content-center"><div class="col-lg-8">
-  <div class="ovic-card"><div class="card-header-ovic">Registrazione {% if form.e_libero_professionista %}libero professionista{% else %}richiedente di una clinica{% endif %}</div><div class="card-body-ovic">
+  <div class="ovic-card"><div class="card-header-ovic">{% if clinica_invito %}Iscrizione — {{ clinica_invito.denominazione }}{% else %}Registrazione {% if form.e_libero_professionista %}libero professionista{% else %}richiedente di una clinica{% endif %}{% endif %}</div><div class="card-body-ovic">
+    {% if clinica_invito %}
+    <div class="alert alert-info py-2 small mb-3"><i class="bi bi-envelope-open me-1"></i>
+      {% if invitante %}{{ invitante.get_full_name|default:invitante.username }} ti ha invitato{% else %}Sei stato invitato{% endif %}
+      in <strong>{{ clinica_invito.denominazione }}</strong>{% if clinica_invito.comune %} ({{ clinica_invito.comune }}){% endif %}.
+      Le fatture restano intestate alla clinica: non devi indicarla ne' ricompilare i suoi dati.
+    </div>
+    {% else %}
     <p class="text-muted small">
       {% if form.e_libero_professionista %}La fattura sara' intestata a te.{% else %}La fattura sara' intestata alla clinica.{% endif %}
       <a href="{% url 'accounts:registrati' %}">Non e' il tuo caso?</a>
     </p>
+    {% endif %}
     {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors|join:"<br>" }}</div>{% endif %}
-    <form method="post" id="form-registrazione">{% csrf_token %}
+    <form method="post" id="form-registrazione" data-clinica-invito="{{ clinica_invito.denominazione|default:'' }}">{% csrf_token %}
 
       <div class="blocco-form mt-0"><div class="sezione-sottotitolo"><i class="bi bi-person me-1"></i>Account</div>
       <div class="row">
@@ -36,7 +44,10 @@
         <div class="col-md-12">{% include "_campo_form.html" with campo=form.ordine_provinciale %}</div>
       </div></div>
 
-      {% if not form.e_libero_professionista %}
+      {% comment %}Con un invito la clinica la decide il link: i campi non ci
+      sono e il riquadro nemmeno, altrimenti resta un titolo su una scatola
+      vuota.{% endcomment %}
+      {% if not form.e_libero_professionista and not clinica_invito %}
       <div class="blocco-form"><div class="sezione-sottotitolo"><i class="bi bi-hospital me-1"></i>Clinica</div>
       {% include "_campo_form.html" with campo=form.clinica %}
       <div class="row">
@@ -46,8 +57,9 @@
       </div></div>
       {% endif %}
 
-      <div class="blocco-form"><div class="sezione-sottotitolo"><i class="bi bi-receipt me-1"></i>Dati per la fatturazione elettronica</div>
-      <p class="small text-muted">Serve almeno uno fra partita IVA e codice fiscale, e un recapito per la fattura elettronica: codice destinatario SDI oppure PEC.{% if not form.e_libero_professionista %} Se la clinica scelta ha gia' i dati di fatturazione, puoi lasciare vuoto.{% endif %}</p>
+      {% if not clinica_invito or not clinica_invito.dati_fatturazione_predefiniti %}
+      <div class="blocco-form"><div class="sezione-sottotitolo"><i class="bi bi-receipt me-1"></i>Dati per la fatturazione elettronica <span class="text-body-secondary fw-normal">· puoi farlo dopo</span></div>
+      <p class="small text-muted">Puoi <strong>lasciare vuoto tutto il blocco</strong> e compilarlo piu' tardi dal tuo profilo: serviranno prima di inviare la prima richiesta.{% if not form.e_libero_professionista %} Se la clinica ha gia' i suoi dati, non ti verranno chiesti.{% endif %}<br>Se li compili adesso: serve almeno uno fra partita IVA e codice fiscale, e un recapito per la fattura elettronica (codice destinatario SDI oppure PEC).</p>
       {% include "_campo_form.html" with campo=form.intestatario %}
       <div class="row">
         <div class="col-md-6">{% include "_campo_form.html" with campo=form.partita_iva %}</div>
@@ -60,6 +72,7 @@
         <div class="col-md-4">{% include "_campo_form.html" with campo=form.pec_fatturazione %}</div>
         <div class="col-md-4">{% include "_campo_form.html" with campo=form.regime_iva %}</div>
       </div></div>
+      {% endif %}
 
       <div class="blocco-form"><div class="sezione-sottotitolo"><i class="bi bi-shield-check me-1"></i>Consensi</div>
       {% include "_campo_form.html" with campo=form.accetto_privacy %}
@@ -82,6 +95,10 @@
     var toccato = intest.value !== '';
     intest.addEventListener('input', function () { toccato = intest.value !== ''; });
     function proposta() {
+      // Con un invito la clinica e' decisa dal link e i suoi campi non ci
+      // sono: l'intestatario e' la clinica, non chi si sta iscrivendo.
+      var invito = f.getAttribute('data-clinica-invito');
+      if (invito) return invito;
       var nuova = f.querySelector('[name=nuova_clinica]');
       var sel = f.querySelector('[name=clinica]');
       if (nuova) {

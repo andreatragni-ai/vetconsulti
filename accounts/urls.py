@@ -11,6 +11,7 @@ urlpatterns = [
     path('esci/', views.Esci.as_view(), name='esci'),
     path('registrati/', views.registrati, name='registrati'),
     path('registrati/<slug:tipo>/', views.registrati, name='registrati_tipo'),
+    path('registrati/invito/<str:token>/', views.registrati_invitato, name='registrati_invitato'),
     path('conferma-email/<uidb64>/<token>/', views.conferma_email, name='conferma_email'),
 
     path('profilo/', views.profilo_richiedente, name='profilo_richiedente'),

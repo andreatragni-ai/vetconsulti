@@ -15,6 +15,8 @@ class TipoInvio(models.TextChoices):
     NON_REFERTABILE = 'NON_REFERTABILE', 'Caso non refertabile per il richiedente'
     SOLLECITO = 'SOLLECITO', 'Sollecito al refertatore a meta\' tempo'
     RILASCIO = 'RILASCIO', 'Presa in carico rilasciata per inattivita\''
+    ISCRIZIONE = 'ISCRIZIONE', 'Nuova iscrizione, da approvare (al gestore)'
+    APPROVAZIONE = 'APPROVAZIONE', 'Profilo approvato (al richiedente)'
     ALTRO = 'ALTRO', 'Altro'
 
 

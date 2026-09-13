@@ -79,6 +79,7 @@ TEMPLATES = [
                 'core.context_processors.dettatura',
                 'core.context_processors.navigazione',
                 'core.context_processors.regole_password',
+                'core.context_processors.assistenza',
             ],
         },
     },
@@ -137,6 +138,9 @@ DEFAULT_FROM_EMAIL = os.environ.get('EMAIL_FROM', 'VetWay Consulti <noreply@vetw
 # L'app invia da noreply@ ma chi risponde deve arrivare a una persona.
 EMAIL_REPLY_TO = os.environ.get('EMAIL_REPLY_TO', 'consulti@vetway.it')
 SERVER_EMAIL = os.environ.get('EMAIL_SERVER', 'errori@vetway.it')
+# Chi approva le iscrizioni: riceve un avviso a ogni nuovo richiedente.
+# Non e' ADMINS (quelli sono gli errori 500, che vanno in un'altra casella).
+EMAIL_GESTORE = os.environ.get('EMAIL_GESTORE', EMAIL_REPLY_TO)
 ADMINS = [('Errori VetWay Consulti', os.environ.get('EMAIL_ERRORS', 'errori@vetway.it'))]
 MANAGERS = ADMINS
 

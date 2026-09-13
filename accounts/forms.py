@@ -30,23 +30,36 @@ def _bootstrap(form):
             w.attrs.setdefault('class', 'form-control')
 
 
-CAMPI_FATTURAZIONE = ('intestatario', 'partita_iva', 'codice_fiscale', 'indirizzo_sede', 'cap',
-                      'comune', 'provincia', 'codice_sdi', 'pec_fatturazione', 'regime_iva')
+# I campi che dicono «l'utente ha deciso di compilare la fatturazione», e
+# quindi che il blocco va validato invece di essere rimandato al profilo.
+# Fuori restano i tre che arrivano compilati senza che nessuno li tocchi:
+# `codice_sdi` e `regime_iva` hanno un valore iniziale, e `intestatario` lo
+# scrive il JavaScript della pagina appena si digita nome e cognome. Contarli
+# renderebbe il blocco «compilato» sempre, e saltarlo impossibile.
+CAMPI_FATTURAZIONE_DIGITATI = ('partita_iva', 'codice_fiscale', 'indirizzo_sede', 'cap',
+                               'comune', 'provincia', 'pec_fatturazione')
 
 
 class RegistrazioneForm(UserCreationForm):
-    """Registrazione di un richiedente, con i dati per la fatturazione
-    elettronica gia' qui e non «dopo, nel profilo».
+    """Registrazione di un richiedente: account, dati professionali e —
+    se li ha sotto mano — la fatturazione.
 
     Il tipo arriva dal primo passo (URL), non da un campo: per una clinica si
     sceglie fra quelle esistenti oppure se ne propone una nuova (che nasce
     non approvata); per un libero professionista la clinica non c'e' e
-    l'approvazione e' sul richiedente.
+    l'approvazione e' sul richiedente. Con un invito (`clinica_invito`) la
+    clinica e' decisa dal link e i suoi campi non compaiono.
 
-    I dati fiscali sono validati con le stesse regole di DatiFatturazione
-    (clean() del modello, che usa accounts/fiscale.py): si costruisce
-    l'istanza senza salvarla e si riportano gli errori sui campi del form.
-    Chi si aggiunge a una clinica che ha gia' i dati puo' lasciarli vuoti.
+    ## Il blocco fiscale si puo' saltare (decisione del 12/09/2026)
+
+    Chiedere P.IVA, SDI e PEC a chi sta solo aprendo un account allunga
+    l'iscrizione e fa abbandonare chi non ha i dati a portata di mano. Ora
+    il blocco lasciato del tutto vuoto vale «dopo»: `dati_fatturazione`
+    resta None e l'invio della prima richiesta e' bloccato da
+    `Richiedente.puo_richiedere` (consulti.regole), che rimanda al profilo.
+    Compilato a meta', invece, si valida subito con le stesse regole di
+    DatiFatturazione (clean() del modello, che usa accounts/fiscale.py):
+    meglio un errore adesso che una fattura sbagliata fra un mese.
     """
 
     first_name = forms.CharField(label='Nome', max_length=150)
@@ -88,12 +101,16 @@ class RegistrazioneForm(UserCreationForm):
         model = User
         fields = ('username', 'first_name', 'last_name', 'email')
 
-    def __init__(self, *args, tipo=TipoRichiedente.CLINICA, **kwargs):
+    def __init__(self, *args, tipo=TipoRichiedente.CLINICA, clinica_invito=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.tipo = tipo
-        if tipo == TipoRichiedente.LIBERO_PROFESSIONISTA:
+        # Con un invito la clinica e' quella del link: i campi per scegliere o
+        # proporne una non compaiono, cosi' il collega non puo' finire per
+        # sbaglio in un'altra struttura (ne' crearne un doppione).
+        self.clinica_invito = clinica_invito
+        if tipo == TipoRichiedente.LIBERO_PROFESSIONISTA or clinica_invito is not None:
             for nome in ('clinica', 'nuova_clinica', 'nuova_clinica_comune', 'nuova_clinica_provincia'):
-                del self.fields[nome]
+                self.fields.pop(nome, None)
             # Il ruolo piu' probabile, non un obbligo: il numero e l'Ordine
             # restano facoltativi anche qui (decisione del 12/09). Chi carica
             # gli esami puo' essere un tecnico, che all'Ordine non e' iscritto,
@@ -120,20 +137,20 @@ class RegistrazioneForm(UserCreationForm):
         return email
 
     def _fatturazione_compilata(self, dati):
-        return any((dati.get(c) or '').strip() for c in CAMPI_FATTURAZIONE
-                   if c not in ('codice_sdi', 'regime_iva'))
+        return any((dati.get(c) or '').strip() for c in CAMPI_FATTURAZIONE_DIGITATI)
 
     def clean(self):
         dati = super().clean()
-        clinica = dati.get('clinica') if not self.e_libero_professionista else None
-        if not self.e_libero_professionista and not clinica and not dati.get('nuova_clinica'):
-            self.add_error('clinica', 'Scegli una clinica o indicane una nuova.')
+        clinica = None
+        if not self.e_libero_professionista:
+            clinica = self.clinica_invito or dati.get('clinica')
+            if self.clinica_invito is None and not clinica and not dati.get('nuova_clinica'):
+                self.add_error('clinica', 'Scegli una clinica o indicane una nuova.')
 
-        # Chi si unisce a una clinica che ha gia' i dati di fatturazione puo'
-        # lasciare il blocco vuoto: si decide PRIMA di proporre l'intestatario,
-        # altrimenti il default farebbe sembrare compilato un blocco vuoto.
-        facoltativa = clinica is not None and clinica.dati_fatturazione_predefiniti is not None
-        if facoltativa and not self._fatturazione_compilata(dati):
+        # Blocco vuoto = «dopo, dal profilo»: si decide PRIMA di proporre
+        # l'intestatario, altrimenti il default farebbe sembrare compilato un
+        # blocco vuoto e l'iscrizione si fermerebbe sui campi dell'indirizzo.
+        if not self._fatturazione_compilata(dati):
             self.dati_fatturazione = None
             return dati
 

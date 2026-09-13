@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% comment %}
+404 — pagina o caso che non c'e'. Django la rende CON la request (
+django.views.defaults.page_not_found), quindi navbar e context processor
+funzionano: chi si perde ha i suoi link per tornare indietro.
+Attenzione: in DEBUG=True non si vede mai, al suo posto c'e' la pagina di
+debug di Django. Per collaudarla: DEBUG=False.
+{% endcomment %}
+{% block title %}Pagina non trovata — VetWay Consulti{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-7">
+  <div class="ovic-card"><div class="card-body-ovic text-center py-5">
+    <div class="display-6 mb-2"><i class="bi bi-compass"></i></div>
+    <h4>Questa pagina non c'e'</h4>
+    <p class="text-muted">Il link e' vecchio, oppure il caso e' stato archiviato. Puo' anche essere un caso di un collega: nel portale si vedono solo i propri.</p>
+    <div class="d-flex gap-2 justify-content-center flex-wrap mt-3">
+      {% if richiedente or refertatore %}<a class="btn-nuova" href="{% url 'consulti:mie_richieste' %}">I miei consulti</a>{% else %}<a class="btn-nuova" href="{% url 'accounts:home' %}">Torna all'inizio</a>{% endif %}
+    </div>
+  </div></div>
+</div></div>
+{% endblock %}

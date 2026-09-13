@@ -1,0 +1,21 @@
+{% extends "auth_base.html" %}
+{% comment %}
+500 — guasto del portale. ATTENZIONE: Django la rende SENZA request e senza
+context processor (django.views.defaults.server_error), quindi qui non si
+possono usare navbar, {{ request }}, {{ user }} ne' le variabili dei nostri
+context processor. Per questo estende auth_base.html (la cornice del login,
+che non ne ha bisogno) e non base.html.
+In prod il guasto arriva davvero per email ad ADMINS: LOGGING manda
+django.request a mail_admins (base.py), quindi la frase non mente.
+Per collaudarla: DEBUG=False.
+{% endcomment %}
+{% block auth_title %}Errore del portale · VetWay Consulti{% endblock %}
+{% block auth_content %}
+<div class="auth-head">
+  <div class="ico"><i class="bi bi-exclamation-octagon"></i></div>
+  <h2>Qualcosa si e' rotto</h2>
+  <p>Non e' colpa tua: l'errore e' del portale ed e' stato segnalato a chi lo cura.</p>
+</div>
+<p class="small text-muted">Se stavi inviando una richiesta, ricaricala dalle tue richieste prima di ricominciare: gli allegati caricati non si perdono.</p>
+<div class="text-center"><a class="auth-link" href="/">Torna all'inizio</a></div>
+{% endblock %}

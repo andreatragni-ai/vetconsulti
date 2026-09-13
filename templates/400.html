@@ -1,0 +1,15 @@
+{% extends "auth_base.html" %}
+{% comment %}
+400 — richiesta malformata (anche ALLOWED_HOSTS sbagliato). Come la 500, la
+rende django.views.defaults.bad_request senza context processor: niente
+navbar, niente variabili nostre.
+{% endcomment %}
+{% block auth_title %}Richiesta non valida · VetWay Consulti{% endblock %}
+{% block auth_content %}
+<div class="auth-head">
+  <div class="ico"><i class="bi bi-question-octagon"></i></div>
+  <h2>Richiesta non valida</h2>
+  <p>Il portale non ha capito questa richiesta. Riprova partendo dall'inizio.</p>
+</div>
+<div class="text-center"><a class="auth-link" href="/">Torna all'inizio</a></div>
+{% endblock %}

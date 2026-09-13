@@ -1,0 +1,11 @@
+Gentile {{ richiedente.user.get_full_name }},
+
+il tuo profilo su VetWay Consulti e' stato approvato: da adesso le richieste di consulto che prepari si possono inviare.
+{% if not puo_richiedere %}
+Manca solo una cosa: i dati per la fatturazione elettronica. Il portale te li chiede prima del primo invio, li compili una volta sola dal tuo profilo.
+{% endif %}
+Si comincia da qui:
+
+  {{ link }}
+
+VetWay Consulti

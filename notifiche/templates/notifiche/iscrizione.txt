@@ -1,0 +1,17 @@
+{% if approvato %}Si e' iscritto un collega{% else %}C'e' una nuova iscrizione da approvare{% endif %}.
+
+  {{ richiedente.denominazione }} — {{ richiedente.get_ruolo_display }}
+  Email: {{ richiedente.email }}{% if richiedente.telefono %}
+  Telefono: {{ richiedente.telefono }}{% endif %}{% if richiedente.numero_iscrizione %}
+  Ordine: {{ richiedente.numero_iscrizione }} ({{ richiedente.ordine_provinciale|default:"provincia non indicata" }}){% endif %}
+{% if richiedente.e_libero_professionista %}  Libero professionista: la fattura sara' intestata a lui.
+{% else %}  Clinica: {{ richiedente.clinica }}{% if richiedente.clinica.approvata %} (gia' approvata){% else %} (NUOVA, da approvare){% endif %}
+{% endif %}{% if invitante %}  Invitato da: {{ invitante.get_full_name|default:invitante.username }}
+{% endif %}{% if richiedente.puo_richiedere %}  Dati di fatturazione: gia' compilati.
+{% else %}  Dati di fatturazione: mancanti — glieli chiede il portale prima del primo invio.
+{% endif %}
+{% if approvato %}Non devi fare nulla: il soggetto e' gia' approvato e le sue richieste partono.{% else %}Finche' non approvi, puo' preparare le richieste ma non inviarle. Si approva da qui:{% endif %}
+
+  {{ link }}
+
+VetWay Consulti

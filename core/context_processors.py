@@ -42,6 +42,13 @@ def regole_password(request):
     return {'regole_password': password_validators_help_texts()}
 
 
+def assistenza(request):
+    """A chi scrivere quando qualcosa non torna: lo mostrano le pagine di
+    errore (403, 404). Uno solo, da settings, cosi' non finisce scritto a
+    mano in tre template diversi."""
+    return {'email_assistenza': settings.EMAIL_REPLY_TO}
+
+
 def navigazione(request):
     utente = getattr(request, 'user', None)
     corrente = request.resolver_match.url_name if getattr(request, 'resolver_match', None) else ''

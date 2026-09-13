@@ -17,6 +17,10 @@ vetway.it stanno li'). Aspettare la propagazione prima di Certbot
 adduser --system --group --home /home/consulti --shell /bin/bash consulti
 mkdir -p /home/consulti/app /home/consulti/vetway-ui /home/consulti/backup /etc/consulti
 chown -R consulti:consulti /home/consulti
+# adduser --system crea la home a 750: nginx (www-data) non la attraversa e
+# statici e allegati rispondono 403. 711 = si attraversa ma non si elenca;
+# i backup restano solo di consulti.
+chmod 711 /home/consulti && chmod 700 /home/consulti/backup
 apt install -y python3-venv python3-dev libpq-dev ffmpeg \
     libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0   # WeasyPrint
 # Verificato il 13/09/2026: sul server mancavano solo ffmpeg (clip eco) e
@@ -96,6 +100,9 @@ Poi:
 
 ```bash
 cp deploy/nginx-consulti.conf /etc/nginx/sites-available/consulti
+# Staging: file delle password nginx, vuoto = nessuno entra. Un utente:
+#   htpasswd /etc/nginx/consulti.htpasswd <nome>
+install -m 640 -o root -g www-data /dev/null /etc/nginx/consulti.htpasswd
 # Prima di Certbot commentare temporaneamente il blocco `listen 443 ssl` e le
 # righe ssl_*, e il secondo blocco server (il redirect): senza certificato
 # `nginx -t` fallisce e il reload lascerebbe giu' anche VetCardio e VetAnest.
@@ -117,7 +124,7 @@ Crontab dell'utente `consulti` (`crontab -u consulti -e`):
 0 * * * * cd /home/consulti/app && set -a && . /etc/consulti/env && . /etc/consulti/secrets.env && set +a && venv/bin/python manage.py sorveglia_consulti >> logs/cron.log 2>&1
 
 # Backup notturno del database e dei media (7 giorni di rotazione)
-0 3 * * * pg_dump -Fc consulti_db > /home/consulti/backup/consulti_db_$(date +\%F).dump && tar czf /home/consulti/backup/media_$(date +\%F).tgz -C /home/consulti/app media && find /home/consulti/backup -mtime +7 -delete
+20 3 * * * pg_dump -h localhost -U consulti -Fc consulti_db > /home/consulti/backup/consulti_db_$(date +\%F).dump && tar czf /home/consulti/backup/media_$(date +\%F).tgz -C /home/consulti/app media && find /home/consulti/backup -mtime +7 -delete
 ```
 
 Per `pg_dump` senza password: `~consulti/.pgpass` con

@@ -8,9 +8,14 @@ sessioni brevi: ogni sessione deve lasciare il repo in uno stato ripartibile.
 
 ## Stato (aggiornare quando cambia)
 
-- **Non e' in produzione.** Verificato l'08/09/2026: sul server (10.10.0.1)
-  non esistono utente `consulti`, db, vhost nginx, ne' il record DNS di
-  `consulti.vetway.it`. Tutto `deploy/` e' scritto ma mai eseguito.
+- **Staging installata il 13/09/2026** sul server di VetCardio e VetAnest
+  (10.10.0.1): utente `consulti`, `consulti_db`, gunicorn-consulti, vhost
+  nginx con password nginx davanti (`/etc/nginx/consulti.htpasswd`) e
+  noindex, cron di sorveglianza e backup. SMTP e chiave AI sono per ora
+  quelli di VetCardio (copiati in `/etc/consulti/secrets.env`). Non
+  pubblicizzata, nessun dato vero. I deploy successivi: `./deploy/deploy.sh`.
+  Attenzione: da qui in poi rigenerare le migrazioni vuol dire ricreare
+  anche `consulti_db` sul server (finche' non ci sono dati veri si puo').
 - Obiettivo: poche cliniche amiche entro 1-2 mesi (ottobre-novembre 2026).
   Priorita': F2 (caricamento per tipo) e F3 (refertazione). F4 (fatturazione)
   puo' aspettare. Il lavoro e' in `docs/BACKLOG.md`.

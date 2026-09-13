@@ -88,7 +88,7 @@ def navigazione(request):
         # riparazioni, si raggiunge da /admin/ a mano.
         namespace = getattr(getattr(request, 'resolver_match', None), 'namespace', '')
         voci.append({'url': reverse('gestione:cruscotto'), 'label': 'Gestione', 'icona': 'speedometer2',
-                     'attiva': namespace == 'gestione' or corrente.startswith('admin_')})
+                     'attiva': namespace == 'gestione'})
 
     if richiedente:
         utente_url = reverse('accounts:profilo_richiedente')

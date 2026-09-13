@@ -19,12 +19,6 @@ urlpatterns = [
     path('profilo/refertatore/diventa-richiedente/', views.refertatore_diventa_richiedente,
          name='refertatore_diventa_richiedente'),
 
-    path('gestione/refertatori/', views.admin_refertatori, name='admin_refertatori'),
-    path('gestione/refertatori/nuovo/', views.admin_refertatore_aggiungi, name='admin_refertatore_aggiungi'),
-    path('gestione/richiedenti/', views.admin_richiedenti, name='admin_richiedenti'),
-    path('gestione/cliniche/<int:pk>/approva/', views.admin_clinica_approva, name='admin_clinica_approva'),
-    path('gestione/richiedenti/<int:pk>/approva/', views.admin_richiedente_approva, name='admin_richiedente_approva'),
-
     # Cambio password (utente loggato) e reset: viste di Django con i nostri template.
     path('password/cambia/', auth_views.PasswordChangeView.as_view(
         template_name='accounts/password_cambia.html',

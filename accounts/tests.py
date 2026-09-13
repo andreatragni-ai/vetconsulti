@@ -466,7 +466,7 @@ def test_approvare_la_clinica_avvisa_i_colleghi(client):
 
     client.force_login(staff)
     mail.outbox.clear()
-    risp = client.post(reverse('accounts:admin_clinica_approva', args=[c.pk]))
+    risp = client.post(reverse('gestione:clinica_approva', args=[c.pk]))
     assert risp.status_code == 302
     c.refresh_from_db()
     assert c.approvata
@@ -481,7 +481,7 @@ def test_approvare_il_libero_professionista_lo_avvisa(client):
     r = Richiedente.objects.create(user=u, tipo=TipoRichiedente.LIBERO_PROFESSIONISTA)
     client.force_login(User.objects.create_user('staff', 'staff@x.it', 'pw', is_staff=True))
     mail.outbox.clear()
-    assert client.post(reverse('accounts:admin_richiedente_approva', args=[r.pk])).status_code == 302
+    assert client.post(reverse('gestione:richiedente_approva', args=[r.pk])).status_code == 302
     r.refresh_from_db()
     assert r.approvato
     assert [d for e in mail.outbox for d in e.to] == ['lp@x.it']

@@ -9,4 +9,6 @@ Le voci si aggiungono qui quando la pagina esiste davvero.
 <ul class="nav nav-tabs ovic-tabs mb-3">
   <li class="nav-item"><a class="nav-link{% if sezione == 'cruscotto' %} active{% endif %}" href="{% url 'gestione:cruscotto' %}"><i class="bi bi-speedometer2 me-1"></i>Da fare</a></li>
   <li class="nav-item"><a class="nav-link{% if sezione == 'casi' %} active{% endif %}" href="{% url 'gestione:casi' %}"><i class="bi bi-inbox me-1"></i>Casi</a></li>
+  <li class="nav-item"><a class="nav-link{% if sezione == 'iscrizioni' %} active{% endif %}" href="{% url 'gestione:iscrizioni' %}"><i class="bi bi-person-check me-1"></i>Iscrizioni</a></li>
+  <li class="nav-item"><a class="nav-link{% if sezione == 'refertatori' %} active{% endif %}" href="{% url 'gestione:refertatori' %}"><i class="bi bi-people me-1"></i>Refertatori</a></li>
 </ul>

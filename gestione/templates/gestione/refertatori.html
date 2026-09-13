@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Refertatori — Gestione — VetWay Consulti{% endblock %}
+{% block content %}
+{% include "gestione/_sezioni.html" %}
+<div class="d-flex justify-content-end mb-2">
+  <a class="btn-nuova" href="{% url 'gestione:refertatore_nuovo' %}"><i class="bi bi-person-plus me-1"></i>Aggiungi refertatore</a>
+</div>
+<div class="ovic-card"><div class="table-responsive">
+<table class="tbl-risultati align-middle">
+  <thead><tr><th>Nome</th><th>Referta</th><th>Disponibile</th><th>Email</th></tr></thead>
+  <tbody>
+  {% for r in refertatori %}
+    {% url 'gestione:refertatore' r.pk as url_ref %}
+    <tr class="riga-cliccabile" onclick="window.location='{{ url_ref }}'">
+      <td><a href="{{ url_ref }}"><strong>{{ r }}</strong></a>{% if r.specializzazione %}<br><span class="codice-caso">{{ r.specializzazione }}</span>{% endif %}</td>
+      <td>{% for c in r.competenze.all %}{% if c.referente %}<span class="badge text-bg-secondary fw-normal">{{ c.get_tipo_esame_display }}{% if c.accetta_urgenze %} <i class="bi bi-lightning-fill" title="Accetta urgenze"></i>{% endif %}</span> {% endif %}{% empty %}<span class="text-muted">niente</span>{% endfor %}</td>
+      <td>{% if not r.attivo %}<span class="text-muted">non riceve casi</span>{% elif r.assente_il %}<span class="text-muted">assente{% if r.assente_al %} fino al {{ r.assente_al|date:"d/m" }}{% endif %}</span>{% else %}<i class="bi bi-check-circle text-success"></i> si'{% endif %}</td>
+      <td class="text-muted">{{ r.user.email }}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="4" class="text-muted text-center py-4">Nessun refertatore ancora.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div></div>
+{% endblock %}

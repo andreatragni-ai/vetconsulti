@@ -69,7 +69,7 @@ def test_iscrizione_avvisa_il_gestore(settings):
     assert 'DA APPROVARE' in email.subject and 'Luca Verdi' in email.subject
     assert 'Clinica Blu' in email.body and 'NUOVA, da approvare' in email.body
     assert 'Dati di fatturazione: mancanti' in email.body
-    assert 'https://consulti.test/gestione/richiedenti/' in email.body
+    assert 'https://consulti.test/gestione/iscrizioni/' in email.body
     assert InvioEmail.objects.get(tipo='ISCRIZIONE').esito == 'OK'
 
 

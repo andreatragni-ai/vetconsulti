@@ -218,7 +218,7 @@ def avvisa_gestore_iscrizione(richiedente, invitante=None):
                   'notifiche/iscrizione.txt',
                   {'richiedente': richiedente, 'soggetto': soggetto, 'approvato': approvato,
                    'invitante': invitante},
-                  link=_assoluto(reverse('accounts:admin_richiedenti')))
+                  link=_assoluto(reverse('gestione:iscrizioni')))
 
 
 def avvisa_richiedente_approvato(richiedente):

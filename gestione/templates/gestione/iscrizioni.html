@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Iscrizioni — Gestione — VetWay Consulti{% endblock %}
+{% block content %}
+{% include "gestione/_sezioni.html" %}
+
+<div class="ovic-card"><div class="card-header-ovic"><i class="bi bi-hourglass-split me-1"></i>Da approvare</div>
+{% if not cliniche_attesa and not liberi_attesa %}
+  <div class="card-body-ovic text-muted">Nessuna iscrizione in attesa.</div>
+{% else %}
+  <div class="card-body-ovic small text-muted pb-0">Finche' non approvi possono preparare le richieste ma non inviarle. Approvando, ricevono un'email.</div>
+  <div class="table-responsive"><table class="tbl-risultati align-middle">
+    <thead><tr><th>Chi</th><th>Persone</th><th>Dati di fatturazione</th><th>Iscritto</th><th></th></tr></thead>
+    <tbody>
+    {% for c in cliniche_attesa %}
+      <tr>
+        <td><strong>{{ c.denominazione }}</strong><br><span class="codice-caso">clinica{% if c.comune %} · {{ c.comune }}{% if c.provincia %} ({{ c.provincia }}){% endif %}{% endif %}</span></td>
+        <td>{% for r in c.richiedenti.all %}{{ r.user.get_full_name }} <span class="codice-caso">{{ r.user.email }}{% if not r.user.is_active %} · email da confermare{% endif %}</span>{% if not forloop.last %}<br>{% endif %}{% empty %}<span class="text-muted">—</span>{% endfor %}</td>
+        <td>{% with d=c.dati_fatturazione_predefiniti %}{% if d %}{{ d.intestatario }}<br><span class="codice-caso">{{ d.partita_iva|default:d.codice_fiscale }}</span>{% else %}<span class="text-muted">li chiede il portale al primo invio</span>{% endif %}{% endwith %}</td>
+        <td class="num-tab text-muted">{{ c.creata_il|date:"d/m/Y" }}</td>
+        <td class="text-end"><form method="post" action="{% url 'gestione:clinica_approva' c.pk %}">{% csrf_token %}<button class="btn-nuova"><i class="bi bi-check2"></i> Approva</button></form></td>
+      </tr>
+    {% endfor %}
+    {% for r in liberi_attesa %}
+      <tr>
+        <td><strong>{{ r.denominazione }}</strong><br><span class="codice-caso">libero professionista{% if r.numero_iscrizione %} · Ordine {{ r.numero_iscrizione }} {{ r.ordine_provinciale }}{% endif %}</span></td>
+        <td>{{ r.user.email }}{% if r.telefono %}<br><span class="codice-caso">{{ r.telefono }}</span>{% endif %}{% if not r.user.is_active %}<br><span class="codice-caso">email da confermare</span>{% endif %}</td>
+        <td>{% with d=r.dati_fatturazione_predefiniti %}{% if d %}{{ d.intestatario }}<br><span class="codice-caso">{{ d.partita_iva|default:d.codice_fiscale }}</span>{% else %}<span class="text-muted">li chiede il portale al primo invio</span>{% endif %}{% endwith %}</td>
+        <td class="num-tab text-muted">{{ r.creato_il|date:"d/m/Y" }}</td>
+        <td class="text-end"><form method="post" action="{% url 'gestione:richiedente_approva' r.pk %}">{% csrf_token %}<button class="btn-nuova"><i class="bi bi-check2"></i> Approva</button></form></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+{% endif %}
+</div>
+
+<div class="ovic-card"><div class="card-header-ovic">Gia' approvati</div><div class="table-responsive">
+  <table class="tbl-risultati align-middle">
+    <thead><tr><th>Chi</th><th>Persone</th><th>Dati di fatturazione</th></tr></thead>
+    <tbody>
+    {% for c in cliniche_ok %}
+      <tr>
+        <td><strong>{{ c.denominazione }}</strong><br><span class="codice-caso">clinica{% if c.comune %} · {{ c.comune }}{% endif %}</span></td>
+        <td>{% for r in c.richiedenti.all %}{{ r.user.get_full_name }}{% if not forloop.last %}, {% endif %}{% empty %}<span class="text-muted">—</span>{% endfor %}</td>
+        <td>{% with d=c.dati_fatturazione_predefiniti %}{% if d %}{{ d.intestatario }}{% else %}<span class="text-muted">mancanti</span>{% endif %}{% endwith %}</td>
+      </tr>
+    {% endfor %}
+    {% for r in liberi_ok %}
+      <tr>
+        <td><strong>{{ r.denominazione }}</strong><br><span class="codice-caso">libero professionista</span></td>
+        <td>{{ r.user.email }}</td>
+        <td>{% with d=r.dati_fatturazione_predefiniti %}{% if d %}{{ d.intestatario }}{% else %}<span class="text-muted">mancanti</span>{% endif %}{% endwith %}</td>
+      </tr>
+    {% endfor %}
+    {% if not cliniche_ok and not liberi_ok %}<tr><td colspan="3" class="text-muted text-center py-4">Nessuno ancora.</td></tr>{% endif %}
+    </tbody>
+  </table>
+</div></div>
+{% endblock %}

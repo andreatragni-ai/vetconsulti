@@ -34,7 +34,7 @@
   {% if iscrizioni %}
   <div class="col-md-6"><div class="ovic-card"><div class="card-header-ovic"><i class="bi bi-person-check me-1"></i>Iscrizioni da approvare</div><div class="card-body-ovic">
     <p class="mb-2">{{ iscrizioni }} in attesa: finche' non le approvi possono preparare le richieste ma non inviarle.</p>
-    <a class="btn-nuova" href="{% url 'accounts:admin_richiedenti' %}">Approva</a>
+    <a class="btn-nuova" href="{% url 'gestione:iscrizioni' %}">Approva</a>
   </div></div></div>
   {% endif %}
 

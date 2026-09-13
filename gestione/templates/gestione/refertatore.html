@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}{{ ref }} — Gestione — VetWay Consulti{% endblock %}
+{% block content %}
+{% include "gestione/_sezioni.html" %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+  <div>
+    <a class="small" href="{% url 'gestione:refertatori' %}"><i class="bi bi-arrow-left"></i> Tutti i refertatori</a>
+    <h5 class="mb-0 mt-1">{{ ref }}</h5>
+    <span class="codice-caso">{{ casi_aperti }} cas{{ casi_aperti|pluralize:"o aperto,i aperti" }}{% if mai_entrato %} · non ha ancora scelto la password{% endif %}</span>
+  </div>
+  <form method="post" action="{% url 'gestione:refertatore_invito' ref.pk %}">{% csrf_token %}
+    <button class="btn-testata-ghost" type="submit"><i class="bi bi-envelope"></i> {% if mai_entrato %}Rimanda l'invito{% else %}Manda il link per la password{% endif %}</button>
+  </form>
+</div>
+
+<form method="post" enctype="multipart/form-data">{% csrf_token %}
+<div class="row">
+  <div class="col-lg-5">
+    <div class="ovic-card"><div class="card-header-ovic">Chi e'</div><div class="card-body-ovic">
+      <div class="row">
+        <div class="col-md-6">{% include "_campo_form.html" with campo=form_u.first_name %}</div>
+        <div class="col-md-6">{% include "_campo_form.html" with campo=form_u.last_name %}</div>
+        <div class="col-md-4">{% include "_campo_form.html" with campo=form_r.titolo %}</div>
+        <div class="col-md-8">{% include "_campo_form.html" with campo=form_u.email %}</div>
+      </div>
+      {% include "_campo_form.html" with campo=form_r.specializzazione %}
+      <div class="row">
+        <div class="col-md-5">{% include "_campo_form.html" with campo=form_r.numero_iscrizione %}</div>
+        <div class="col-md-7">{% include "_campo_form.html" with campo=form_r.ordine_provinciale %}</div>
+      </div>
+      {% include "_campo_form.html" with campo=form_r.foto %}
+      {% include "_campo_form.html" with campo=form_r.firma %}
+    </div></div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="ovic-card"><div class="card-header-ovic">Disponibilita'</div><div class="card-body-ovic">
+      {% include "_campo_form.html" with campo=form_r.attivo %}
+      <div class="row">
+        <div class="col-md-6">{% include "_campo_form.html" with campo=form_r.assente_dal %}</div>
+        <div class="col-md-6">{% include "_campo_form.html" with campo=form_r.assente_al %}</div>
+      </div>
+      {% include "_campo_form.html" with campo=form_r.messaggio %}
+    </div></div>
+
+    <div class="ovic-card"><div class="card-header-ovic">Cosa referta</div><div class="card-body-ovic">
+      {{ formset.management_form }}
+      <div class="table-responsive">
+      <table class="tbl-risultati align-middle">
+        <thead><tr><th>Esame</th><th>Referta</th><th>Urgenze</th><th>Prezzo €</th><th>Risponde in (ore)</th></tr></thead>
+        <tbody>
+        {% for riga in righe %}{% with f=riga.form %}
+          <tr>
+            <td>{{ f.id }}{{ f.tipo_esame }}<strong>{{ f.instance.get_tipo_esame_display }}</strong>
+              {% for e in f.non_field_errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</td>
+            <td>{{ f.referente }}</td>
+            <td>{{ f.accetta_urgenze }}</td>
+            <td>{{ f.prezzo_personalizzato }}<div class="form-text mt-0">vuoto = listino{% if riga.listino %} ({{ riga.listino }}){% endif %}</div>
+              {% for e in f.prezzo_personalizzato.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</td>
+            <td>{{ f.tempo_risposta_ore }}<div class="form-text mt-0">vuoto = 48</div>
+              {% for e in f.tempo_risposta_ore.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</td>
+          </tr>
+        {% endwith %}{% endfor %}
+        </tbody>
+      </table>
+      </div>
+      <div class="form-text">«Urgenze»: gli si possono mandare casi urgenti di quel tipo, con risposta entro 4 ore. Prezzi imponibili, IVA esclusa.</div>
+    </div></div>
+
+    <div class="ovic-card"><div class="card-header-ovic">Fattura</div><div class="card-body-ovic">
+      {% for scelta in form_r.soggetto_emittente %}<div class="form-check">{{ scelta.tag }} <label class="form-check-label" for="{{ scelta.id_for_label }}">{{ scelta.choice_label }}</label></div>{% endfor %}
+      {% for e in form_r.soggetto_emittente.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      {% for e in form_r.non_field_errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      <div id="blocco-dati-propri" class="mt-3"{% if not in_proprio %} hidden{% endif %}>
+        <p class="small text-muted">Emette in proprio: servono i suoi dati di fatturazione.</p>
+        <div class="row">
+          <div class="col-md-12">{% include "_campo_form.html" with campo=form_f.intestatario %}</div>
+          <div class="col-md-6">{% include "_campo_form.html" with campo=form_f.partita_iva %}</div>
+          <div class="col-md-6">{% include "_campo_form.html" with campo=form_f.codice_fiscale %}</div>
+          <div class="col-md-12">{% include "_campo_form.html" with campo=form_f.indirizzo_sede %}</div>
+          <div class="col-md-3">{% include "_campo_form.html" with campo=form_f.cap %}</div>
+          <div class="col-md-6">{% include "_campo_form.html" with campo=form_f.comune %}</div>
+          <div class="col-md-3">{% include "_campo_form.html" with campo=form_f.provincia %}</div>
+          <div class="col-md-4">{% include "_campo_form.html" with campo=form_f.codice_sdi %}</div>
+          <div class="col-md-4">{% include "_campo_form.html" with campo=form_f.pec_fatturazione %}</div>
+          <div class="col-md-4">{% include "_campo_form.html" with campo=form_f.regime_iva %}</div>
+        </div>
+      </div>
+    </div></div>
+
+    <button class="btn-nuova" type="submit"><i class="bi bi-save me-1"></i>Salva</button>
+  </div>
+</div>
+</form>
+{% endblock %}
+{% block js %}
+<script>
+  // I dati di fatturazione compaiono solo se emette in proprio.
+  (function () {
+    var blocco = document.getElementById('blocco-dati-propri');
+    document.querySelectorAll('input[name="r-soggetto_emittente"]').forEach(function (r) {
+      r.addEventListener('change', function () { blocco.hidden = r.value !== 'REFERTATORE' || !r.checked; });
+    });
+  })();
+</script>
+{% endblock %}

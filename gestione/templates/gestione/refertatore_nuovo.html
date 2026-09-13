@@ -1,25 +1,24 @@
 {% extends "base.html" %}
-{% block title %}Nuovo refertatore — VetWay Consulti{% endblock %}
+{% block title %}Nuovo refertatore — Gestione — VetWay Consulti{% endblock %}
 {% block content %}
-<div class="row justify-content-center"><div class="col-lg-6">
+{% include "gestione/_sezioni.html" %}
+<div class="row justify-content-center"><div class="col-lg-7">
   <div class="ovic-card"><div class="card-header-ovic">Aggiungi refertatore</div><div class="card-body-ovic">
-    <p class="text-muted small">Crea l'account e manda per email il link per scegliere la password.</p>
+    <p class="text-muted small">Crea l'account e manda per email il link per scegliere la password. Prezzi, tempi e urgenze li completi dopo, nella sua scheda.</p>
     <form method="post">{% csrf_token %}
       <div class="row">
         <div class="col-md-6">{% include "_campo_form.html" with campo=form.first_name %}</div>
         <div class="col-md-6">{% include "_campo_form.html" with campo=form.last_name %}</div>
-        <div class="col-md-6">{% include "_campo_form.html" with campo=form.username %}</div>
         <div class="col-md-6">{% include "_campo_form.html" with campo=form.email %}</div>
+        <div class="col-md-6">{% include "_campo_form.html" with campo=form.username %}</div>
         <div class="col-md-3">{% include "_campo_form.html" with campo=form.titolo %}</div>
         <div class="col-md-9">{% include "_campo_form.html" with campo=form.specializzazione %}</div>
-        <div class="col-md-4">{% include "_campo_form.html" with campo=form.numero_iscrizione %}</div>
-        <div class="col-md-8">{% include "_campo_form.html" with campo=form.ordine_provinciale %}</div>
       </div>
-      <div class="mb-3"><label class="form-label">{{ form.tipi_referente.label }}</label>
+      <div class="mb-3"><label class="form-label">Cosa referta</label>
         {% for cb in form.tipi_referente %}<div class="form-check">{{ cb.tag }} <label class="form-check-label" for="{{ cb.id_for_label }}">{{ cb.choice_label }}</label></div>{% endfor %}
       </div>
       <button class="btn-nuova" type="submit"><i class="bi bi-envelope me-1"></i>Crea e invia invito</button>
-      <a class="btn-testata-ghost ms-2" href="{% url 'accounts:admin_refertatori' %}">Annulla</a>
+      <a class="btn-testata-ghost ms-2" href="{% url 'gestione:refertatori' %}">Annulla</a>
     </form>
   </div></div>
 </div></div>

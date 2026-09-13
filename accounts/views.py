@@ -1,5 +1,5 @@
 """
-Accesso, registrazione, profili e area admin.
+Accesso, registrazione e profili.
 
 ## Conferma email e invito: stesso meccanismo
 
@@ -12,29 +12,23 @@ L'invito di un collega nella stessa clinica non puo' usare quel token —
 l'utente da invitare non esiste ancora — e usa una firma a tempo:
 `accounts/inviti.py`.
 
-## Perche' il refertatore nasce con una password casuale
-
-PasswordResetForm.get_users() scarta chi ha una password inutilizzabile:
-un account creato con set_unusable_password() non riceverebbe l'invito.
-Quindi si mette una password casuale da `secrets` che nessuno conosce, e
-il link di reset fa il resto.
+Le pagine dello staff (refertatori, iscrizioni, approvazioni) stanno in
+`gestione/`.
 """
 
 import logging
-import secrets
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.auth.forms import PasswordResetForm
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.mail import EmailMessage
 from django.db import transaction
 from django.forms import modelformset_factory
 from django.http import Http404
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.encoding import force_bytes, force_str
@@ -44,17 +38,13 @@ from django.views.decorators.http import require_POST
 from notifiche import servizi
 
 from . import inviti
-from .forms import (ClinicaForm, CompetenzaForm, DatiFatturazioneForm, NuovoRefertatoreForm,
-                    RefertatoreProfiloForm, RegistrazioneForm, RichiedenteForm,
-                    competenze_complete)
-from .models import (Clinica, CompetenzaRefertatore, Consenso,
-                     DatiFatturazione, Refertatore, Richiedente, TipoConsenso, TipoRichiedente,
-                     versione_consenso)
+from .forms import (ClinicaForm, CompetenzaForm, DatiFatturazioneForm, RefertatoreProfiloForm,
+                    RegistrazioneForm, RichiedenteForm, competenze_complete)
+from .models import (Clinica, CompetenzaRefertatore, Consenso, Richiedente, TipoConsenso,
+                     TipoRichiedente, versione_consenso)
 
 logger = logging.getLogger('accounts')
 User = get_user_model()
-
-solo_staff = user_passes_test(lambda u: u.is_staff, login_url='/accedi/')
 
 
 class Accedi(LoginView):
@@ -325,104 +315,3 @@ def refertatore_diventa_richiedente(request):
             dati.save(update_fields=['richiedente', 'predefinita'])
     messages.success(request, 'Ora puoi anche chiedere consulti a tuo nome.')
     return redirect('accounts:profilo_richiedente')
-
-
-# ── Area admin ───────────────────────────────────────────────────────────────
-
-def genera_password_casuale():
-    """Password che nessuno deve conoscere: tiene l'account «con password
-    utilizzabile» finche' l'utente non sceglie la sua dal link di invito."""
-    return secrets.token_urlsafe(32)
-
-
-def _invia_invito(request, utente):
-    """Riusa il reset password di Django con testi da invito."""
-    form = PasswordResetForm({'email': utente.email})
-    if not form.is_valid():
-        return False
-    try:
-        form.save(
-            request=request, use_https=request.is_secure(),
-            subject_template_name='accounts/invito_subject.txt',
-            email_template_name='accounts/invito_email.txt')
-    except Exception:
-        logger.exception('Invio invito fallito per %s', utente.username)
-        return False
-    return True
-
-
-@solo_staff
-def admin_refertatori(request):
-    refertatori = Refertatore.objects.select_related('user').prefetch_related('competenze')
-    in_attesa = (Clinica.objects.filter(approvata=False).count()
-                 + Richiedente.objects.filter(tipo=TipoRichiedente.LIBERO_PROFESSIONISTA, approvato=False).count())
-    return render(request, 'accounts/admin_refertatori.html', {
-        'refertatori': refertatori, 'in_attesa': in_attesa})
-
-
-@solo_staff
-def admin_refertatore_aggiungi(request):
-    form = NuovoRefertatoreForm(request.POST or None)
-    if request.method == 'POST' and form.is_valid():
-        d = form.cleaned_data
-        with transaction.atomic():
-            utente = User.objects.create_user(
-                username=d['username'], email=d['email'], password=genera_password_casuale(),
-                first_name=d['first_name'], last_name=d['last_name'])
-            ref = Refertatore.objects.create(
-                user=utente, titolo=d['titolo'], specializzazione=d['specializzazione'],
-                numero_iscrizione=d['numero_iscrizione'], ordine_provinciale=d['ordine_provinciale'])
-            for tipo in d['tipi_referente']:
-                CompetenzaRefertatore.objects.create(refertatore=ref, tipo_esame=tipo, referente=True)
-        if _invia_invito(request, utente):
-            messages.success(request, f'Refertatore {ref} creato: invito inviato a {utente.email}.')
-        else:
-            messages.warning(request, f'Refertatore {ref} creato, ma l\'invito non e\' partito.')
-        return redirect('accounts:admin_refertatori')
-    return render(request, 'accounts/admin_refertatore_form.html', {'form': form})
-
-
-@solo_staff
-def admin_richiedenti(request):
-    """Chi aspetta un ok: cliniche (con i loro richiedenti) e liberi
-    professionisti, in un'unica pagina. Prima gli approvati no."""
-    cliniche = Clinica.objects.order_by('approvata', 'denominazione').prefetch_related('richiedenti__user')
-    liberi = (Richiedente.objects.filter(tipo=TipoRichiedente.LIBERO_PROFESSIONISTA)
-              .select_related('user').order_by('approvato', 'user__last_name'))
-    return render(request, 'accounts/admin_richiedenti.html', {'cliniche': cliniche, 'liberi': liberi})
-
-
-@solo_staff
-@require_POST
-def admin_clinica_approva(request, pk):
-    """Approvare la clinica abilita tutti i suoi colleghi in un colpo, quindi
-    l'avviso va a ognuno di loro e non solo a chi si e' iscritto per primo.
-
-    Chi non ha ancora confermato l'email resta fuori: «puoi inviare» a chi
-    non riesce nemmeno ad accedere e' un invito a sbattere contro il login.
-    Lo scopre da se' entrando, che e' comunque il passo successivo.
-    """
-    clinica = get_object_or_404(Clinica, pk=pk)
-    clinica.approvata = True
-    clinica.save(update_fields=['approvata'])
-    avvisati = 0
-    for richiedente in clinica.richiedenti.select_related('user').filter(user__is_active=True):
-        if servizi.avvisa_richiedente_approvato(richiedente):
-            avvisati += 1
-    messages.success(request, f'Clinica «{clinica.denominazione}» approvata. '
-                              f'Avvisat{"o" if avvisati == 1 else "i"} {avvisati} collegh{"a" if avvisati == 1 else "i"} per email.')
-    return redirect('accounts:admin_richiedenti')
-
-
-@solo_staff
-@require_POST
-def admin_richiedente_approva(request, pk):
-    richiedente = get_object_or_404(Richiedente, pk=pk, tipo=TipoRichiedente.LIBERO_PROFESSIONISTA)
-    richiedente.approvato = True
-    richiedente.save(update_fields=['approvato'])
-    if servizi.avvisa_richiedente_approvato(richiedente):
-        messages.success(request, f'Richiedente «{richiedente.denominazione}» approvato e avvisato per email.')
-    else:
-        messages.warning(request, f'Richiedente «{richiedente.denominazione}» approvato, '
-                                  'ma l\'email di avviso non e\' partita.')
-    return redirect('accounts:admin_richiedenti')

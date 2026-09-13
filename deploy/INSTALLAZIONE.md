@@ -100,9 +100,6 @@ Poi:
 
 ```bash
 cp deploy/nginx-consulti.conf /etc/nginx/sites-available/consulti
-# Staging: file delle password nginx, vuoto = nessuno entra. Un utente:
-#   htpasswd /etc/nginx/consulti.htpasswd <nome>
-install -m 640 -o root -g www-data /dev/null /etc/nginx/consulti.htpasswd
 # Prima di Certbot commentare temporaneamente il blocco `listen 443 ssl` e le
 # righe ssl_*, e il secondo blocco server (il redirect): senza certificato
 # `nginx -t` fallisce e il reload lascerebbe giu' anche VetCardio e VetAnest.

@@ -10,8 +10,9 @@ sessioni brevi: ogni sessione deve lasciare il repo in uno stato ripartibile.
 
 - **Staging installata il 13/09/2026** sul server di VetCardio e VetAnest
   (10.10.0.1): utente `consulti`, `consulti_db`, gunicorn-consulti, vhost
-  nginx con password nginx davanti (`/etc/nginx/consulti.htpasswd`) e
-  noindex, cron di sorveglianza e backup. SMTP e chiave AI sono per ora
+  nginx con noindex (la password nginx davanti e' stata tolta il 14/09:
+  con Safari e i link delle email chiedeva la password piu' volte), cron di
+  sorveglianza e backup. SMTP e chiave AI sono per ora
   quelli di VetCardio (copiati in `/etc/consulti/secrets.env`). Non
   pubblicizzata, nessun dato vero. HTTPS Let's Encrypt (rinnovo automatico
   provato), DNS su register.it. I deploy successivi: `./deploy/deploy.sh`.

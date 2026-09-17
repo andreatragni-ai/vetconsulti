@@ -279,6 +279,12 @@ LOGGING = {
         'referti': {'handlers': ['console', 'file'], 'level': 'INFO', 'propagate': False},
         'registro': {'handlers': ['console', 'file'], 'level': 'INFO', 'propagate': False},
         'eco': {'handlers': ['console', 'file'], 'level': 'INFO', 'propagate': False},
+        # Host finti degli scanner (nginx li chiude gia'): nel file, non in mail.
+        'django.security.DisallowedHost': {
+            'handlers': ['file'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
         'django.request': {
             'handlers': ['console', 'file', 'mail_admins'],
             'level': 'WARNING',

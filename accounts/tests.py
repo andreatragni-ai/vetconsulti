@@ -507,6 +507,17 @@ def test_pagina_500_si_rende_senza_request():
     assert 'Qualcosa si e\' rotto' in get_template('500.html').render()
 
 
+def test_host_finto_non_manda_mail_agli_admin(client, settings):
+    """Gli scanner mandano Host a caso (kolesiko.ua, 16/09/2026): 400 e riga
+    nel log, non una mail d'errore a errori@vetway.it."""
+    from django.core import mail
+    settings.ALLOWED_HOSTS = ['consulti.vetway.it']
+    settings.ADMINS = [('Errori', 'errori@vetway.it')]
+    risp = client.get('/', HTTP_HOST='kolesiko.ua')
+    assert risp.status_code == 400
+    assert mail.outbox == []
+
+
 @pytest.mark.django_db
 def test_invito_in_clinica_senza_dati_chiede_la_fatturazione(client):
     """Se la clinica non ha ancora i dati fiscali, il collega invitato li

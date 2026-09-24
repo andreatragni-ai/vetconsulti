@@ -200,6 +200,32 @@ def _scadenza(richiesta):
     return regole.scadenza(richiesta)
 
 
+# ── Integrazioni: l'esame arrivato non basta ────────────────────────────────
+
+def avvisa_integrazione_chiesta(richiesta, integrazione):
+    """L'esperto ha accettato con riserva, o chiede altro durante la presa in
+    carico: il richiedente deve sapere cosa serve e che puo' caricarlo."""
+    return _invia(TipoInvio.INTEGRAZIONE, richiesta.richiedente.user.email,
+                  f'[VetWay Consulti] Servono integrazioni: {_caso(richiesta)}',
+                  'notifiche/integrazione_chiesta.txt',
+                  {'richiedente': richiesta.richiedente, 'refertatore': richiesta.refertatore,
+                   'integrazione': integrazione},
+                  richiesta)
+
+
+def avvisa_integrazione_arrivata(richiesta, quante=0):
+    """Il richiedente ha caricato ed e' tornato a dire «fatto»: il caso e'
+    di nuovo completo per quanto lo sara'."""
+    ref = richiesta.refertatore
+    if ref is None:
+        return False
+    return _invia(TipoInvio.INTEGRAZIONE_OK, ref.user.email,
+                  f'[VetWay Consulti] Integrazioni arrivate: {_caso(richiesta)}',
+                  'notifiche/integrazione_arrivata.txt',
+                  {'refertatore': ref, 'quante': quante}, richiesta,
+                  link=_link_refertazione(richiesta))
+
+
 # ── Iscrizione: al gestore e al richiedente ─────────────────────────────────
 
 def avvisa_gestore_iscrizione(richiedente, invitante=None):

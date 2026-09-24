@@ -19,6 +19,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_POST
@@ -96,6 +97,11 @@ def refertazione(request, pk):
         'frasi_declina': _frasi_declina(richiesta.refertatore),
         'form_nr': NonRefertabileForm(tipo_esame=richiesta.tipo_esame),
         'racconto': racconta(richiesta.audit.select_related('utente')),
+        # Integrazioni: cosa e' stato chiesto e le due rotte del form.
+        'integrazione_aperta': richiesta.integrazione_aperta(),
+        'consigliati_mancanti': regole.consigliati_mancanti(richiesta),
+        'url_prendi': reverse('consulti:prendi_in_carico', args=[richiesta.pk]),
+        'url_integrazione': reverse('consulti:chiedi_integrazione', args=[richiesta.pk]),
     })
 
 

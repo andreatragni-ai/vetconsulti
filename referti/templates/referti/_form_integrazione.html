@@ -1,0 +1,16 @@
+{% comment %}
+Il testo di una richiesta di integrazioni. Due usi, decisi da `azione` e
+`etichetta`: con la riserva all'accettazione (POST a consulti:prendi_in_carico
+con riserva=si) e durante la presa in carico (consulti:chiedi_integrazione).
+Parametri: richiesta, azione (url), etichetta, riserva (bool), campo_id.
+{% endcomment %}
+<form method="post" action="{{ azione }}" class="mt-2">{% csrf_token %}
+  {% if riserva %}<input type="hidden" name="riserva" value="si">{% endif %}
+  <label class="form-label" for="{{ campo_id }}">Cosa serve <span class="text-danger">*</span></label>
+  <textarea name="testo" id="{{ campo_id }}" rows="3" class="form-control mb-2"
+            maxlength="2000" required placeholder="Es. manca l'asse corto a livello dei papillari; il transmitralico e' fuori allineamento, va rifatto."></textarea>
+  <div class="form-text mb-2">Lo legge chi ha chiesto il consulto, che potra' caricare i file sul caso senza rifare la richiesta.</div>
+  {% include "_dettatura_barra.html" with campo_id=campo_id caso=richiesta.pk %}
+  <button type="submit" class="btn {% if riserva %}btn-outline-primary{% else %}btn-outline-secondary{% endif %} btn-sm">
+    <i class="bi bi-envelope-paper me-1"></i>{{ etichetta }}</button>
+</form>

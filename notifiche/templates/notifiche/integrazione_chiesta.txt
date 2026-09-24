@@ -1,0 +1,13 @@
+Gentile {{ richiedente.user.get_full_name }},
+
+{{ refertatore.nome_completo|default:"l'esperto" }} ha preso in carico il caso {{ richiesta.codice }} ({{ richiesta.get_tipo_esame_display }}, paziente {{ richiesta.paziente }}), ma per refertarlo gli serve altro:
+
+  {{ integrazione.testo }}
+
+Puoi caricare i file che mancano sulla pagina del caso, senza rifare la richiesta: quando hai finito premi «Ho caricato le integrazioni» e l'esperto viene avvisato.
+
+  {{ link }}
+
+Se l'esame non si puo' rifare, rispondi a questa email o telefona: l'esperto decidera' se refertare cio' che c'e' o dichiarare il caso non refertabile.
+
+VetWay Consulti

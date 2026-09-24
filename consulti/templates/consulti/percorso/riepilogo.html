@@ -3,7 +3,9 @@
 Passo 4 della richiesta guidata: riepilogo e invio (consulti/views_percorso.py:
 passo_riepilogo). Ogni blocco ha «Modifica» che riporta al passo giusto. Il
 pulsante «Invia a <esperto>» e' spento se regole.perche_non_puoi_inviare dice
-qualcosa (la frase compare accanto, con il link per sistemare).
+qualcosa (la frase compare accanto, con il link per sistemare). Cio' che manca
+ma non blocca (le proiezioni eco) diventa l'avviso «esame non completo» piu' la
+spunta di presa d'atto, che la vista `invia` gira a Richiesta.invia.
 {% endcomment %}
 {% block title %}{{ richiesta.titolo }} · invia — VetWay Consulti{% endblock %}
 {% block content %}
@@ -16,6 +18,24 @@ qualcosa (la frase compare accanto, con il link per sistemare).
   <i class="bi bi-exclamation-triangle mt-1" aria-hidden="true"></i>
   <div><strong>Non si puo' ancora inviare.</strong> {{ motivo_blocco }}
     {% if url_correggi %}<a href="{{ url_correggi }}">Vai a sistemarlo</a>.{% elif not richiesta.richiedente.puo_richiedere %}<a href="{% url 'accounts:profilo_richiedente' %}">Vai al profilo</a>.{% endif %}</div>
+</div>
+{% endif %}
+{% if consigliati_mancanti and not motivo_blocco %}
+<div class="alert alert-warning" id="avviso-incompleto">
+  <div class="d-flex gap-2 align-items-start">
+    <i class="bi bi-exclamation-triangle mt-1" aria-hidden="true"></i>
+    <div>
+      <strong>L'esame non e' completo: {{ consigliati_mancanti|length }} {{ consigliati_mancanti|length|pluralize:"proiezione manca,proiezioni mancano" }}.</strong>
+      Puoi inviarlo lo stesso, ma con un esame incompleto o eseguito male
+      <strong>la refertazione potrebbe non essere possibile</strong>: l'esperto puo' chiederti
+      di integrarlo, oppure dichiararlo non refertabile.
+      <details class="mt-2">
+        <summary>Vedi cosa manca</summary>
+        <ul class="mb-0 mt-1">{% for e in consigliati_mancanti %}<li>{{ e.etichetta }}</li>{% endfor %}</ul>
+      </details>
+      <div class="mt-2"><a href="{{ url_3 }}">Torna a caricare i file</a>.</div>
+    </div>
+  </div>
 </div>
 {% endif %}
 {% if ref and not ref.disponibile_oggi %}
@@ -88,9 +108,17 @@ qualcosa (la frase compare accanto, con il link per sistemare).
 
 <form method="post" action="{% url 'consulti:invia' richiesta.pk %}" class="percorso-barra">{% csrf_token %}
   <div class="principale">
+    {% if consigliati_mancanti and not motivo_blocco %}
+    <div class="form-check mb-2 w-100">
+      <input class="form-check-input" type="checkbox" name="presa_atto" value="si" id="presa-atto" required>
+      <label class="form-check-label" for="presa-atto">
+        So che l'esame e' incompleto e che la refertazione potrebbe non essere possibile.
+      </label>
+    </div>
+    {% endif %}
     <button type="submit" class="btn-nuova"{% if motivo_blocco %} disabled aria-describedby="perche-invio"{% endif %}><i class="bi bi-send" aria-hidden="true"></i> Invia a {{ ref|default:"..." }}</button>
     {% if motivo_blocco %}<span class="perche" id="perche-invio">{{ motivo_blocco }}</span>
-    {% elif ref %}<span class="perche">{{ ref.user.get_full_name|default:ref.nome_completo }} ricevera' una email con il caso. Dopo l'invio i file non si modificano piu'.</span>{% endif %}
+    {% elif ref %}<span class="perche">{{ ref.user.get_full_name|default:ref.nome_completo }} ricevera' una email con il caso. Dopo l'invio i file non si modificano piu'{% if consigliati_mancanti %}, salvo le integrazioni che l'esperto ti chiede{% endif %}.</span>{% endif %}
   </div>
   <a class="btn-indietro" href="{{ url_3 }}"><i class="bi bi-arrow-left"></i> Indietro</a>
 </form>

@@ -3,8 +3,25 @@ A che punto e' il caso, visto da chi l'ha chiesto (e dallo staff, in
 lettura). Contesto da consulti/views.py:dettaglio: richiesta, e_richiedente,
 ultima / versioni / classificazione_ultima (solo versioni FIRMATE),
 esperti (per riassegnare un caso declinato), puo_annullare, ore_risposta e
-scadenza (consulti.regole: 4 ore se urgente).
+scadenza (consulti.regole: 4 ore se urgente), integrazione_aperta (l'esperto
+ha chiesto altro materiale: finche' e' aperta il caricamento e' riaperto).
 {% endcomment %}
+{% if integrazione_aperta %}
+<div class="ovic-card"><div class="card-header-ovic">L'esperto ha bisogno di altro materiale</div><div class="card-body-ovic">
+  <p class="small text-muted mb-2">{{ richiesta.refertatore }} ha preso in carico il caso{% if richiesta.con_riserva %} con riserva{% endif %} e chiede, il {{ integrazione_aperta.chiesta_il|date:"d/m/Y" }}:</p>
+  {% include "_dato.html" with label="Cosa serve" val=integrazione_aperta.testo multiline=True %}
+  {% if e_richiedente %}
+  <div class="barra-azioni-testata mt-2 d-flex gap-2 flex-wrap">
+    <a class="btn-nuova" href="{% url 'consulti:passo_carica' richiesta.pk %}"><i class="bi bi-upload me-1"></i>Carica quello che serve</a>
+    <form method="post" action="{% url 'consulti:integrazioni_fatte' richiesta.pk %}"
+          data-conferma="Avvisare {{ richiesta.refertatore }} che le integrazioni sono complete? Dopo, i file tornano a non essere modificabili.">{% csrf_token %}
+      <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-check2 me-1"></i>Ho caricato le integrazioni</button>
+    </form>
+  </div>
+  <p class="form-text mt-2 mb-0">Se l'esame non si puo' rifare, scrivi o telefona all'esperto: decidera' se refertare cio' che c'e' o dichiarare il caso non refertabile.</p>
+  {% endif %}
+</div></div>
+{% endif %}
 {% if richiesta.stato == 'REFERTATA' and ultima %}
   {% include "referti/_referto_firmato.html" %}
 

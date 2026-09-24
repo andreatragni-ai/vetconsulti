@@ -218,6 +218,26 @@ class EsameForm(forms.ModelForm):
 
 # ── Decisioni del refertatore ────────────────────────────────────────────────
 
+class IntegrazioneForm(forms.Form):
+    """Cosa l'esperto chiede in piu': con la riserva all'accettazione, o
+    durante la presa in carico. Lo legge il richiedente nell'email e sul
+    caso, e finche' non evade puo' caricare altri file."""
+
+    testo = forms.CharField(
+        label='Cosa serve', widget=forms.Textarea(attrs={'rows': 3}), max_length=2000,
+        help_text='Quali proiezioni mancano o vanno rifatte, e come. Lo legge chi ha chiesto il consulto.')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _bootstrap(self)
+
+    def clean_testo(self):
+        testo = self.cleaned_data['testo'].strip()
+        if len(testo) < 3:
+            raise forms.ValidationError('Scrivi cosa serve: lo legge chi ha chiesto il consulto.')
+        return testo
+
+
 class DeclinaForm(forms.Form):
     motivo = forms.CharField(
         label='Motivo', widget=forms.Textarea(attrs={'rows': 3}), max_length=1000,

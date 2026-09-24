@@ -160,7 +160,8 @@ def test_smistamento_con_ai_propone_e_non_scrive(loggato, esame_caricato, catalo
     assert dove['IMG_0004.jpg'] == ('PDS', True, 'AI')
     # Nulla e' confermato: nessuna ProiezioneCaricata, e la regola di invio lo dice.
     assert not ProiezioneCaricata.objects.exists()
-    assert regole.perche_non_puoi_inviare(esame_caricato).startswith('Mancano')
+    # Il referto dell'ecografo e' ancora da smistare: quello blocca ancora.
+    assert regole.perche_non_puoi_inviare(esame_caricato) == 'Manca il referto dell\'ecografo (PDF).'
     # Lo stato, a lavoro finito, fa ricaricare la pagina.
     r = loggato.get(reverse('consulti:smistamento_stato', args=[esame_caricato.pk]))
     assert r.status_code == 200 and r['HX-Refresh'] == 'true'
@@ -275,16 +276,26 @@ def test_conferma_riallinea_dopo_uno_spostamento(loggato, esame_caricato, catalo
     assert esame_caricato.audit.filter(azione='SMISTAMENTO_CONFERMATO').count() == 2
 
 
-def test_invio_bloccato_finche_ci_sono_righe_obbligatorie_vuote(loggato, esame_caricato, catalogo):
+def test_righe_vuote_avvisano_ma_non_bloccano(loggato, esame_caricato, catalogo):
+    """Dal 24/09/2026 le proiezioni mancanti non fermano piu' l'invio: il
+    passo 3 lascia andare avanti e lo dice, e l'invio pretende la spunta."""
     _sposta(loggato, esame_caricato, _allegato(esame_caricato, 'referto.pdf'), 'referto')
     _sposta(loggato, esame_caricato, _allegato(esame_caricato, 'IMG_0001.mp4'), f'proiezione:{catalogo["ap_clip"].pk}')
     loggato.post(reverse('consulti:smistamento_conferma', args=[esame_caricato.pk]))
     pagina = _t(loggato.get(reverse('consulti:passo_carica', args=[esame_caricato.pk])))
-    assert 'disabled aria-describedby="perche-fermo"' in pagina
-    assert 'la proiezione «LA/Ao»' in pagina and 'la proiezione «Asse lungo 4 camere»' in pagina
+    assert 'disabled aria-describedby="perche-fermo"' not in pagina
+    assert 'la refertazione potrebbe non essere possibile' in pagina
+
+    # Senza spunta non parte...
     loggato.post(reverse('consulti:invia', args=[esame_caricato.pk]))
     esame_caricato.refresh_from_db()
     assert esame_caricato.stato == StatoRichiesta.BOZZA
+    # ...con la spunta si', e resta scritto che era incompleta.
+    loggato.post(reverse('consulti:invia', args=[esame_caricato.pk]), {'presa_atto': 'si'})
+    esame_caricato.refresh_from_db()
+    assert esame_caricato.stato == StatoRichiesta.INVIATA and esame_caricato.inviata_incompleta
+    evento = esame_caricato.audit.filter(azione='INVIATA').last()
+    assert evento.dettaglio['incompleta'] and 'LA/Ao' in ' '.join(evento.dettaglio['mancanti'])
 
 
 def test_caricamento_riga_per_riga_resta_ed_e_gia_confermato(loggato, esame_caricato, catalogo):

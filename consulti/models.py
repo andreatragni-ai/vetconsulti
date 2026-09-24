@@ -92,6 +92,12 @@ class Richiesta(models.Model):
     urgenza = models.BooleanField(default=False)
     stato = models.CharField(
         max_length=20, choices=StatoRichiesta.choices, default=StatoRichiesta.BOZZA, db_index=True)
+    inviata_incompleta = models.BooleanField(
+        default=False,
+        help_text='Inviata senza tutte le proiezioni consigliate, con presa d\'atto del richiedente.')
+    con_riserva = models.BooleanField(
+        default=False,
+        help_text='Presa in carico con riserva: l\'esperto ha chiesto integrazioni.')
 
     quesito = models.TextField(blank=True, help_text='Cosa si chiede al collega.')
     anamnesi = models.TextField(blank=True)
@@ -163,27 +169,91 @@ class Richiesta(models.Model):
                 f'La richiesta {self.codice} e\' «{self.get_stato_display()}»: '
                 f'operazione non ammessa.')
 
-    def invia(self, utente=None):
+    def invia(self, utente=None, presa_atto_incompleto=False):
+        """Manda il caso all'esperto.
+
+        Cio' che manca e non blocca (le proiezioni eco: decisione del
+        24/09/2026) non ferma l'invio, ma pretende che il richiedente abbia
+        spuntato la presa d'atto nel riepilogo: `presa_atto_incompleto`.
+        Senza, si alza TransizioneNonValida come per un blocco vero — la
+        guardia non sta solo nella vista.
+        """
         from . import regole
         self._pretendi_stato(StatoRichiesta.BOZZA)
         motivo = regole.perche_non_puoi_inviare(self)
         if motivo:
             raise TransizioneNonValida(motivo)
+        mancanti = regole.consigliati_mancanti(self)
+        if mancanti and not presa_atto_incompleto:
+            raise TransizioneNonValida(
+                'L\'esame e\' incompleto: per inviarlo lo stesso spunta la presa d\'atto.')
         self.stato = StatoRichiesta.INVIATA
         self.inviata_il = timezone.now()
-        self.save(update_fields=['stato', 'inviata_il'])
-        self.registra('INVIATA', utente, refertatore=self.refertatore_id)
+        self.inviata_incompleta = bool(mancanti)
+        self.save(update_fields=['stato', 'inviata_il', 'inviata_incompleta'])
+        self.registra('INVIATA', utente, refertatore=self.refertatore_id,
+                      incompleta=bool(mancanti), mancanti=[m.etichetta for m in mancanti])
 
-    def prendi_in_carico(self, refertatore, utente=None):
+    def prendi_in_carico(self, refertatore, utente=None, riserva=False, motivo_riserva=''):
+        """`riserva=True`: l'esperto accetta un esame che non e' completo e
+        dice cosa gli serve (`motivo_riserva`, obbligatorio). Il caso resta
+        suo, segnato «con riserva», e nasce un'Integrazione aperta che
+        riapre il caricamento al richiedente."""
         self._pretendi_stato(StatoRichiesta.INVIATA)
         if not refertatore.referta(self.tipo_esame):
             raise TransizioneNonValida(
                 f'{refertatore} non e\' referente per {self.get_tipo_esame_display()}.')
+        if riserva and not (motivo_riserva or '').strip():
+            raise TransizioneNonValida(
+                'Per accettare con riserva scrivi cosa manca o cosa rifare: lo legge chi ha chiesto.')
         self.refertatore = refertatore
         self.stato = StatoRichiesta.PRESA_IN_CARICO
         self.presa_in_carico_il = timezone.now()
-        self.save(update_fields=['refertatore', 'stato', 'presa_in_carico_il'])
-        self.registra('PRESA_IN_CARICO', utente or refertatore.user, refertatore=refertatore.id)
+        self.con_riserva = bool(riserva)
+        self.save(update_fields=['refertatore', 'stato', 'presa_in_carico_il', 'con_riserva'])
+        self.registra('PRESA_IN_CARICO', utente or refertatore.user,
+                      refertatore=refertatore.id, riserva=bool(riserva))
+        if riserva:
+            return self.chiedi_integrazione(motivo_riserva, utente or refertatore.user)
+        return None
+
+    # ── Integrazioni: cosa l'esperto chiede in piu' ──────────────────
+
+    def chiedi_integrazione(self, testo, utente=None):
+        """L'esperto chiede altri file o un esame rifatto. Finche' e' aperta,
+        il richiedente puo' caricare sul caso gia' inviato (`apre_al_caricamento`)."""
+        self._pretendi_stato(StatoRichiesta.PRESA_IN_CARICO)
+        testo = (testo or '').strip()
+        if not testo:
+            raise TransizioneNonValida('Scrivi che cosa serve: la frase arriva a chi ha chiesto il consulto.')
+        integrazione = Integrazione.objects.create(richiesta=self, testo=testo,
+                                                   chiesta_da=self.refertatore)
+        self.registra('INTEGRAZIONE_CHIESTA', utente, integrazione=integrazione.id, testo=testo[:300])
+        return integrazione
+
+    def integrazione_aperta(self):
+        return self.integrazioni.filter(evasa_il__isnull=True).order_by('-chiesta_il').first()
+
+    def evadi_integrazioni(self, utente=None):
+        """Il richiedente dichiara di aver caricato cio' che serviva: le
+        richieste aperte si chiudono e il caricamento si richiude."""
+        aperte = list(self.integrazioni.filter(evasa_il__isnull=True))
+        if not aperte:
+            return 0
+        adesso = timezone.now()
+        for i in aperte:
+            i.evasa_il = adesso
+            i.save(update_fields=['evasa_il'])
+        self.registra('INTEGRAZIONE_EVASA', utente, quante=len(aperte))
+        return len(aperte)
+
+    @property
+    def apre_al_caricamento(self):
+        """Il richiedente puo' aggiungere file: in bozza sempre, dopo l'invio
+        solo se c'e' un'integrazione aperta. Non rende modificabile il resto
+        del caso (paziente, esame, esperto): quello resta `modificabile`."""
+        return self.modificabile or bool(
+            self.stato == StatoRichiesta.PRESA_IN_CARICO and self.integrazione_aperta())
 
     def rilascia_presa_in_carico(self, utente=None, motivo=''):
         """Torna INVIATA: il refertatore resta indicato, ma il caso e' di
@@ -482,6 +552,40 @@ class Allegato(models.Model):
         richiesta.registra('ALLEGATO_CARICATO', utente, allegato=allegato.id, categoria=categoria,
                            nome=allegato.nome_originale, **dettaglio_audit)
         return allegato
+
+
+class Integrazione(models.Model):
+    """Cosa l'esperto chiede in piu' su un caso gia' inviato.
+
+    Nasce con l'accettazione con riserva (esame incompleto o mal eseguito) e
+    si puo' ripetere durante la presa in carico. Finche' e' aperta
+    (`evasa_il` vuoto) il richiedente puo' caricare file sul caso: e' l'unico
+    caso in cui gli allegati di una richiesta partita cambiano ancora.
+
+    Non e' uno stato della Richiesta: il caso resta PRESA_IN_CARICO e i tempi
+    di risposta continuano a correre. Il flag `con_riserva` serve solo a far
+    vedere a colpo d'occhio, negli elenchi, che l'esame non era completo.
+    """
+
+    richiesta = models.ForeignKey(Richiesta, on_delete=models.CASCADE, related_name='integrazioni')
+    testo = models.TextField(help_text='Cosa manca o cosa va rifatto. Lo legge chi ha chiesto il consulto.')
+    chiesta_da = models.ForeignKey('accounts.Refertatore', on_delete=models.SET_NULL, null=True,
+                                   related_name='integrazioni_chieste')
+    chiesta_il = models.DateTimeField(auto_now_add=True)
+    evasa_il = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Richiesta di integrazione'
+        verbose_name_plural = 'Richieste di integrazione'
+        ordering = ['-chiesta_il']
+
+    def __str__(self):
+        stato = 'aperta' if self.evasa_il is None else 'evasa'
+        return f'{self.richiesta.codice} — integrazione {stato} del {self.chiesta_il:%d/%m/%Y}'
+
+    @property
+    def aperta(self):
+        return self.evasa_il is None
 
 
 class Commento(models.Model):

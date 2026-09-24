@@ -4,7 +4,9 @@
 Passo 3 della richiesta guidata: carica gli esami, diverso per tipo
 (consulti/views_percorso.py:passo_carica + contesto_caricamento).
 In cima (a destra su desktop) il contatore e la lista con le caselle: vengono
-da regole.elementi_obbligatori, la stessa regola che blocca l'invio. Sotto,
+da regole.elementi_obbligatori, la stessa regola dell'invio: le voci con
+blocca=True fermano «Avanti» (perche_fermo), le proiezioni mancanti sono solo
+un avviso e si decide nel riepilogo (consigliati_mancanti). Sotto,
 le zone: ECG un tracciato (anche piu' file); Holter referto PDF + file
 dell'apparecchio facoltativo; eco referto PDF + una riga per proiezione del
 catalogo, raggruppate per finestra acustica, e in fondo i filmati liberi.
@@ -17,6 +19,13 @@ non confermate (consulti/views_smistamento.py).
 {% endcomment %}
 {% block title %}{{ richiesta.titolo }} · carica gli esami — VetWay Consulti{% endblock %}
 {% block content %}
+{% if integrazione_aperta %}
+<div class="alert alert-warning">
+  <i class="bi bi-envelope-paper me-1" aria-hidden="true"></i>
+  <strong>{{ richiesta.refertatore }} ha chiesto delle integrazioni:</strong> «{{ integrazione_aperta.testo }}»<br>
+  Aggiungi qui i file che mancano — il caso resta dove si trova — e poi premi «Ho caricato le integrazioni».
+</div>
+{% endif %}
 {% include "consulti/percorso/_testata.html" %}
 
 <div class="row g-3" data-carica
@@ -180,12 +189,22 @@ non confermate (consulti/views_smistamento.py).
     {% if tavolo and modifiche_da_confermare %}
       <button type="submit" form="form-conferma" class="btn-nuova"><i class="bi bi-check2-square"></i> Confermo lo smistamento</button>
       <span class="perche">{{ modifiche_da_confermare }} file propost{{ modifiche_da_confermare|pluralize:"o,i" }} o spostat{{ modifiche_da_confermare|pluralize:"o,i" }} da confermare: nulla va al collega finche' non confermi.{% if righe_vuote_obbligatorie %} Poi restano {{ righe_vuote_obbligatorie }} righe obbligatorie da riempire.{% endif %}</span>
-    {% elif mancanti %}
+    {% elif integrazione_aperta %}
+      <form method="post" action="{% url 'consulti:integrazioni_fatte' richiesta.pk %}"
+            data-conferma="Avvisare l'esperto che le integrazioni sono complete?">{% csrf_token %}
+        <button type="submit" class="btn-nuova"><i class="bi bi-check2 me-1"></i>Ho caricato le integrazioni</button>
+      </form>
+      <span class="perche">Il caso e' gia' dall'esperto: i file che aggiungi qui si uniscono a quelli di prima. Quando hai finito, avvisalo.</span>
+    {% elif perche_fermo %}
       <button type="button" class="btn-nuova" disabled aria-describedby="perche-fermo">Avanti <i class="bi bi-arrow-right"></i></button>
       <span class="perche" id="perche-fermo"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>{{ perche_fermo }}</span>
     {% else %}
       <a class="btn-nuova" href="{% url 'consulti:passo_riepilogo' richiesta.pk %}">Avanti <i class="bi bi-arrow-right"></i></a>
+      {% if consigliati_mancanti %}
+      <span class="perche"><i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>{{ consigliati_mancanti|length }} {{ consigliati_mancanti|length|pluralize:"proiezione manca,proiezioni mancano" }}: puoi andare avanti e inviare lo stesso, ma con un esame incompleto la refertazione potrebbe non essere possibile.</span>
+      {% else %}
       <span class="perche">Tutto l'obbligatorio c'e': nel passo successivo rivedi e invii.</span>
+      {% endif %}
     {% endif %}
   </div>
   <a class="btn-indietro" href="{% url 'consulti:passo_esame' richiesta.pk %}"><i class="bi bi-arrow-left"></i> Indietro</a>

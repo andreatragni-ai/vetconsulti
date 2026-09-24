@@ -22,7 +22,9 @@ quelli da decidere, poi dal piu' vecchio.
       <td>{% include "consulti/_cella_paziente.html" %}</td>
       <td>{{ r.get_tipo_esame_display }}</td>
       <td>{{ r.richiedente.user.get_full_name }}<br><span class="text-muted small">{{ r.intestatario.denominazione }}{% if not r.clinica_id %} (lib. prof.){% endif %}</span></td>
-      <td><span class="pill-stato{% if r.tono_stato %} pill-stato--{{ r.tono_stato }}{% endif %}">{{ r.get_stato_display }}</span></td>
+      <td><span class="pill-stato{% if r.tono_stato %} pill-stato--{{ r.tono_stato }}{% endif %}">{{ r.get_stato_display }}</span>
+        {% if r.con_riserva %}<br><span class="text-muted small" title="Presa in carico con riserva: hai chiesto integrazioni">con riserva</span>
+        {% elif r.inviata_incompleta %}<br><span class="text-muted small" title="Inviato senza tutte le proiezioni">esame incompleto</span>{% endif %}</td>
       <td class="num-tab">da {{ riga.eta }}<br><span class="text-muted small">{{ r.inviata_il|date:"d/m H:i" }}</span></td>
       <td class="num-tab{% if riga.in_ritardo %} caso-in-ritardo{% endif %}">{{ riga.ore_risposta }} h{% if r.urgenza %} <span class="small">(urgente)</span>{% endif %}<br><span class="small">{% if riga.in_ritardo %}scaduta il{% else %}entro il{% endif %} {{ riga.scadenza|date:"d/m H:i" }}</span></td>
       <td class="td-kebab"><a class="btn-sel" href="{% url 'referti:refertazione' r.pk %}">{% if r.stato == 'INVIATA' %}Decidi{% else %}Referta{% endif %}</a></td>

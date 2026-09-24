@@ -1,8 +1,17 @@
 """
-Il lato del refertatore sui casi: l'elenco dei casi ricevuti e le tre
-decisioni (prendi in carico, declina, non refertabile). La pagina dove si
-decide e si referta e' `referti:refertazione`; qui ci sono le rotte POST e
-l'elenco. Solo il refertatore assegnato agisce: per tutti gli altri 404.
+Il lato del refertatore sui casi: l'elenco dei casi ricevuti e le decisioni
+(prendi in carico, anche **con riserva**, declina, non refertabile) piu' le
+richieste di integrazione. La pagina dove si decide e si referta e'
+`referti:refertazione`; qui ci sono le rotte POST e l'elenco. Solo il
+refertatore assegnato agisce: per tutti gli altri 404.
+
+## Accettare con riserva (24/09/2026)
+
+Da quando un esame incompleto puo' essere inviato, l'esperto ha una via di
+mezzo fra prendere in carico e declinare: accetta, scrive cosa gli manca e
+il richiedente puo' caricarlo sul caso gia' partito. Il caso resta
+PRESA_IN_CARICO e i tempi continuano a correre: la riserva non li ferma,
+perche' fermarli vorrebbe dire che un caso puo' restare appeso per sempre.
 """
 
 from django.contrib import messages
@@ -13,8 +22,10 @@ from django.utils import timezone
 from django.utils.timesince import timesince
 from django.views.decorators.http import require_POST
 
+from notifiche import servizi
+
 from . import regole
-from .forms import DeclinaForm, NonRefertabileForm
+from .forms import DeclinaForm, IntegrazioneForm, NonRefertabileForm
 from .models import Richiesta, StatoRichiesta, TransizioneNonValida
 from .permessi import caso_del_refertatore
 
@@ -58,13 +69,49 @@ def casi_ricevuti(request):
 @login_required
 @require_POST
 def prendi_in_carico(request, pk):
+    """Con `riserva=si` nel POST serve anche il testo di cosa manca: il caso
+    si prende lo stesso e parte la richiesta di integrazione."""
     richiesta = caso_del_refertatore(request.user, pk)
+    riserva = request.POST.get('riserva') == 'si'
+    form = IntegrazioneForm(request.POST) if riserva else None
+    if riserva and not form.is_valid():
+        errori = ' '.join(e for errs in form.errors.values() for e in errs)
+        messages.error(request, f'Accettazione con riserva: {errori}')
+        return redirect('referti:refertazione', pk=pk)
     try:
-        richiesta.prendi_in_carico(request.user.refertatore, request.user)
+        integrazione = richiesta.prendi_in_carico(
+            request.user.refertatore, request.user, riserva=riserva,
+            motivo_riserva=form.cleaned_data['testo'] if riserva else '')
     except TransizioneNonValida as e:
         messages.error(request, str(e))
+        return redirect('referti:refertazione', pk=pk)
+    if integrazione is not None:
+        servizi.avvisa_integrazione_chiesta(richiesta, integrazione)
+        messages.success(request, f'{richiesta.codice} preso in carico con riserva: '
+                                  'ho scritto a chi ha chiesto cosa serve.')
     else:
         messages.success(request, f'Hai preso in carico {richiesta.codice}: il referto e\' tuo.')
+    return redirect('referti:refertazione', pk=pk)
+
+
+@login_required
+@require_POST
+def chiedi_integrazione(request, pk):
+    """Altre integrazioni durante la presa in carico: stesso meccanismo
+    della riserva, senza cambiare stato."""
+    richiesta = caso_del_refertatore(request.user, pk)
+    form = IntegrazioneForm(request.POST)
+    if not form.is_valid():
+        errori = ' '.join(e for errs in form.errors.values() for e in errs)
+        messages.error(request, f'Richiesta di integrazioni: {errori}')
+        return redirect('referti:refertazione', pk=pk)
+    try:
+        integrazione = richiesta.chiedi_integrazione(form.cleaned_data['testo'], request.user)
+    except TransizioneNonValida as e:
+        messages.error(request, str(e))
+        return redirect('referti:refertazione', pk=pk)
+    servizi.avvisa_integrazione_chiesta(richiesta, integrazione)
+    messages.success(request, 'Richiesta inviata: chi ha chiesto il consulto puo\' caricare i file che servono.')
     return redirect('referti:refertazione', pk=pk)
 
 

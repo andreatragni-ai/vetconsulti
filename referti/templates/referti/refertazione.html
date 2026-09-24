@@ -4,7 +4,7 @@
 Pagina di refertazione (referti/views.py:refertazione), solo per il
 refertatore assegnato. A sinistra (sopra, su mobile) il visore degli
 allegati; a destra (sotto) il caso in lettura e, a seconda dello stato:
-  INVIATA          decisione: prendi in carico / declina
+  INVIATA          decisione: prendi in carico, con riserva, o declina
   PRESA_IN_CARICO  editor del referto (bozza + salvataggio automatico), firma,
                    non refertabile, declina
   REFERTATA        referto firmato, versioni, rettifica
@@ -50,18 +50,38 @@ sono rotte diverse: la firma passa dalla modale di conferma del pacchetto.
     {# ── Decisione ─────────────────────────────────────────────────── #}
     <div class="ovic-card"><div class="card-header-ovic">Decisione</div><div class="card-body-ovic">
       <p class="small mb-2">Guarda gli allegati e decidi: prendendolo in carico il caso diventa tuo e il richiedente lo vede sulla sua pagina.</p>
+      {% include "referti/_esame_incompleto.html" %}
       <form method="post" action="{% url 'consulti:prendi_in_carico' richiesta.pk %}" class="mb-3 barra-azioni-testata">{% csrf_token %}
         <button type="submit" class="btn-nuova"><i class="bi bi-check2-circle me-1"></i>Prendi in carico</button>
       </form>
+      <details class="azioni-secondarie"{% if richiesta.inviata_incompleta %} open{% endif %}>
+        <summary><i class="bi bi-exclamation-triangle me-1"></i>Prendi in carico con riserva (l'esame non basta cosi')</summary>
+        <p class="small text-muted mb-1">Il caso diventa tuo e il collega riceve per email cio' che gli chiedi; potra' caricarlo sul caso. I tempi di risposta continuano a correre.</p>
+        {% include "referti/_form_integrazione.html" with azione=url_prendi riserva=True campo_id="testo-riserva" etichetta="Prendi in carico con riserva" %}
+      </details>
+      <hr>
       {% include "referti/_form_declina.html" %}
     </div></div>
 
     {% elif richiesta.stato == 'PRESA_IN_CARICO' %}
     {# ── Editor del referto ───────────────────────────────────────── #}
     <div class="ovic-card"><div class="card-header-ovic">Referto</div><div class="card-body-ovic">
+      {% include "referti/_esame_incompleto.html" %}
       {% include "referti/_editor.html" with modo="firma" %}
     </div></div>
     <div class="ovic-card"><div class="card-body-ovic">
+      <details class="azioni-secondarie"{% if integrazione_aperta %} open{% endif %}>
+        <summary><i class="bi bi-envelope-paper me-1"></i>Chiedi integrazioni al collega</summary>
+        {% if integrazione_aperta %}
+        <div class="alert alert-warning py-2 small mb-2">
+          Chieste il {{ integrazione_aperta.chiesta_il|date:"d/m/Y H:i" }} e non ancora consegnate:
+          «{{ integrazione_aperta.testo }}»<br>
+          Finche' sono aperte il collega puo' caricare file sul caso, e sarai avvisato quando avra' finito.
+        </div>
+        {% endif %}
+        {% include "referti/_form_integrazione.html" with azione=url_integrazione riserva=False campo_id="testo-integrazione" etichetta="Chiedi le integrazioni" %}
+      </details>
+      <hr>
       <details class="azioni-secondarie">
         <summary><i class="bi bi-slash-circle me-1"></i>Il caso non e' refertabile</summary>
         <form method="post" action="{% url 'consulti:non_refertabile' richiesta.pk %}"

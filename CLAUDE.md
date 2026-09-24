@@ -92,7 +92,13 @@ Senza librerie il test del PDF vero salta con un messaggio che lo dice.
   primo guasto vero (test: `test_pagina_500_si_rende_senza_request`).
 - `consulti/regole.py`: transizioni di stato della Richiesta con
   `EventoAudit` append-only. Non aggiungere stati senza un test per ogni
-  transizione. Un caso urgente scade in 4 ore e va solo a chi accetta le
+  transizione. Ogni elemento atteso dice anche se `blocca`: bloccano solo
+  tracciato ECG, referto Holter e referto dell'ecografo; le proiezioni eco
+  avvisano e basta (24/09/2026). Chi invia incompleto spunta la presa
+  d'atto, e l'esperto puo' accettare **con riserva** chiedendo integrazioni
+  (`Integrazione`, `consulti/tests_integrazioni.py`). Finche' c'e'
+  un'integrazione aperta — e solo allora — il caso gia' inviato riaccetta
+  file: e' `Richiesta.apre_al_caricamento`, non `modificabile`. Un caso urgente scade in 4 ore e va solo a chi accetta le
   urgenze per quel tipo (`rifiuta_urgenza`, test in
   `consulti/tests_urgenze.py`).
 - `registro/`: `Prestazione` e' immutabile una volta registrata.

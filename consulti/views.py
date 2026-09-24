@@ -112,15 +112,19 @@ def dettaglio(request, pk):
         'esperti': (percorso.esperti_con_prezzo(richiesta.tipo_esame, richiesta.urgenza)
                     if e_richiedente and richiesta.stato == StatoRichiesta.DECLINATA else []),
         'puo_annullare': e_richiedente and richiesta.stato in (StatoRichiesta.BOZZA, StatoRichiesta.INVIATA),
+        'integrazione_aperta': richiesta.integrazione_aperta(),
+        'integrazioni': list(richiesta.integrazioni.all()),
         'ore_risposta': regole.ore_risposta(richiesta) if richiesta.refertatore_id else None,
         'scadenza': regole.scadenza(richiesta),
     })
 
 
 def _solo_richiedente_in_bozza(request, richiesta):
+    """Chi ha chiesto, e solo quando il caso accetta file: in bozza sempre,
+    dopo l'invio se l'esperto ha chiesto integrazioni (`apre_al_caricamento`)."""
     if richiesta.richiedente.user_id != request.user.id:
         raise Http404
-    if not richiesta.modificabile:
+    if not richiesta.apre_al_caricamento:
         raise TransizioneNonValida('La richiesta non e\' piu\' in bozza: gli allegati non si toccano.')
 
 
@@ -218,7 +222,10 @@ def elimina_allegato(request, pk, allegato_pk):
 def invia(request, pk):
     richiesta = caso_del_richiedente(request.user, pk)
     try:
-        richiesta.invia(request.user)
+        # La spunta del riepilogo: «so che l'esame e' incompleto». La guardia
+        # vera sta in Richiesta.invia, questa e' solo la casella del form.
+        richiesta.invia(request.user,
+                        presa_atto_incompleto=request.POST.get('presa_atto') == 'si')
     except TransizioneNonValida as e:
         messages.error(request, str(e))
         if richiesta.modificabile:
@@ -228,6 +235,22 @@ def invia(request, pk):
     avvisa_caso_arrivato(richiesta)
     # Cosa succede adesso lo dice il riquadro della pagina del caso (_esito_caso.html).
     messages.success(request, f'Richiesta inviata a {richiesta.refertatore}.')
+    return redirect('consulti:dettaglio', pk=pk)
+
+
+@login_required
+@require_POST
+def integrazioni_fatte(request, pk):
+    """«Ho caricato le integrazioni»: chiude le richieste aperte e avvisa
+    l'esperto. Da qui il caso torna a essere non modificabile."""
+    richiesta = caso_del_richiedente(request.user, pk)
+    quante = richiesta.evadi_integrazioni(request.user)
+    if not quante:
+        messages.info(request, 'Non c\'erano integrazioni da consegnare.')
+        return redirect('consulti:dettaglio', pk=pk)
+    from notifiche.servizi import avvisa_integrazione_arrivata
+    avvisa_integrazione_arrivata(richiesta, quante)
+    messages.success(request, f'{richiesta.refertatore} e\' stato avvisato: i file nuovi sono sul caso.')
     return redirect('consulti:dettaglio', pk=pk)
 
 

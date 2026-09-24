@@ -490,32 +490,37 @@ def test_la_clip_passa_alla_transcodifica_dopo_il_commit(loggato, bozza_eco, cat
 
 # ── Passo 3: la lista di cio' che manca e «Avanti» ───────────────────────────
 
-def test_avanti_spento_con_la_lista_della_regola_di_invio(loggato, bozza_eco, catalogo):
+def test_avanti_spento_solo_da_cio_che_blocca(loggato, bozza_eco, catalogo):
+    """«Avanti» lo ferma solo il referto dell'ecografo. Le proiezioni
+    mancanti restano nella lista con le caselle, ma diventano un avviso
+    (decisione del 24/09/2026)."""
     url = reverse('consulti:passo_carica', args=[bozza_eco.pk])
     pagina = _t(loggato.get(url))
     elementi = regole.elementi_obbligatori(bozza_eco)
     assert '0 di 4 elementi obbligatori caricati' in pagina
     for e in elementi:
         assert f'href="#{e.chiave}">{e.etichetta}</a>' in pagina
-    # La frase accanto ad «Avanti» e' quella che bloccherebbe l'invio.
     frase = regole.frase_mancanti(regole.allegati_mancanti(bozza_eco))
-    assert frase == regole.perche_non_puoi_inviare(bozza_eco)
+    assert frase == regole.perche_non_puoi_inviare(bozza_eco) == 'Manca il referto dell\'ecografo (PDF).'
     assert f'<i class="bi bi-info-circle me-1" aria-hidden="true"></i>{frase}' in pagina
     assert 'class="btn-nuova" disabled' in pagina
     assert reverse('consulti:passo_riepilogo', args=[bozza_eco.pk]) not in pagina.split('percorso-barra')[-1]
 
+    # Col solo referto si va avanti, con l'avviso di quante proiezioni mancano.
     _carica(loggato, bozza_eco, 'eco_referto', _file('r.pdf'))
     _carica(loggato, bozza_eco, 'proiezione', _file('a.mp4', MP4), proiezione=catalogo['pd_clip'].pk)
     pagina = _t(loggato.get(url))
     assert '2 di 4 elementi obbligatori caricati' in pagina
-    assert 'Mancano: la proiezione «LA/Ao»; la proiezione «Apicale 4 camere».' in pagina
+    assert 'disabled aria-describedby' not in pagina
+    assert '2 proiezioni mancano' in pagina
+    assert f'href="{reverse("consulti:passo_riepilogo", args=[bozza_eco.pk])}"' in pagina
+    assert regole.perche_non_puoi_inviare(bozza_eco) is None
 
     _carica(loggato, bozza_eco, 'proiezione', _file('b.png', PNG), proiezione=catalogo['pd_statica'].pk)
     _carica(loggato, bozza_eco, 'proiezione', _file('c.mp4', MP4), proiezione=catalogo['ap_clip'].pk)
     pagina = _t(loggato.get(url))
-    assert '4 di 4 elementi obbligatori caricati' in pagina and 'disabled aria-describedby' not in pagina
-    assert f'href="{reverse("consulti:passo_riepilogo", args=[bozza_eco.pk])}"' in pagina
-    assert regole.perche_non_puoi_inviare(bozza_eco) is None
+    assert '4 di 4 elementi obbligatori caricati' in pagina
+    assert 'proiezioni mancano' not in pagina and regole.consigliati_mancanti(bozza_eco) == []
 
 
 def test_eco_righe_per_finestra_filmati_prima_e_liberi_in_fondo(loggato, bozza_eco, catalogo):

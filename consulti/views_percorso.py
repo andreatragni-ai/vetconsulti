@@ -50,11 +50,17 @@ def _richiedente_o_redirect(request):
     return richiedente, None
 
 
-def _bozza(request, pk):
+def _bozza(request, pk, anche_integrazioni=False):
     """(richiesta, None) se e' una bozza di chi chiede; 404 se non e' sua;
-    (richiesta, redirect alla pagina del caso) se e' gia' partita."""
+    (richiesta, redirect alla pagina del caso) se e' gia' partita.
+
+    `anche_integrazioni`: lascia passare anche un caso preso in carico con
+    un'integrazione aperta — li' il passo «Carica gli esami» serve ancora,
+    mentre paziente, esame e riepilogo no (il caso e' gia' partito).
+    """
     richiesta = caso_del_richiedente(request.user, pk)
-    if not richiesta.modificabile:
+    apre = richiesta.apre_al_caricamento if anche_integrazioni else richiesta.modificabile
+    if not apre:
         messages.info(request, 'La richiesta non e\' piu\' in bozza: qui la vedi, ma non si modifica.')
         return richiesta, redirect('consulti:dettaglio', pk=pk)
     return richiesta, None
@@ -327,8 +333,13 @@ def contesto_caricamento(richiesta):
     elementi = regole.elementi_obbligatori(richiesta)
     mostrati = set()
     mancanti = [e for e in elementi if not e.fatto]
+    # «Avanti» si spegne solo per cio' che blocca davvero (il referto
+    # dell'ecografo, il tracciato): le proiezioni mancanti diventano un
+    # avviso, e la decisione se mandare lo stesso e' del riepilogo.
+    bloccanti = [e for e in mancanti if e.blocca]
     ctx = {'elementi': elementi, 'fatti': len(elementi) - len(mancanti), 'totale': len(elementi),
-           'mancanti': mancanti, 'perche_fermo': regole.frase_mancanti([e.frase for e in mancanti]),
+           'mancanti': mancanti, 'perche_fermo': regole.frase_mancanti([e.frase for e in bloccanti]),
+           'consigliati_mancanti': [e for e in mancanti if not e.blocca],
            'lista_a_gruppi': _lista_a_gruppi(elementi)}
 
     def zona(slot):
@@ -359,11 +370,12 @@ def contesto_caricamento(richiesta):
 
 @login_required
 def passo_carica(request, pk):
-    richiesta, uscita = _bozza(request, pk)
+    richiesta, uscita = _bozza(request, pk, anche_integrazioni=True)
     if uscita:
         return uscita
     return render(request, 'consulti/percorso/carica.html', {
         'richiesta': richiesta, 'passi': percorso.indicatore(3, richiesta),
+        'integrazione_aperta': richiesta.integrazione_aperta(),
         'max_semplice': settings.ALLEGATO_MAX_BYTE, 'max_pezzi': upload_chunk.max_byte(),
         **contesto_caricamento(richiesta),
     })
@@ -395,12 +407,14 @@ def passo_riepilogo(request, pk):
         except PrezzoNonDisponibile:
             prezzo = None
     motivo = regole.perche_non_puoi_inviare(richiesta)
+    incompleto = regole.consigliati_mancanti(richiesta)
     # Dove si corregge cio' che blocca: il primo passo incompleto, oppure il
     # profilo se il blocco e' la fatturazione o l'approvazione.
     passo = percorso.passo_da_riprendere(richiesta)
     return render(request, 'consulti/percorso/riepilogo.html', {
         'richiesta': richiesta, 'paziente': richiesta.paziente, 'passi': percorso.indicatore(4, richiesta),
         'prezzo': prezzo, 'motivo_blocco': motivo,
+        'consigliati_mancanti': incompleto,
         'url_correggi': percorso.url_passo(richiesta, passo) if motivo and passo < 4 else None,
         'allegati': _allegati_in_ordine(richiesta),
         'ore_risposta': regole.ore_risposta(richiesta) if richiesta.refertatore_id else None,

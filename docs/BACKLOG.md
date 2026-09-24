@@ -160,6 +160,16 @@ spunta. Le idee grosse hanno un file loro in `docs/`.
   possa affidare anche dalla Gestione senza aspettare il richiedente;
   (w) le sezioni in quest'ordine e con questi nomi.
 
+- [2026-09-24] **Esame incompleto e riserva — Andre conferma all'uso**.
+  Le proiezioni eco non bloccano piu' l'invio (avviso + presa d'atto);
+  l'esperto puo' prendere in carico con riserva, chiedere integrazioni per
+  email e il collega le carica sul caso gia' inviato. Da confermare: (x) i
+  testi delle due email nuove (`integrazione_chiesta.txt`,
+  `integrazione_arrivata.txt`); (y) se la riserva debba fermare il tempo di
+  risposta (oggi NO: i tempi corrono lo stesso, altrimenti un caso resta
+  appeso per sempre); (z) se un'eco senza nemmeno il referto PDF
+  dell'ecografo debba poter partire (oggi no, e' l'unico blocco rimasto).
+
 ## Prossimo
 
 - [2026-09-12] **Un invito non si revoca**: e' una firma a tempo, non una

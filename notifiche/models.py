@@ -18,6 +18,8 @@ class TipoInvio(models.TextChoices):
     CASO_TOLTO = 'CASO_TOLTO', 'Caso affidato a un altro esperto (al precedente)'
     CASO_SPOSTATO = 'CASO_SPOSTATO', 'Caso affidato a un altro esperto (al richiedente)'
     CASO_ANNULLATO = 'CASO_ANNULLATO', 'Caso annullato dalla gestione'
+    INTEGRAZIONE = 'INTEGRAZIONE', 'Integrazioni chieste (al richiedente)'
+    INTEGRAZIONE_OK = 'INTEGRAZIONE_OK', 'Integrazioni arrivate (al refertatore)'
     ISCRIZIONE = 'ISCRIZIONE', 'Nuova iscrizione, da approvare (al gestore)'
     APPROVAZIONE = 'APPROVAZIONE', 'Profilo approvato (al richiedente)'
     ALTRO = 'ALTRO', 'Altro'

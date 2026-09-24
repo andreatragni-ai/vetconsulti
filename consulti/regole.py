@@ -29,6 +29,18 @@ ci sono gia'. Da li' escono sia la frase di `perche_non_puoi_inviare` (via
 `allegati_mancanti`) sia la lista con le caselle del passo «Carica gli
 esami» della richiesta guidata: il template non riscrive la regola, la
 legge. Aggiungere un requisito qui lo aggiunge in entrambi i posti.
+
+## Cosa blocca e cosa avvisa (24/09/2026)
+
+Ogni elemento dice anche se `blocca` l'invio. Bloccano i file senza i quali
+non c'e' niente da leggere: il tracciato ECG, il referto del software
+Holter, il referto PDF dell'ecografo (sono le misure). Le 25 proiezioni
+dell'eco NON bloccano piu': mancavano quasi sempre per un limite
+dell'ecografo o della finestra acustica, e il caso restava fermo in bozza.
+Ora il riepilogo elenca cio' che manca, il richiedente spunta una presa
+d'atto (`Richiesta.invia(presa_atto_incompleto=True)`) e l'esperto decide:
+puo' declinare, dichiarare non refertabile, oppure accettare **con riserva**
+chiedendo le integrazioni (`Richiesta.chiedi_integrazione`).
 """
 
 from dataclasses import dataclass
@@ -50,13 +62,14 @@ class Elemento:
     frase: str
     fatto: bool
     proiezione_id: int | None = None
+    blocca: bool = True
 
 
 def elementi_obbligatori(richiesta):
-    """Gli elementi obbligatori per il tipo della richiesta, in ordine, con
-    lo stato fatto/mancante. Gli allegati SCARTATO non contano per le
-    categorie; per le proiezioni conta la riga ProiezioneCaricata, come
-    prima del refactor (nessun cambiamento in cio' che blocca l'invio)."""
+    """Gli elementi attesi per il tipo della richiesta, in ordine, con lo
+    stato fatto/mancante e se bloccano l'invio (`blocca`). Gli allegati
+    SCARTATO non contano per le categorie; per le proiezioni conta la riga
+    ProiezioneCaricata."""
     categorie = set(richiesta.allegati.exclude(stato='SCARTATO').values_list('categoria', flat=True))
     elementi = []
     if richiesta.tipo_esame == TipoEsame.ECG:
@@ -76,13 +89,19 @@ def elementi_obbligatori(richiesta):
         # Stesso ordine delle righe del passo 3: finestra, filmati prima delle immagini, `ordine`.
         for p in in_ordine(ProiezioneCatalogo.objects.filter(obbligatoria=True, attiva=True)):
             elementi.append(Elemento(f'proiezione_{p.id}', p.nome, f'la proiezione «{p.nome}»',
-                                     p.id in caricate, proiezione_id=p.id))
+                                     p.id in caricate, proiezione_id=p.id, blocca=False))
     return elementi
 
 
 def allegati_mancanti(richiesta):
-    """Elenco di frasi, una per requisito non soddisfatto."""
-    return [e.frase for e in elementi_obbligatori(richiesta) if not e.fatto]
+    """Le frasi dei requisiti che mancano E bloccano l'invio."""
+    return [e.frase for e in elementi_obbligatori(richiesta) if not e.fatto and e.blocca]
+
+
+def consigliati_mancanti(richiesta):
+    """Gli elementi che mancano ma NON bloccano: l'elenco dell'avviso nel
+    riepilogo, e cio' che finisce nell'audit dell'invio incompleto."""
+    return [e for e in elementi_obbligatori(richiesta) if not e.fatto and not e.blocca]
 
 
 def _perche_non_puo_richiedere(richiesta):

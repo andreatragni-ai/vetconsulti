@@ -1,0 +1,17 @@
+{% comment %}
+Cosa non e' arrivato con l'esame, per l'esperto che deve decidere o refertare.
+Contesto da referti/views.py:refertazione: consigliati_mancanti (le proiezioni
+del catalogo senza file) e richiesta.inviata_incompleta (il collega lo sapeva:
+ha spuntato la presa d'atto al momento dell'invio).
+{% endcomment %}
+{% if consigliati_mancanti %}
+<div class="alert alert-warning py-2 small">
+  <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
+  <strong>Esame incompleto: {{ consigliati_mancanti|length }} {{ consigliati_mancanti|length|pluralize:"proiezione manca,proiezioni mancano" }}.</strong>
+  {% if richiesta.inviata_incompleta %}Il collega lo sapeva: ha inviato accettando che la refertazione potrebbe non essere possibile.{% endif %}
+  <details class="mt-1">
+    <summary>Vedi quali</summary>
+    <ul class="mb-0 mt-1">{% for e in consigliati_mancanti %}<li>{{ e.etichetta }}</li>{% endfor %}</ul>
+  </details>
+</div>
+{% endif %}

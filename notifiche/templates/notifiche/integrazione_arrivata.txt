@@ -1,0 +1,9 @@
+Gentile {{ refertatore.nome_completo }},
+
+per il caso {{ richiesta.codice }} ({{ richiesta.get_tipo_esame_display }}, paziente {{ richiesta.paziente }}) sono arrivate le integrazioni che avevi chiesto.
+
+Il caso e' sempre tuo: lo riprendi da qui.
+
+  {{ link }}
+
+VetWay Consulti

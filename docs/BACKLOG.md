@@ -170,6 +170,15 @@ spunta. Le idee grosse hanno un file loro in `docs/`.
   appeso per sempre); (z) se un'eco senza nemmeno il referto PDF
   dell'ecografo debba poter partire (oggi no, e' l'unico blocco rimasto).
 
+- [2026-09-24] **Bersagli da dito nelle pagine di accesso: portarli in
+  vetway-ui**. `.auth-link` del pacchetto e' testo da 13 px alto 17: su
+  iPhone «Registrati» non si riusciva a toccare (log di nginx senza nemmeno
+  una richiesta, 24/09). Rimediato QUI, in `templates/auth_base.html`, con
+  `.auth-azioni .auth-link` a 44 px: e' un override locale del pacchetto e
+  vale solo per il portale. Il posto giusto e' `vetway_ui/auth_base.html`,
+  dove lo stesso problema ce l'hanno anche VetCardio e VetAnest; da fare
+  insieme agli altri componenti da portare su (vedi voce vetway-ui 0.3.0).
+
 ## Prossimo
 
 - [2026-09-12] **Un invito non si revoca**: e' una firma a tempo, non una

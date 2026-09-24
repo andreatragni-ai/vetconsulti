@@ -9,3 +9,26 @@ vetway-tokens.css: le variabili --ovic-* ci sono, le classi generiche no
 soli dentro .auth-box (blocco auth_messages del pacchetto).
 {% endcomment %}
 {% block auth_title %}VetWay Consulti{% endblock %}
+
+{% block auth_extra_head %}
+<style>
+  /* Bersagli da dito sulle pagine di accesso (24/09/2026). Nel pacchetto
+     .auth-link e' solo testo da 13 px alto 17: sul telefono «Registrati» e
+     «Password dimenticata?» stanno appiccicati e il tocco cade nel vuoto —
+     successo davvero, log di nginx senza nemmeno una richiesta. Qui
+     diventano righe alte 44 px (minimo consigliato da Apple e dalle WCAG).
+     Vale per tutte le pagine che estendono questo layout.
+     TODO: sta nel pacchetto vetway-ui, vedi docs/BACKLOG.md. */
+  .auth-azioni { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .1rem; }
+  .auth-azioni .auth-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 .7rem;
+  }
+  /* Solo nelle righe di azioni: `.auth-link` compare anche dentro le frasi
+     («puoi anche iscriverti da solo»), e li' un bersaglio alto 44 px
+     sformerebbe il testo. */
+</style>
+{% endblock %}

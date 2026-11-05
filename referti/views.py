@@ -24,13 +24,13 @@ from django.utils import timezone
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_POST
 
-from consulti import regole
+from consulti import anagrafica, regole
 from consulti.forms import DeclinaForm, NonRefertabileForm
 from consulti.elenco_file import gruppi_file
 from consulti.models import StatoRichiesta, TransizioneNonValida
 from consulti.motivi import FRASI_DECLINA
 from consulti.permessi import (caso_del_refertatore, e_refertatore_assegnato, e_richiedente,
-                               registra_accesso_staff)
+                               puo_leggere_referto, registra_accesso_staff, registra_accesso_storico)
 from consulti.racconto import racconta
 from core.views_media import consegna
 from . import pdf
@@ -102,6 +102,9 @@ def refertazione(request, pk):
         'consigliati_mancanti': regole.consigliati_mancanti(richiesta),
         'url_prendi': reverse('consulti:prendi_in_carico', args=[richiesta.pk]),
         'url_integrazione': reverse('consulti:chiedi_integrazione', args=[richiesta.pk]),
+        # Gli altri casi dello stesso paziente, anche di colleghi: i referti
+        # firmati si aprono, le pagine dei casi no (consulti/anagrafica.py).
+        'storico': anagrafica.storico_per(request.user, richiesta),
     })
 
 
@@ -186,12 +189,17 @@ def anteprima(request, pk):
 # ── PDF delle versioni firmate ───────────────────────────────────────────────
 
 def _puo_vedere_versioni(utente, richiesta):
-    return utente.is_staff or e_richiedente(utente, richiesta) or e_refertatore_assegnato(utente, richiesta)
+    """La regola sta in consulti/permessi.py, con le altre: staff, chi ha
+    chiesto, l'esperto assegnato, e l'esperto di un altro caso dello stesso
+    paziente (lo storico)."""
+    return puo_leggere_referto(utente, richiesta)
 
 
 def _consegna_versione(request, versione):
     richiesta = versione.referto.richiesta
-    registra_accesso_staff(request.user, richiesta, f'PDF referto v{versione.numero}')
+    pagina = f'PDF referto v{versione.numero}'
+    registra_accesso_staff(request.user, richiesta, pagina)
+    registra_accesso_storico(request.user, richiesta, pagina)
     nome = pdf.nome_file(versione)
     if not versione.pdf:
         contenuto = pdf.contenuto_pdf(versione)

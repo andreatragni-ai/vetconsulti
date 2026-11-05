@@ -9,6 +9,10 @@ razza fuori elenco si accetta, con un avviso discreto. La data di nascita
 e' un campo di TESTO gg/mm/aaaa (non type="date": su Safari il campo data
 vuoto mostra la data di oggi in grigio e sembra compilato); il JS qui sotto
 aggiunge le barre mentre si scrive, il form accetta anche - e .
+
+Mentre si scrive il nome, htmx chiede all'archivio pazienti della clinica
+chi somiglia e lo propone in #archivio-proposte (consulti/anagrafica.py):
+«usa questi dati» ricopia tutto tranne il peso, che va scritto ogni volta.
 {% endcomment %}
 {% block title %}{% if richiesta %}{{ richiesta.titolo }} · paziente{% else %}Nuova richiesta{% endif %} — VetWay Consulti{% endblock %}
 {% block content %}
@@ -17,10 +21,18 @@ aggiunge le barre mentre si scrive, il form accetta anche - e .
 {% if ripreso %}<div class="alert alert-info py-2 small"><i class="bi bi-arrow-counterclockwise me-1"></i>Avevi gia' iniziato una richiesta: riparti da qui. <a href="{% url 'consulti:nuova' %}?ricomincia=1">Ricomincia da capo</a></div>{% endif %}
 
 <form method="post" id="form-paziente">{% csrf_token %}
+{% comment %}L'id della voce d'archivio da cui arrivano i dati: viaggia
+nascosto per tutto il percorso, cosi' la fotografia resta legata al
+paziente giusto.{% endcomment %}
+{{ form.archivio }}
 <div class="ovic-card"><div class="card-header-ovic">Il paziente</div><div class="card-body-ovic">
   {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors|join:" " }}</div>{% endif %}
   <div class="row">
-    <div class="col-md-6">{% include "_campo_form.html" with campo=form.nome %}</div>
+    <div class="col-md-6">
+      {% include "_campo_form.html" with campo=form.nome %}
+      {# Le proposte dell'archivio pazienti: le porta htmx dal campo nome. #}
+      <div id="archivio-proposte" aria-live="polite"></div>
+    </div>
     <div class="col-md-6">
       <fieldset class="mb-3">
         <legend class="form-label fs-6 mb-2">{{ form.specie.label }} <span class="text-danger">*</span></legend>

@@ -193,6 +193,10 @@ class Richiesta(models.Model):
         self.save(update_fields=['stato', 'inviata_il', 'inviata_incompleta'])
         self.registra('INVIATA', utente, refertatore=self.refertatore_id,
                       incompleta=bool(mancanti), mancanti=[m.etichetta for m in mancanti])
+        # L'archivio pazienti si riempie qui, non da una pagina a parte:
+        # cio' che e' stato inviato e' cio' che vale (consulti/anagrafica.py).
+        from . import anagrafica
+        anagrafica.registra(self)
 
     def prendi_in_carico(self, refertatore, utente=None, riserva=False, motivo_riserva=''):
         """`riserva=True`: l'esperto accetta un esame che non e' completo e
@@ -410,13 +414,99 @@ class Sesso(models.TextChoices):
     ND = 'ND', 'Non noto'
 
 
+class PazienteArchivio(models.Model):
+    """L'anagrafica: lo stesso animale fra una richiesta e l'altra (05/11/2026).
+
+    Serve a non riscrivere Luna da zero ogni volta. NON sostituisce il
+    `Paziente` della richiesta, che resta la fotografia di quel giorno (il
+    peso, l'eta', il proprietario di allora: e' cio' che va sul referto).
+    Qui stanno solo i dati che da un esame all'altro non cambiano, e il
+    **peso non c'e' di proposito**: precompilarlo in silenzio vorrebbe dire
+    firmare indici normalizzati su un peso vecchio.
+
+    ## Di chi e' l'archivio (deciso con Andre il 05/11/2026)
+
+    Della clinica: Luna inserita da un collega la ritrova chi apre la
+    richiesta dopo, come la cartella di carta. Un libero professionista ha
+    il suo (`clinica` nulla, `richiedente` lui). Gli elenchi dei casi
+    restano per utente: cambia solo l'anagrafica. Lo scope si chiede sempre
+    a `consulti.anagrafica.archivio_di`, non filtrando a mano.
+
+    ## Si riempie da solo, all'invio
+
+    Nessuna pagina «aggiungi paziente»: `Richiesta.invia()` chiama
+    `anagrafica.registra`, che aggiorna la voce o la crea. Una bozza
+    abbandonata non lascia niente in archivio, e l'ultimo caso inviato e'
+    quello che vince: se il collega corregge la razza, la correzione resta.
+    `chiave` (nome + specie + cognome del proprietario normalizzati,
+    `consulti/nomi.py`) e' dove si riconosce lo stesso animale, e l'unicita'
+    e' nel database, non nel codice.
+    """
+
+    # Clinica e richiedente come sulla Richiesta: clinica nulla = libero
+    # professionista. CASCADE e non PROTECT perche' l'archivio e' un dato
+    # derivato dai casi: una clinica senza casi (le richieste la PROTECT-ano)
+    # si cancella portandosi via la sua anagrafica.
+    clinica = models.ForeignKey(Clinica, on_delete=models.CASCADE, null=True, blank=True,
+                                related_name='pazienti')
+    richiedente = models.ForeignKey(Richiedente, on_delete=models.CASCADE, related_name='pazienti_archivio',
+                                    help_text='Chi ha inserito il paziente per primo.')
+    nome = models.CharField(max_length=100)
+    specie = models.CharField(max_length=10, choices=Specie.choices, default=Specie.CANE)
+    razza = models.CharField(max_length=100, blank=True)
+    sesso = models.CharField(max_length=2, choices=Sesso.choices, default=Sesso.ND)
+    data_nascita = models.DateField(null=True, blank=True)
+    eta_testo = models.CharField(max_length=30, blank=True, help_text='Es. «8 anni», se la data non e\' nota.')
+    eta_dal = models.DateField(
+        null=True, blank=True,
+        help_text='Quando l\'eta\' in anni e\' stata scritta: passato un po\' di tempo non si precompila piu\'.')
+    cognome_proprietario = models.CharField(max_length=100, blank=True)
+    chiave = models.CharField(max_length=220, editable=False, db_index=True)
+    creato_il = models.DateTimeField(auto_now_add=True)
+    visto_il = models.DateTimeField(null=True, blank=True, help_text='Ultimo caso inviato per questo paziente.')
+
+    class Meta:
+        verbose_name = 'Paziente in archivio'
+        verbose_name_plural = 'Archivio pazienti'
+        ordering = ['nome', 'cognome_proprietario']
+        constraints = [
+            models.UniqueConstraint(fields=['clinica', 'chiave'], condition=models.Q(clinica__isnull=False),
+                                    name='un_paziente_per_clinica'),
+            models.UniqueConstraint(fields=['richiedente', 'chiave'], condition=models.Q(clinica__isnull=True),
+                                    name='un_paziente_per_richiedente'),
+        ]
+
+    def __str__(self):
+        return f'{self.nome}{" " + self.cognome_proprietario if self.cognome_proprietario else ""}'
+
+    def save(self, *args, **kwargs):
+        from .nomi import chiave_archivio, maiuscole_nome
+        self.nome = maiuscole_nome(self.nome)
+        self.cognome_proprietario = maiuscole_nome(self.cognome_proprietario)
+        self.chiave = chiave_archivio(self.nome, self.specie, self.cognome_proprietario)
+        super().save(*args, **kwargs)
+
+    @property
+    def descrizione(self):
+        """«Cane, Labrador» o «Gatto»: la riga sotto il nome nell'elenco."""
+        return f'{self.get_specie_display()}{", " + self.razza if self.razza else ""}'
+
+
 class Paziente(models.Model):
-    """I dati del paziente vivono sulla richiesta, non in un'anagrafica: il
-    portale non e' la cartella clinica della clinica, e lo stesso cane su due
-    richieste diverse sono due pazienti (potrebbe essere cambiato il peso,
-    o il proprietario)."""
+    """I dati del paziente **su questa richiesta**: la fotografia del giorno
+    dell'esame, non una scheda da aggiornare. Lo stesso cane su due richieste
+    sono due Paziente, perche' il peso, l'eta' e a volte il proprietario
+    cambiano, e sul referto va cio' che era vero allora.
+
+    Dal 05/11/2026 la fotografia punta anche alla voce di
+    `PazienteArchivio`, l'anagrafica della clinica da cui il passo 1 si
+    precompila (`consulti/anagrafica.py`): `archivio` nullo vuol dire un
+    caso vecchio o una bozza mai inviata."""
 
     richiesta = models.OneToOneField(Richiesta, on_delete=models.CASCADE, related_name='paziente')
+    archivio = models.ForeignKey(
+        PazienteArchivio, on_delete=models.SET_NULL, null=True, blank=True, related_name='pazienti',
+        help_text='La voce dell\'anagrafica da cui arriva (e che l\'invio aggiorna).')
     nome = models.CharField(max_length=100)
     specie = models.CharField(max_length=10, choices=Specie.choices, default=Specie.CANE)
     razza = models.CharField(max_length=100, blank=True)

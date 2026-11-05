@@ -53,6 +53,9 @@ def _frase(evento, refertatori):
         'PRESTAZIONE_REGISTRATA': f'prestazione registrata (€ {d.get("totale", "?")})',
         'SOLLECITO': 'promemoria inviato all\'esperto a meta\' del tempo di risposta',
         'ACCESSO_STAFF': f'ha consultato il caso come staff ({d.get("pagina", "pagina")})',
+        # L'esperto di un altro caso dello stesso paziente che ha letto il
+        # referto: lo vede anche chi ha chiesto, e' il suo paziente.
+        'ACCESSO_STORICO': f'ha letto il referto per lo storico del paziente ({d.get("pagina", "referto")})',
         'SMISTAMENTO_AVVIATO': f'ha avviato lo smistamento automatico di {d.get("file", "")} file',
         'SMISTAMENTO_CONFERMATO': f'ha confermato lo smistamento dei file ({d.get("righe", 0)} proiezioni)',
     }

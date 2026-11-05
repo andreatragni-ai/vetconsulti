@@ -1,0 +1,30 @@
+{% comment %}
+Gli altri casi dello stesso paziente, sulla pagina del caso e su quella di
+refertazione. Le righe arrivano da consulti.anagrafica.storico_per, che ha
+gia' deciso cosa questo utente puo' aprire: un caso del collega si legge
+nella riga ma non ha link, il referto firmato si apre in PDF (e per un
+esperto di un altro caso lascia un ACCESSO_STORICO nell'audit).
+Contesto: storico [{caso, url, url_pdf}], richiesta.
+{% endcomment %}
+{% if storico %}
+<div class="ovic-card"><div class="card-header-ovic">Altri casi di {{ richiesta.paziente.nome }}</div>
+<div class="table-responsive">
+  <table class="tbl-risultati align-middle mb-0">
+    <tbody>
+      {% for r in storico %}
+      <tr>
+        <td class="text-nowrap">{{ r.caso.inviata_il|date:"d/m/Y"|default:"—" }}</td>
+        <td>
+          {% if r.url %}<a href="{{ r.url }}">{{ r.caso.get_tipo_esame_display }}</a>{% else %}{{ r.caso.get_tipo_esame_display }}{% endif %}
+          <span class="codice-caso d-block">{{ r.caso.codice }}{% if r.caso.refertatore %} · {{ r.caso.refertatore }}{% endif %}{% if r.caso.richiedente_id != richiesta.richiedente_id %} · chiesto da {{ r.caso.richiedente.user.get_full_name }}{% endif %}</span>
+        </td>
+        <td class="text-end text-nowrap">
+          {% if r.url_pdf %}<a class="btn btn-sm btn-outline-secondary" href="{{ r.url_pdf }}"><i class="bi bi-file-earmark-text me-1" aria-hidden="true"></i>Referto</a>
+          {% else %}<span class="pill-stato{% if r.caso.tono_stato %} pill-stato--{{ r.caso.tono_stato }}{% endif %}">{{ r.caso.get_stato_display }}</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% endif %}

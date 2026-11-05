@@ -46,6 +46,8 @@ sono rotte diverse: la firma passa dalla modale di conferma del pacchetto.
       {% include "_dato.html" with label="Terapia in corso" val=richiesta.terapia multiline=True %}
     </div></div>
 
+    {% include "consulti/_storico_paziente.html" %}
+
     {% if richiesta.stato == 'INVIATA' %}
     {# ── Decisione ─────────────────────────────────────────────────── #}
     <div class="ovic-card"><div class="card-header-ovic">Decisione</div><div class="card-body-ovic">

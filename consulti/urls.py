@@ -10,6 +10,8 @@ urlpatterns = [
     path('nuova/', views_percorso.nuova_paziente, name='nuova'),
     path('nuova/esame/', views_percorso.nuova_esame, name='nuova_esame'),
     path('esperti/', views_percorso.esperti, name='esperti'),
+    # Archivio pazienti: le proposte mentre si scrive il nome (passo 1).
+    path('archivio/', views_percorso.archivio, name='archivio'),
     # Dettatura vocale: «Ripulisci» il testo dettato (solo testo all'AI).
     path('ripulisci/', views_dettatura.ripulisci, name='ripulisci'),
     path('<int:pk>/paziente/', views_percorso.passo_paziente, name='passo_paziente'),

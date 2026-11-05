@@ -30,6 +30,7 @@ Il titolo e' il paziente con l'esame; il codice sta accanto, piccolo.
       {% include "_dato.html" with label="Anamnesi" val=richiesta.anamnesi multiline=True %}
       {% include "_dato.html" with label="Terapia in corso" val=richiesta.terapia multiline=True %}
     </div></div>
+    {% include "consulti/_storico_paziente.html" %}
   </div>
   <div class="col-lg-7">
     <div class="ovic-card"><div class="card-header-ovic">Allegati</div><div class="card-body-ovic">

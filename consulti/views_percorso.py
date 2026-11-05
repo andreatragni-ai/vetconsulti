@@ -15,15 +15,17 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_GET
 
 from core.tipi import TipoEsame
 from listino.prezzi import PrezzoNonDisponibile, prezzo_effettivo
-from . import caricamento, percorso, regole, upload_chunk
+from . import anagrafica, caricamento, percorso, regole, upload_chunk
 from .forms import EsameForm, PazienteForm
 from .permessi import caso_del_richiedente
 
-CAMPI_PAZIENTE = ('nome', 'specie', 'razza', 'sesso', 'data_nascita', 'eta_anni', 'peso_kg', 'cognome_proprietario')
+CAMPI_PAZIENTE = ('nome', 'specie', 'razza', 'sesso', 'data_nascita', 'eta_anni', 'peso_kg',
+                  'cognome_proprietario', 'archivio')
 CAMPI_ESAME = ('tipo_esame', 'refertatore', 'urgenza', 'quesito', 'anamnesi', 'terapia')
 
 # Cosa servira' caricare, per le schede del tipo di esame (passo 2).
@@ -89,6 +91,20 @@ def _paziente_in_sessione(form, post):
     return grezzi
 
 
+def _precompila(request, richiedente):
+    """La voce d'archivio chiesta con `?archivio=<id>`, con l'avviso di cosa
+    NON e' stato precompilato. None se l'id non e' (piu') nel suo archivio."""
+    voce = anagrafica.voce(richiedente, request.GET.get('archivio'))
+    if voce is None:
+        return None
+    messages.info(request, f'Dati di {voce.nome} presi dall\'archivio. Il peso scrivilo comunque: '
+                           f'cambia, e il referto ci calcola gli indici.')
+    if not voce.data_nascita and voce.eta_testo and not anagrafica.eta_fresca(voce):
+        messages.warning(request, f'In archivio l\'eta\' di {voce.nome} e\' «{voce.eta_testo}», scritta il '
+                                  f'{voce.eta_dal:%d/%m/%Y}: ricontrollala, non l\'ho precompilata.')
+    return voce
+
+
 def _tipi(form):
     scelto = form['tipo_esame'].value()
     return [{**t, 'etichetta': TipoEsame(t['valore']).label, 'scelto': scelto == t['valore']} for t in TIPI]
@@ -123,16 +139,27 @@ def nuova_paziente(request):
         request.session.pop(percorso.SESSIONE_PAZIENTE, None)
         request.session.pop(percorso.SESSIONE_ESAME, None)
         return redirect('consulti:nuova')
+    if request.GET.get('archivio'):
+        # «Usa questi dati» da una proposta dell'archivio: i valori entrano
+        # in sessione come se li avesse scritti chi compila, e si torna sul
+        # passo 1 (`preso=1` perche' il banner giusto e' quello dell'avviso,
+        # non «avevi gia' iniziato»).
+        voce = _precompila(request, richiedente)
+        if voce is not None:
+            request.session[percorso.SESSIONE_PAZIENTE] = PazienteForm.iniziale_da_archivio(voce)
+            return redirect(f'{reverse("consulti:nuova")}?preso=1')
+        return redirect('consulti:nuova')
     salvati = request.session.get(percorso.SESSIONE_PAZIENTE)
     if request.method == 'POST':
-        form = PazienteForm(request.POST)
+        form = PazienteForm(request.POST, richiedente=richiedente)
         if form.is_valid():
             request.session[percorso.SESSIONE_PAZIENTE] = _paziente_in_sessione(form, request.POST)
             return redirect('consulti:nuova_esame')
     else:
-        form = PazienteForm(initial=salvati or {})
+        form = PazienteForm(initial=salvati or {}, richiedente=richiedente)
     return render(request, 'consulti/percorso/paziente.html', {
-        'form': form, 'richiesta': None, 'ripreso': bool(salvati) and request.method != 'POST',
+        'form': form, 'richiesta': None,
+        'ripreso': bool(salvati) and request.method != 'POST' and not request.GET.get('preso'),
         'passi': percorso.indicatore(1, paziente_in_sessione=bool(salvati)),
         'puo_richiedere': richiedente.puo_richiedere,
     })
@@ -143,7 +170,13 @@ def passo_paziente(request, pk):
     richiesta, uscita = _bozza(request, pk)
     if uscita:
         return uscita
-    form = PazienteForm(request.POST or None, instance=richiesta.paziente)
+    richiedente = richiesta.richiedente
+    iniziale = None
+    if request.method == 'GET' and request.GET.get('archivio'):
+        voce = _precompila(request, richiedente)
+        iniziale = PazienteForm.iniziale_da_archivio(voce) if voce is not None else None
+    form = PazienteForm(request.POST or None, instance=richiesta.paziente, richiedente=richiedente,
+                        initial=iniziale)
     if request.method == 'POST' and form.is_valid():
         form.save()
         return redirect(percorso.url_passo(richiesta, 2))
@@ -169,7 +202,7 @@ def nuova_esame(request):
             request.session[percorso.SESSIONE_ESAME] = _grezzi(request.POST, CAMPI_ESAME)
             return redirect('consulti:nuova')
         form = EsameForm(request.POST)
-        form_p = PazienteForm(dati_paziente)
+        form_p = PazienteForm(dati_paziente, richiedente=richiedente)
         if not form_p.is_valid():
             messages.error(request, 'Controlla i dati del paziente.')
             return redirect('consulti:nuova')
@@ -233,6 +266,24 @@ def esperti(request):
         'esperti': esperti, 'selezionato': request.GET.get('refertatore', ''),
         'tipo_scelto': tipo, 'tipo_label': TipoEsame(tipo).label.lower(), 'urgenza': urgenza,
         'nessuno_per_urgenza': bool(urgenza and esperti and not any(e['accetta_urgenze'] for e in esperti)),
+    })
+
+
+@login_required
+@require_GET
+def archivio(request):
+    """Frammento htmx: chi c'e' gia' in archivio con il nome che si sta
+    scrivendo nel passo 1 (`consulti/anagrafica.py` per lo scope). `caso` e'
+    la bozza da cui si cerca, per tornare sul suo passo 1 invece che su
+    quello di una richiesta nuova."""
+    richiedente = getattr(request.user, 'richiedente', None)
+    caso = request.GET.get('caso') or ''
+    url_usa = reverse('consulti:nuova')
+    if caso.isdigit():
+        url_usa = percorso.url_passo(caso_del_richiedente(request.user, caso), 1)
+    return render(request, 'consulti/percorso/_archivio.html', {
+        'trovati': anagrafica.cerca(richiedente, request.GET.get('nome', '')),
+        'url_usa': url_usa,
     })
 
 

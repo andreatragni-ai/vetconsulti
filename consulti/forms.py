@@ -3,9 +3,11 @@ from decimal import Decimal
 
 from django import forms
 
+from django.urls import reverse
+
 from accounts.models import Refertatore
 from core.tipi import TipoEsame
-from . import razze
+from . import anagrafica, razze
 from .nomi import maiuscole_nome
 from .models import Paziente, Richiesta, Sesso, Specie
 
@@ -46,10 +48,21 @@ class PazienteForm(forms.ModelForm):
     nascita oppure come anni (in `eta_testo`, «8 anni»), non entrambe. La
     razza si sceglie dall'elenco della specie (consulti/razze.py) scrivendo
     per filtrare; una razza fuori elenco si accetta com'e'. Nome e cognome
-    del proprietario prendono le maiuscole (consulti/nomi.py)."""
+    del proprietario prendono le maiuscole (consulti/nomi.py).
+
+    Dal 05/11/2026 il form conosce l'archivio pazienti: mentre si scrive il
+    nome, htmx propone chi c'e' gia' (`consulti:archivio`), e `archivio`
+    tiene l'id della voce scelta per tutto il percorso, anche attraverso la
+    sessione del passo 2. Serve `richiedente` per sapere di quale archivio
+    si parla; senza, il form funziona come prima e non propone nulla."""
 
     # Gli elenchi per il JS del campo razza: {{ form.elenchi_razze|json_script:... }}.
     elenchi_razze = razze.RAZZE
+
+    # Un IntegerField e non un ModelChoiceField: una voce cancellata o di
+    # un'altra clinica non deve diventare un errore in faccia a chi compila,
+    # ma un paziente nuovo (clean_archivio).
+    archivio = forms.IntegerField(required=False, widget=forms.HiddenInput)
 
     specie = forms.ChoiceField(
         label='Specie', choices=Specie.choices, widget=forms.RadioSelect,
@@ -96,8 +109,9 @@ class PazienteForm(forms.ModelForm):
         }
         error_messages = {'nome': {'required': 'Scrivi il nome del paziente.'}}
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, richiedente=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.richiedente = richiedente
         _bootstrap(self)
         self.fields['specie'].widget.attrs['class'] = 'btn-check'
         self.fields['nome'].widget.attrs['autofocus'] = True
@@ -105,6 +119,54 @@ class PazienteForm(forms.ModelForm):
             corrisponde = ETA_IN_ANNI.match(self.instance.eta_testo or '')
             if corrisponde:
                 self.initial['eta_anni'] = int(corrisponde.group(1))
+            self.initial.setdefault('archivio', self.instance.archivio_id)
+        if richiedente is not None and anagrafica.archivio_di(richiedente).exists():
+            self._proponi_archivio()
+
+    def _proponi_archivio(self):
+        """Il campo nome chiede al portale, mentre si scrive, chi c'e' gia'
+        in archivio; le proposte finiscono in #archivio-proposte (il
+        frammento consulti/percorso/_archivio.html). Niente JS nostro: e'
+        htmx, come le schede degli esperti del passo 2."""
+        url = reverse('consulti:archivio')
+        caso = getattr(self.instance, 'richiesta_id', None)
+        self.fields['nome'].help_text = (
+            'Se l\'hai gia\' visto, te lo proponiamo mentre scrivi: i dati si ricopiano da soli.')
+        self.fields['nome'].widget.attrs.update({
+            'hx-get': f'{url}?caso={caso}' if caso else url,
+            # `input` e non `keyup`: cosi' le proposte arrivano anche quando
+            # il nome e' incollato o messo dal riempimento automatico.
+            'hx-trigger': 'input changed delay:400',
+            'hx-params': 'nome',
+            'hx-target': '#archivio-proposte',
+            'hx-swap': 'innerHTML',
+        })
+
+    @classmethod
+    def iniziale_da_archivio(cls, voce):
+        """I valori con cui precompilare il passo 1 da una voce d'archivio,
+        come stringhe (gli stessi che viaggiano in sessione).
+
+        Il **peso non c'e'**: va scritto ogni volta, perche' e' il
+        denominatore degli indici del referto. L'eta' in anni c'e' solo se
+        e' ancora fresca (`anagrafica.MESI_ETA_FRESCA`): quella di due anni
+        fa sarebbe una bugia, e la pagina preferisce chiederla."""
+        iniziale = {'archivio': str(voce.pk), 'nome': voce.nome, 'specie': voce.specie,
+                    'razza': voce.razza, 'sesso': voce.sesso,
+                    'cognome_proprietario': voce.cognome_proprietario}
+        if voce.data_nascita:
+            iniziale['data_nascita'] = voce.data_nascita.strftime('%d/%m/%Y')
+        elif anagrafica.eta_fresca(voce):
+            corrisponde = ETA_IN_ANNI.match(voce.eta_testo or '')
+            if corrisponde:
+                iniziale['eta_anni'] = corrisponde.group(1)
+        return {c: v for c, v in iniziale.items() if v not in (None, '')}
+
+    def clean_archivio(self):
+        """Dall'id alla voce, dentro l'archivio di chi compila. Un id di
+        un'altra clinica o di una voce cancellata non e' un errore da
+        mostrare: il paziente e' nuovo e si va avanti."""
+        return anagrafica.voce(self.richiedente, self.cleaned_data.get('archivio'))
 
     # Maiuscole gia' qui (e di nuovo in Paziente.save): il passo 2 mostra il
     # nome giusto anche prima che la bozza esista.
@@ -133,6 +195,9 @@ class PazienteForm(forms.ModelForm):
         paziente = super().save(commit=False)
         anni = self.cleaned_data.get('eta_anni')
         paziente.eta_testo = _eta_testo(anni) if anni is not None else ''
+        # `archivio` non e' in Meta.fields (e' un IntegerField): il legame con
+        # l'anagrafica si mette qui. L'invio lo rifara' comunque da capo.
+        paziente.archivio = self.cleaned_data.get('archivio')
         if commit:
             paziente.save()
         return paziente

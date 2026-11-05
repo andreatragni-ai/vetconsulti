@@ -3,7 +3,7 @@
 from django.contrib import admin
 
 from core.admin_sola_lettura import SolaLettura
-from .models import Allegato, EventoAudit, Paziente, Richiesta
+from .models import Allegato, EventoAudit, Paziente, PazienteArchivio, Richiesta
 
 
 class PazienteInline(SolaLettura, admin.StackedInline):
@@ -37,3 +37,14 @@ class EventoAuditAdmin(SolaLettura, admin.ModelAdmin):
     list_display = ('richiesta', 'azione', 'utente', 'quando')
     list_filter = ('azione',)
     search_fields = ('richiesta__codice',)
+
+
+@admin.register(PazienteArchivio)
+class PazienteArchivioAdmin(SolaLettura, admin.ModelAdmin):
+    """L'archivio pazienti si guarda, non si corregge: lo riscrive l'invio
+    successivo (`consulti/anagrafica.py`, l'ultimo caso vince). I doppioni
+    si uniscono dalla Gestione, il giorno che serve (docs/BACKLOG.md)."""
+
+    list_display = ('nome', 'cognome_proprietario', 'specie', 'razza', 'clinica', 'visto_il')
+    list_filter = ('specie', 'clinica')
+    search_fields = ('nome', 'cognome_proprietario', 'razza')

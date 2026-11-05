@@ -36,6 +36,15 @@ sessioni brevi: ogni sessione deve lasciare il repo in uno stato ripartibile.
 - Amministrazione, deciso con Andre il 13/09/2026: tutto il lavoro dello
   staff sta nella Gestione del portale (`/gestione/`), che vede tutti i casi
   inviati e interviene nelle emergenze. Referto eco senza ACVIM.
+- Archivio pazienti, deciso con Andre il 05/11/2026: l'anagrafica e' della
+  **clinica** (del richiedente se libero professionista), si riempie da
+  sola a ogni invio e precompila il passo 1; il **peso mai**, l'eta' in
+  anni solo se recente. Lo **storico** del paziente si vede sulla pagina
+  del caso e in refertazione, attraversando i colleghi: l'unica eccezione
+  ai permessi e' che l'esperto assegnato puo' aprire il PDF dei referti
+  firmati degli altri casi dello stesso paziente (`consulti/anagrafica.py`,
+  `consulti/tests_anagrafica.py`). Sul server, una volta sola:
+  `manage.py popola_archivio_pazienti`.
 
 ## Avvio e collaudo
 
@@ -101,6 +110,13 @@ Senza librerie il test del PDF vero salta con un messaggio che lo dice.
   file: e' `Richiesta.apre_al_caricamento`, non `modificabile`. Un caso urgente scade in 4 ore e va solo a chi accetta le
   urgenze per quel tipo (`rifiuta_urgenza`, test in
   `consulti/tests_urgenze.py`).
+- `consulti/anagrafica.py`: l'archivio pazienti. Lo scope (clinica o
+  libero professionista) si chiede SEMPRE a `archivio_di` / `voce`: un
+  filtro scritto a mano altrove, prima o poi, mostra i pazienti di
+  un'altra clinica. `PazienteArchivio` non e' la cartella clinica: il
+  `Paziente` della richiesta resta la fotografia del giorno dell'esame, e
+  il peso vive solo li'. L'archivio si aggiorna dentro `Richiesta.invia()`
+  e da nessun'altra parte.
 - `registro/`: `Prestazione` e' immutabile una volta registrata.
 - `core/views_media.py` + `consulti/upload_chunk.py`: gli allegati non sono
   mai serviti come statici (FileResponse in dev, X-Accel-Redirect in prod).

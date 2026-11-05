@@ -23,7 +23,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 
 from accounts.models import Refertatore
-from . import caricamento, percorso, regole, upload_chunk
+from . import anagrafica, caricamento, percorso, regole, upload_chunk
 from .elenco_file import voci_in_ordine
 from .models import Allegato, Richiesta, StatoRichiesta, TransizioneNonValida
 from .permessi import caso_del_richiedente, e_refertatore_assegnato, registra_accesso_staff
@@ -116,6 +116,8 @@ def dettaglio(request, pk):
         'integrazioni': list(richiesta.integrazioni.all()),
         'ore_risposta': regole.ore_risposta(richiesta) if richiesta.refertatore_id else None,
         'scadenza': regole.scadenza(richiesta),
+        # Gli altri casi dello stesso paziente (consulti/anagrafica.py).
+        'storico': anagrafica.storico_per(request.user, richiesta),
     })
 
 

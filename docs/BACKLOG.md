@@ -206,6 +206,16 @@ spunta. Le idee grosse hanno un file loro in `docs/`.
   `CONSULTI_SMISTAMENTO_ESEMPLARI`. Da rifare anche il confronto
   `--taglio 0` contro `--taglio 0.08` (quanto costa in accuratezza non
   mandare l'intestazione con il nome del paziente).
+- [2026-11-05] **Archivio pazienti, da confermare al collaudo**: (aa) i
+  doppioni (lo stesso cane scritto una volta con il cognome del
+  proprietario e una volta senza) oggi restano due voci e nessuno li
+  unisce: serve un «unisci» in Gestione, o basta sceglierne uno?
+  (bb) l'eta' in anni non si precompila oltre i 6 mesi
+  (`anagrafica.MESI_ETA_FRESCA`): giusto il limite? (cc) lo staff non ha
+  una pagina dell'archivio in Gestione (nell'admin e' in sola lettura);
+  (dd) l'esperto vede i referti firmati degli altri casi del paziente, ma
+  NON i loro allegati: se serve guardare le immagini di marzo e' un'altra
+  decisione.
 - [2026-09-11] Commenti con allegati sul caso (resto di F2).
 - [2026-09-11] vetway-ui 0.3.0: portare nel pacchetto i componenti nati
   in `static/consulti/css/consulti.css` per F2 (`.passi`, `.schede-scelta`,

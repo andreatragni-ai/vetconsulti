@@ -8,6 +8,13 @@ Visore degli allegati del caso (pagina di refertazione). Contesto:
   voci_visore   — le stesse voci in fila: {allegato, genere: pdf|immagine|
                   video|altro, filmato, proiezione, nota, miniatura}
   iniziale      — la voce aperta all'arrivo (il primo PDF, o il primo allegato)
+Dal 14/11/2026 la scena sta a SINISTRA e le schede in una colonna stretta
+che scorre per conto suo (`.visore-corpo`): con 26 file l'elenco sopra la
+scena riempiva tutto lo schermo e l'immagine finiva sotto la piega. Su
+schermo stretto tornano una sopra l'altra, scena prima. I file si scorrono
+anche con le frecce della tastiera e con i due bottoni sulla scena: il
+contatore «7 di 26» dice a che punto sei.
+
 Ogni scheda ha una miniatura (le immagini: il file stesso, piccolo e
 caricato solo quando si vede) o un'icona (filmati, PDF, altro).
 I file passano SEMPRE da scarica_allegato (mai statici): ?inline=1 li mostra
@@ -18,6 +25,26 @@ non parte finche' non la si guarda.
 <div class="visore">
   <div class="ovic-card"><div class="card-header-ovic">Allegati ({{ voci_visore|length }})</div><div class="card-body-ovic">
     {% if voci_visore %}
+    <div class="visore-corpo">
+    <div class="visore-scena">
+      <button type="button" class="visore-freccia prec" data-passo="-1" aria-label="File precedente"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
+      {% for v in voci_visore %}{% url 'scarica_allegato' v.allegato.pk as url_file %}
+      <div id="vis-{{ v.allegato.pk }}" class="visore-posto w-100{% if v.allegato.pk == iniziale.allegato.pk %} attivo{% endif %}">
+        {% if v.genere == 'pdf' %}
+          <iframe {% if v.allegato.pk == iniziale.allegato.pk %}src{% else %}data-src{% endif %}="{{ url_file }}?inline=1" title="{{ v.allegato.nome_originale }}"></iframe>
+        {% elif v.genere == 'immagine' %}
+          <img {% if v.allegato.pk == iniziale.allegato.pk %}src{% else %}data-src{% endif %}="{{ url_file }}?inline=1" alt="{{ v.proiezione|default:v.allegato.get_categoria_display }}">
+        {% elif v.genere == 'video' %}
+          <video controls preload="metadata" playsinline {% if v.allegato.pk == iniziale.allegato.pk %}src{% else %}data-src{% endif %}="{{ url_file }}?inline=1"></video>
+        {% else %}
+          <div class="visore-altro"><i class="bi bi-file-earmark fs-2 d-block mb-2"></i>Questo formato non si apre nel browser.<br>
+            <a href="{{ url_file }}">Scarica «{{ v.allegato.nome_originale|default:'file' }}»</a> ({{ v.allegato.dimensione|filesizeformat }})</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+      <button type="button" class="visore-freccia succ" data-passo="1" aria-label="File successivo"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+      <span class="visore-conta"><span data-visore-numero>1</span> di {{ voci_visore|length }}</span>
+    </div>
     <div class="visore-elenco">
       {% for g in gruppi_visore %}
       <div class="visore-blocco{% if g.chiave %} blocco-{{ g.chiave }}{% endif %}{% if not g.etichetta %} senza-titolo{% endif %}">
@@ -39,23 +66,9 @@ non parte finche' non la si guarda.
       </div>{# /visore-blocco #}
       {% endfor %}
     </div>
-    <div class="visore-scena">
-      {% for v in voci_visore %}{% url 'scarica_allegato' v.allegato.pk as url_file %}
-      <div id="vis-{{ v.allegato.pk }}" class="w-100{% if v.allegato.pk == iniziale.allegato.pk %} attivo{% endif %}">
-        {% if v.genere == 'pdf' %}
-          <iframe {% if v.allegato.pk == iniziale.allegato.pk %}src{% else %}data-src{% endif %}="{{ url_file }}?inline=1" title="{{ v.allegato.nome_originale }}"></iframe>
-        {% elif v.genere == 'immagine' %}
-          <img {% if v.allegato.pk == iniziale.allegato.pk %}src{% else %}data-src{% endif %}="{{ url_file }}?inline=1" alt="{{ v.proiezione|default:v.allegato.get_categoria_display }}">
-        {% elif v.genere == 'video' %}
-          <video controls preload="metadata" playsinline {% if v.allegato.pk == iniziale.allegato.pk %}src{% else %}data-src{% endif %}="{{ url_file }}?inline=1"></video>
-        {% else %}
-          <div class="visore-altro"><i class="bi bi-file-earmark fs-2 d-block mb-2"></i>Questo formato non si apre nel browser.<br>
-            <a href="{{ url_file }}">Scarica «{{ v.allegato.nome_originale|default:'file' }}»</a> ({{ v.allegato.dimensione|filesizeformat }})</div>
-        {% endif %}
-      </div>
-      {% endfor %}
     </div>
     <div class="d-flex justify-content-between flex-wrap gap-2 small mt-2">
+      {% if voci_visore|length > 1 %}<span class="text-muted order-last">Scorri i file con <kbd>&larr;</kbd> <kbd>&rarr;</kbd></span>{% endif %}
       {% for v in voci_visore %}{% url 'scarica_allegato' v.allegato.pk as url_file %}
       <span class="visore-didascalia{% if v.allegato.pk != iniziale.allegato.pk %} d-none{% endif %}" data-per="vis-{{ v.allegato.pk }}">
         <span class="text-muted">{{ v.allegato.nome_originale|default:v.allegato.file.name }} · {{ v.allegato.dimensione|filesizeformat }}</span>

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static vetway_ui %}
 {% comment %}
 Passo 2 della richiesta guidata: tipo di esame (tre schede), esperto (schede
 dei soli referenti per quel tipo, gli assenti visibili ma non scegliibili),
@@ -61,7 +61,7 @@ tastiera = Avanti), «Indietro» viene mostrato a sinistra con order:-1.
 </form>
 {% endblock %}
 {% block js %}
-<script src="{% static 'consulti/js/dettatura.js' %}" defer></script>
+<script src="{% vw_static 'consulti/js/dettatura.js' %}" defer></script>
 <script>
 (function () {
   // Tipo di esame o urgenza cambiati: htmx ricarica le schede degli esperti

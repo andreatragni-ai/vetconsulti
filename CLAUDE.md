@@ -78,6 +78,14 @@ Senza librerie il test del PDF vero salta con un messaggio che lo dice.
   cosa; `main` sempre verde. Push a fine sessione, anche `wip`.
 - Testi in italiano con apostrofo ASCII al posto delle accentate (`e'`,
   `piu'`, `gia'`) in codice, commenti, commit e docs: convenzione storica.
+- Nei template, `{# ... #}` vale per **una riga sola**: su piu' righe Django
+  lo stampa sulla pagina (successo due volte, 12/09 e 14/11/2026). Un
+  commento lungo si scrive con `{% comment %}...{% endcomment %}`.
+- Il CSS e il JS del portale si includono con `{% vw_static %}`, non con
+  `{% static %}`: gli statici escono con una settimana di cache e il nome
+  del file non cambia mai (vedi la docstring di `vw_static` in vetway-ui).
+  Con `{% static %}` una correzione appena messa in produzione non la vede
+  nessuno per giorni — e in locale non si vede nemmeno ricaricando.
 - Ogni bug corretto lascia un test nel `tests.py` dell'app.
 - UI solo con classi, partial e variabili `--ovic-*` di vetway-ui: nessun
   colore letterale. Attenzione all'omonimia `_campo_form.html` (form) vs

@@ -93,7 +93,7 @@ def test_miniature_per_le_immagini_icone_per_filmati_e_pdf(eco_inviata):
 def test_pagina_del_refertatore_nell_ordine_del_catalogo(client, mondo, eco_inviata):
     client.force_login(mondo.ref.user)
     pagina = html.unescape(client.get(reverse('referti:refertazione', args=[eco_inviata.pk])).content.decode())
-    elenco = pagina[pagina.index('class="visore-elenco"'):pagina.index('class="visore-scena"')]
+    elenco = pagina[pagina.index('class="visore-elenco"'):pagina.index('visore-didascalia')]
     titoli = re.findall(r'class="visore-gruppo"[^>]*>([^<]+)<', elenco)
     assert [t.strip() for t in titoli] == ['Referto dell\'ecografo', 'Parasternale destra', 'Sottoxifoidea',
                                           'Parasternale sinistra, apicale e craniale', 'Filmati liberi', 'Altri file']
@@ -105,7 +105,9 @@ def test_pagina_del_refertatore_nell_ordine_del_catalogo(client, mondo, eco_invi
     # Aperto all'arrivo: il referto dell'ecografo, e l'anteprima grande resta.
     referto = eco_inviata.allegati.get(categoria=CategoriaAllegato.ECO_REFERTO_PDF)
     assert re.search(rf'data-visore="vis-{referto.pk}"\s+class="visore-scheda attiva"', elenco)
-    assert f'<div id="vis-{referto.pk}" class="w-100 attivo">' in pagina
+    assert f'<div id="vis-{referto.pk}" class="visore-posto w-100 attivo">' in pagina
+    # Il contatore dei file e le due frecce (collaudo del 14/11/2026).
+    assert 'di 9</span>' in pagina and pagina.count('class="visore-freccia') == 2
 
 
 def test_pagina_del_caso_stesso_ordine(client, mondo, eco_inviata):

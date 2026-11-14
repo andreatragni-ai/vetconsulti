@@ -77,6 +77,11 @@ def refertazione(request, pk):
         form = RefertoForm(instance=referto)
     versioni = list(referto.versioni.all()) if referto else []
     gruppi, voci, iniziale = _voci_visore(richiesta)
+    # Cosa era atteso e cosa e' arrivato: la stessa regola dell'invio
+    # (consulti/regole.py). `consigliati_totali` serve alla riga di verdetto
+    # «25 proiezioni su 25» quando non manca niente.
+    elementi = regole.elementi_obbligatori(richiesta)
+    consigliati = [e for e in elementi if not e.blocca]
     ore = regole.ore_risposta(richiesta)   # 4 se urgente
     scadenza = regole.scadenza(richiesta)
     return render(request, 'referti/refertazione.html', {
@@ -99,7 +104,8 @@ def refertazione(request, pk):
         'racconto': racconta(richiesta.audit.select_related('utente')),
         # Integrazioni: cosa e' stato chiesto e le due rotte del form.
         'integrazione_aperta': richiesta.integrazione_aperta(),
-        'consigliati_mancanti': regole.consigliati_mancanti(richiesta),
+        'consigliati_mancanti': [e for e in consigliati if not e.fatto],
+        'consigliati_totali': len(consigliati),
         'url_prendi': reverse('consulti:prendi_in_carico', args=[richiesta.pk]),
         'url_integrazione': reverse('consulti:chiedi_integrazione', args=[richiesta.pk]),
         # Gli altri casi dello stesso paziente, anche di colleghi: i referti

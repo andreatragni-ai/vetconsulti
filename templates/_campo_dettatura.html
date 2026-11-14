@@ -5,7 +5,7 @@ microfono e' quello del browser (niente audio ai fornitori); «Ripulisci» manda
 solo il testo all'AI per la forma, e «Annulla ripulitura» torna indietro.
 
 La pagina che lo usa deve caricare il JS una volta sola, nel blocco js:
-  <script src="{% static 'consulti/js/dettatura.js' %}" defer></script>
+  <script src="{% vw_static 'consulti/js/dettatura.js' %}" defer></script>
 
 Uso: {% include "_campo_dettatura.html" with campo=form.quesito caso=richiesta.pk %}
 Variabili: campo (obbligatoria), caso (pk della richiesta, se esiste gia': al

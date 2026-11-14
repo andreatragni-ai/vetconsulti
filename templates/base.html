@@ -1,5 +1,5 @@
 {% extends "vetway_ui/base.html" %}
-{% load static %}
+{% load static vetway_ui %}
 {% comment %}
 base.html — template "ospite" di VetWay Consulti sopra vetway_ui/base.html
 (pacchetto vetway-ui). Qui resta SOLO cio' che e' del portale: testata con
@@ -16,7 +16,7 @@ title / content / js (alias di extra_js) / extra_head / extra_body.
 
 {% block host_head %}
   <!-- Regole di dominio del portale, subito dopo vetway.css del pacchetto -->
-  <link href="{% static 'consulti/css/consulti.css' %}" rel="stylesheet">
+  <link href="{% vw_static 'consulti/css/consulti.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block avvisi %}

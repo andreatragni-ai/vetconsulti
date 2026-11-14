@@ -80,8 +80,8 @@ paziente giusto.{% endcomment %}
 </form>
 {{ form.elenchi_razze|json_script:"razze-per-specie" }}
 {% endblock %}
-{% block js %}{% load static %}
-<script src="{% static 'consulti/js/elenco_filtrato.js' %}"></script>
+{% block js %}{% load static vetway_ui %}
+<script src="{% vw_static 'consulti/js/elenco_filtrato.js' %}"></script>
 <script>
 (function () {
   'use strict';

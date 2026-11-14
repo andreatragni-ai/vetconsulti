@@ -78,9 +78,25 @@
 @media (min-width: 992px) {
   .visore { position: sticky; top: .75rem; }
 }
+/* Dal 14/11/2026 scena e schede stanno affiancate: con 26 file l'elenco
+   sopra la scena riempiva lo schermo e l'immagine finiva sotto la piega.
+   Sotto 992px tornano incolonnate, la scena per prima. */
+.visore-corpo { display: flex; gap: .6rem; align-items: flex-start; }
+
 /* Elenco dei file a gruppi (consulti/elenco_file.py): titolo della finestra,
-   poi le schede con miniatura (immagini) o icona (filmati, PDF). */
+   poi le schede con miniatura (immagini) o icona (filmati, PDF). Da lg in su
+   e' la colonna stretta accanto alla scena, e scorre per conto suo. */
 .visore-elenco { margin-bottom: .6rem; }
+@media (min-width: 992px) {
+  .visore-elenco {
+    flex: 0 0 15rem;
+    max-height: 72vh;
+    overflow-y: auto;
+    margin-bottom: 0;
+    padding-right: .2rem;
+  }
+  .visore-elenco .visore-scheda { width: 100%; }
+}
 .visore-gruppo {
   margin: .5rem 0 .3rem;
   font-size: .72rem;
@@ -158,8 +174,10 @@
 .visore-scheda.attiva { background: var(--ovic-blu); border-color: var(--ovic-blu); color: var(--bs-white); }
 .visore-scheda.attiva .tipo { color: var(--bs-white); opacity: .8; }
 .visore-scheda.attiva .miniatura { color: var(--ovic-blu); }
-.visore-elenco + .visore-scena { margin-top: .6rem; }
 .visore-scena {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
   background: var(--ovic-grigio);
   border: 1px solid var(--ovic-bordo);
   border-radius: 6px;
@@ -169,11 +187,48 @@
   align-items: center;
   justify-content: center;
 }
-.visore-scena > * { display: none; }
-.visore-scena > .attivo { display: block; }
-.visore-scena iframe { width: 100%; height: 78vh; border: 0; }
-.visore-scena img, .visore-scena video { max-width: 100%; max-height: 78vh; margin: 0 auto; }
+/* Solo le lastre si nascondono: frecce e contatore stanno sopra la scena. */
+.visore-posto { display: none; }
+.visore-posto.attivo { display: block; }
+.visore-scena iframe { width: 100%; height: 72vh; border: 0; }
+.visore-scena img, .visore-scena video { max-width: 100%; max-height: 72vh; margin: 0 auto; }
+
+/* Avanti e indietro fra i file, con la tastiera o con i due bottoni. */
+.visore-freccia {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--ovic-bordo);
+  background: rgba(255, 255, 255, .92);
+  color: var(--ovic-blu);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.visore-freccia:hover { background: var(--bs-white); }
+.visore-freccia:disabled { opacity: .35; cursor: default; }
+.visore-freccia.prec { left: .5rem; }
+.visore-freccia.succ { right: .5rem; }
+.visore-conta {
+  position: absolute;
+  bottom: .5rem;
+  left: .5rem;
+  z-index: 3;
+  padding: .15rem .7rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .62);
+  color: var(--bs-white);
+  font-size: .78rem;
+}
 .visore-scena .visore-altro { padding: 2rem 1rem; text-align: center; }
+@media (max-width: 991.98px) {
+  /* Scena sopra, schede sotto: la stessa colonna, ma l'immagine per prima. */
+  .visore-corpo { flex-direction: column; }
+  .visore-elenco { width: 100%; margin-top: .6rem; }
+}
 @media (max-width: 767.98px) {
   .visore-scena iframe { height: 60vh; }
   .visore-scena img, .visore-scena video { max-height: 60vh; }

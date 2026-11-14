@@ -1,8 +1,12 @@
 {% comment %}
 Cosa non e' arrivato con l'esame, per l'esperto che deve decidere o refertare.
 Contesto da referti/views.py:refertazione: consigliati_mancanti (le proiezioni
-del catalogo senza file) e richiesta.inviata_incompleta (il collega lo sapeva:
-ha spuntato la presa d'atto al momento dell'invio).
+del catalogo senza file), consigliati_totali (quante ne erano attese) e
+richiesta.inviata_incompleta (il collega lo sapeva: ha spuntato la presa
+d'atto al momento dell'invio).
+
+Dal 14/11/2026 parla anche quando NON manca niente: prima, per sapere che
+l'esame era completo, bisognava contare le miniature.
 {% endcomment %}
 {% if consigliati_mancanti %}
 <div class="alert alert-warning py-2 small">
@@ -13,5 +17,10 @@ ha spuntato la presa d'atto al momento dell'invio).
     <summary>Vedi quali</summary>
     <ul class="mb-0 mt-1">{% for e in consigliati_mancanti %}<li>{{ e.etichetta }}</li>{% endfor %}</ul>
   </details>
+</div>
+{% elif consigliati_totali %}
+<div class="alert alert-success py-2 small">
+  <i class="bi bi-check-circle me-1" aria-hidden="true"></i>
+  <strong>Esame completo: {{ consigliati_totali }} proiezioni su {{ consigliati_totali }}.</strong>
 </div>
 {% endif %}

@@ -1,9 +1,11 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static vetway_ui %}
 {% comment %}
 Pagina di refertazione (referti/views.py:refertazione), solo per il
 refertatore assegnato. A sinistra (sopra, su mobile) il visore degli
-allegati; a destra (sotto) il caso in lettura e, a seconda dello stato:
+allegati, con la scena grande e le schede in colonna; a destra (sotto)
+prima cio' che si fa, poi il paziente e la cronologia. A seconda dello
+stato:
   INVIATA          decisione: prendi in carico, con riserva, o declina
   PRESA_IN_CARICO  editor del referto (bozza + salvataggio automatico), firma,
                    non refertabile, declina
@@ -27,27 +29,11 @@ sono rotte diverse: la firma passa dalla modale di conferma del pacchetto.
 </p>
 
 <div class="row g-3">
-  <div class="col-lg-7">
+  <div class="col-lg-8">
     {% include "referti/_visore.html" %}
   </div>
 
-  <div class="col-lg-5">
-    <div class="ovic-card"><div class="card-header-ovic">Paziente e quesito</div><div class="card-body-ovic">
-      <div class="row">
-        <div class="col-6">{% include "_dato.html" with label="Paziente" val=richiesta.paziente %}</div>
-        <div class="col-6">{% include "_dato.html" with label="Proprietario" val=richiesta.paziente.cognome_proprietario %}</div>
-        <div class="col-6">{% include "_dato.html" with label="Sesso" val=richiesta.paziente.get_sesso_display %}</div>
-        <div class="col-6">{% if richiesta.paziente.data_nascita %}{% include "_dato.html" with label="Nato il" val=richiesta.paziente.data_nascita|date:"d/m/Y" %}{% else %}{% include "_dato.html" with label="Eta'" val=richiesta.paziente.eta_testo %}{% endif %}</div>
-        <div class="col-6">{% include "_dato.html" with label="Peso (kg)" val=richiesta.paziente.peso_kg %}</div>
-        {% if richiesta.motivo_esame %}<div class="col-6">{% include "_dato.html" with label="Motivo dell'esame" val=richiesta.motivo_esame %}</div>{% endif %}
-      </div>
-      {% include "_dato.html" with label="Quesito" val=richiesta.quesito multiline=True %}
-      {% include "_dato.html" with label="Anamnesi" val=richiesta.anamnesi multiline=True %}
-      {% include "_dato.html" with label="Terapia in corso" val=richiesta.terapia multiline=True %}
-    </div></div>
-
-    {% include "consulti/_storico_paziente.html" %}
-
+  <div class="col-lg-4">
     {% if richiesta.stato == 'INVIATA' %}
     {# ── Decisione ─────────────────────────────────────────────────── #}
     <div class="ovic-card"><div class="card-header-ovic">Decisione</div><div class="card-body-ovic">
@@ -62,7 +48,13 @@ sono rotte diverse: la firma passa dalla modale di conferma del pacchetto.
         {% include "referti/_form_integrazione.html" with azione=url_prendi riserva=True campo_id="testo-riserva" etichetta="Prendi in carico con riserva" %}
       </details>
       <hr>
-      {% include "referti/_form_declina.html" %}
+      {% comment %}Chiuso come la riserva: declinare e' l'azione meno
+      frequente e non deve pesare piu' del prendere in carico (collaudo del
+      14/11/2026).{% endcomment %}
+      <details class="azioni-secondarie">
+        <summary><i class="bi bi-arrow-return-left me-1"></i>Declina il caso</summary>
+        {% include "referti/_form_declina.html" %}
+      </details>
     </div></div>
 
     {% elif richiesta.stato == 'PRESA_IN_CARICO' %}
@@ -120,6 +112,22 @@ sono rotte diverse: la firma passa dalla modale di conferma del pacchetto.
     </div>
     {% endif %}
 
+    <div class="ovic-card"><div class="card-header-ovic">Paziente e quesito</div><div class="card-body-ovic">
+      <div class="row">
+        <div class="col-6">{% include "_dato.html" with label="Paziente" val=richiesta.paziente %}</div>
+        <div class="col-6">{% include "_dato.html" with label="Proprietario" val=richiesta.paziente.cognome_proprietario %}</div>
+        <div class="col-6">{% include "_dato.html" with label="Sesso" val=richiesta.paziente.get_sesso_display %}</div>
+        <div class="col-6">{% if richiesta.paziente.data_nascita %}{% include "_dato.html" with label="Nato il" val=richiesta.paziente.data_nascita|date:"d/m/Y" %}{% else %}{% include "_dato.html" with label="Eta'" val=richiesta.paziente.eta_testo %}{% endif %}</div>
+        <div class="col-6">{% include "_dato.html" with label="Peso (kg)" val=richiesta.paziente.peso_kg %}</div>
+        {% if richiesta.motivo_esame %}<div class="col-6">{% include "_dato.html" with label="Motivo dell'esame" val=richiesta.motivo_esame %}</div>{% endif %}
+      </div>
+      {% include "_dato.html" with label="Quesito" val=richiesta.quesito multiline=True %}
+      {% include "_dato.html" with label="Anamnesi" val=richiesta.anamnesi multiline=True %}
+      {% include "_dato.html" with label="Terapia in corso" val=richiesta.terapia multiline=True %}
+    </div></div>
+
+    {% include "consulti/_storico_paziente.html" %}
+
     <div class="ovic-card"><div class="card-body-ovic">
       <details class="azioni-secondarie">
         <summary><i class="bi bi-clock-history me-1"></i>Cronologia del caso</summary>
@@ -132,35 +140,70 @@ sono rotte diverse: la firma passa dalla modale di conferma del pacchetto.
 
 {% block js %}
 {# Dettatura vocale delle tre caselle del referto e del motivo del declino. #}
-<script src="{% static 'consulti/js/dettatura.js' %}" defer></script>
+<script src="{% vw_static 'consulti/js/dettatura.js' %}" defer></script>
 <script>
 (function () {
   'use strict';
 
   // ── Visore: una scheda per allegato, il file si carica al primo clic ──
-  document.querySelectorAll('[data-visore]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var id = btn.getAttribute('data-visore');
-      document.querySelectorAll('[data-visore]').forEach(function (b) {
-        var attivo = b === btn;
-        b.classList.toggle('attiva', attivo);
-        b.setAttribute('aria-selected', attivo ? 'true' : 'false');
-      });
-      document.querySelectorAll('.visore-scena > div').forEach(function (d) {
-        var attivo = d.id === id;
-        d.classList.toggle('attivo', attivo);
-        if (!attivo) { d.querySelectorAll('video').forEach(function (v) { v.pause(); }); }
-      });
-      document.querySelectorAll('.visore-didascalia').forEach(function (s) {
-        s.classList.toggle('d-none', s.getAttribute('data-per') !== id);
-      });
-      var scena = document.getElementById(id);
-      scena.querySelectorAll('[data-src]').forEach(function (el) {
-        el.setAttribute('src', el.getAttribute('data-src'));
-        el.removeAttribute('data-src');
-      });
+  // Le schede sono in fila nell'ordine del catalogo: da li' escono anche il
+  // contatore «7 di 26», le due frecce sulla scena e i tasti freccia.
+  var schede = Array.prototype.slice.call(document.querySelectorAll('[data-visore]'));
+  var numero = document.querySelector('[data-visore-numero]');
+  var frecce = Array.prototype.slice.call(document.querySelectorAll('.visore-freccia'));
+  var corrente = Math.max(0, schede.findIndex(function (s) { return s.classList.contains('attiva'); }));
+
+  function mostra(indice, muovi_fuoco) {
+    if (indice < 0 || indice >= schede.length) { return; }
+    corrente = indice;
+    var btn = schede[indice];
+    var id = btn.getAttribute('data-visore');
+    schede.forEach(function (b) {
+      var attivo = b === btn;
+      b.classList.toggle('attiva', attivo);
+      b.setAttribute('aria-selected', attivo ? 'true' : 'false');
+    });
+    document.querySelectorAll('.visore-posto').forEach(function (d) {
+      var attivo = d.id === id;
+      d.classList.toggle('attivo', attivo);
+      if (!attivo) { d.querySelectorAll('video').forEach(function (v) { v.pause(); }); }
+    });
+    document.querySelectorAll('.visore-didascalia').forEach(function (s) {
+      s.classList.toggle('d-none', s.getAttribute('data-per') !== id);
+    });
+    var scena = document.getElementById(id);
+    scena.querySelectorAll('[data-src]').forEach(function (el) {
+      el.setAttribute('src', el.getAttribute('data-src'));
+      el.removeAttribute('data-src');
+    });
+    // La scheda attiva si porta sotto gli occhi da sola: la colonna delle
+    // miniature scorre per conto suo e con 26 file esce dalla vista.
+    btn.scrollIntoView({ block: 'nearest' });
+    if (muovi_fuoco) { btn.focus({ preventScroll: true }); }
+    if (numero) { numero.textContent = indice + 1; }
+    frecce.forEach(function (f) {
+      var passo = parseInt(f.getAttribute('data-passo'), 10);
+      f.disabled = (indice + passo < 0 || indice + passo >= schede.length);
+    });
+  }
+
+  schede.forEach(function (btn, i) {
+    btn.addEventListener('click', function () { mostra(i, false); });
+  });
+  frecce.forEach(function (f) {
+    f.addEventListener('click', function () {
+      mostra(corrente + parseInt(f.getAttribute('data-passo'), 10), false);
     });
   });
+  // Frecce della tastiera, ma non mentre si scrive il referto o un motivo.
+  document.addEventListener('keydown', function (e) {
+    if (!schede.length || e.metaKey || e.ctrlKey || e.altKey) { return; }
+    var dentro = e.target.closest('input, textarea, select, [contenteditable="true"]');
+    if (dentro) { return; }
+    if (e.key === 'ArrowLeft') { mostra(corrente - 1, true); e.preventDefault(); }
+    if (e.key === 'ArrowRight') { mostra(corrente + 1, true); e.preventDefault(); }
+  });
+  if (schede.length) { mostra(corrente, false); }
 
   // ── Frasi rapide per declinare: riempiono la casella, poi si completa ──
   document.querySelectorAll('[data-frase]').forEach(function (btn) {

@@ -30,6 +30,31 @@ def refertatore_loggato(client, mondo):
 
 
 @pytest.fixture
+def eco_completa(db, mondo):
+    """Un'eco INVIATA con tutte le proiezioni del catalogo (due) caricate."""
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    from accounts.models import CompetenzaRefertatore
+    from consulti.models import Allegato, CategoriaAllegato, Paziente, Richiesta
+    from core.tipi import TipoEsame
+    from eco.models import ProiezioneCaricata, ProiezioneCatalogo
+
+    CompetenzaRefertatore.objects.create(refertatore=mondo.ref, tipo_esame=TipoEsame.ECO, referente=True)
+    caso = Richiesta.objects.create(tipo_esame=TipoEsame.ECO, richiedente=mondo.richiedente,
+                                    clinica=mondo.clinica, refertatore=mondo.ref, quesito='Soffio?')
+    Paziente.objects.create(richiesta=caso, nome='Luna')
+    Allegato.da_upload(caso, SimpleUploadedFile('referto.pdf', b'%PDF-1.4', 'application/pdf'),
+                       CategoriaAllegato.ECO_REFERTO_PDF, mondo.richiedente.user)
+    for i, nome in enumerate(('Asse lungo 4 camere', 'Asse corto'), start=1):
+        p = ProiezioneCatalogo.objects.create(codice=f'P{i}', nome=nome, obbligatoria=True, ordine=i)
+        a = Allegato.da_upload(caso, SimpleUploadedFile(f'p{i}.png', b'\x89PNG', 'image/png'),
+                               CategoriaAllegato.ECO_STATICA, mondo.richiedente.user)
+        ProiezioneCaricata.objects.create(richiesta=caso, proiezione=p, allegato=a)
+    caso.invia(mondo.richiedente.user)
+    return caso
+
+
+@pytest.fixture
 def firmato(refertatore_loggato, caso_in_carico, pdf_finto):
     _salva(refertatore_loggato, caso_in_carico)
     refertatore_loggato.post(reverse('referti:firma', args=[caso_in_carico.pk]))
@@ -47,6 +72,26 @@ def test_pagina_decisione_su_caso_inviato(refertatore_loggato, caso_inviato):
     allegato = caso_inviato.allegati.get()
     assert f'{reverse("scarica_allegato", args=[allegato.pk])}?inline=1' in pagina   # visore
     assert 'id="form-referto"' not in pagina
+
+
+def test_declinare_sta_dietro_un_dettaglio(refertatore_loggato, caso_inviato):
+    """Collaudo del 14/11/2026: il modulo per declinare occupava piu' spazio
+    del prendere in carico. Ora e' chiuso come la riserva, ma c'e'."""
+    pagina = refertatore_loggato.get(reverse('referti:refertazione', args=[caso_inviato.pk])).content.decode()
+    prima = pagina.index('Declina il caso')
+    assert pagina.rindex('<details', 0, prima) > pagina.rindex('</details>', 0, prima)
+    assert reverse('consulti:declina', args=[caso_inviato.pk]) in pagina
+
+
+def test_il_verdetto_dice_anche_quando_l_esame_e_completo(refertatore_loggato, mondo, eco_completa):
+    pagina = refertatore_loggato.get(reverse('referti:refertazione', args=[eco_completa.pk])).content.decode()
+    assert 'Esame completo: 2 proiezioni su 2.' in pagina
+    assert 'Esame incompleto' not in pagina
+
+
+def test_il_verdetto_su_un_ecg_non_parla_di_proiezioni(refertatore_loggato, caso_inviato):
+    pagina = refertatore_loggato.get(reverse('referti:refertazione', args=[caso_inviato.pk])).content.decode()
+    assert 'proiezioni su' not in pagina      # l'ECG non ha un catalogo
 
 
 def test_pagina_editor_su_caso_in_carico(refertatore_loggato, caso_in_carico):

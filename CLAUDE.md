@@ -36,6 +36,14 @@ sessioni brevi: ogni sessione deve lasciare il repo in uno stato ripartibile.
 - Amministrazione, deciso con Andre il 13/09/2026: tutto il lavoro dello
   staff sta nella Gestione del portale (`/gestione/`), che vede tutti i casi
   inviati e interviene nelle emergenze. Referto eco senza ACVIM.
+- **Eco a tre filmati, deciso con Andre il 15/11/2026**: il consulto eco si
+  fonda su tre clip B-mode di 5-10 s (asse lungo dx, asse corto dx, apicale
+  sx 4 camere) piu' il referto dell'ecografo in PDF; le altre proiezioni
+  sono facoltative e si aggiungono da un elenco o come «Altro» descritto a
+  mano. Quello che l'esperto consegna si chiama **consulto cardiologico**
+  (giudizio, suggerimento terapeutico, ulteriori indagini), non «referto».
+  Lo smistamento AI si spegne. Il dettaglio e l'ordine dei lavori stanno in
+  `docs/BACKLOG.md`; da fare, non ancora fatto.
 - Archivio pazienti, deciso con Andre il 05/11/2026: l'anagrafica e' della
   **clinica** (del richiedente se libero professionista), si riempie da
   sola a ogni invio e precompila il passo 1; il **peso mai**, l'eta' in

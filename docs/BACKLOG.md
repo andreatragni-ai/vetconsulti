@@ -5,6 +5,38 @@ spunta. Le idee grosse hanno un file loro in `docs/`.
 
 ## Adesso
 
+- [2026-11-15] **L'eco cambia forma: tre filmati, non venticinque file.**
+  Deciso con Andre (mockup `static/mockup/passo3.html`, rigenerabile con lo
+  script in scratchpad). Il consulto eco si fonda su **tre clip B-mode di
+  5-10 secondi** — `DX1_B` asse lungo destro, `DX3_B` asse corto destro,
+  `SX1_B` apicale sinistra 4 camere — piu' il **referto dell'ecografo in
+  PDF** con le misure, che resta sempre obbligatorio. Le altre 22
+  proiezioni del catalogo diventano **facoltative**: il collega le aggiunge
+  quando sostengono la sua ipotesi, scegliendole da un elenco con i nomi
+  del catalogo, oppure con una voce «Altro» che descrive a mano.
+  Le tre clip **bloccano** l'invio (con la presa d'atto gia' esistente per
+  chi ha una finestra impossibile), e cio' che serve si dice **in cima al
+  passo 3**, prima di caricare, non alla fine.
+  Quello che l'esperto consegna non e' piu' un «referto» ma un **consulto
+  cardiologico**: giudizio, suggerimento terapeutico ed eventuali ulteriori
+  indagini — i primi due sono le caselle che ci sono gia', gli altri due
+  diventano voci del blocco eco (`referti/blocchi.py`, nessuna migrazione).
+  Il documento dira' su cosa si basa, generandolo dai file arrivati.
+  Lo **smistamento AI si spegne** (resta nel codice, disattivato): con
+  quattro file si trascina a mano. Le righe «Altro» devono poter essere
+  quante servono, quindi `ProiezioneCaricata` deve accettare una riga senza
+  proiezione di catalogo: **e' l'unica migrazione**.
+  Ordine: (1) catalogo a 3 obbligatorie + avviso in cima; (2) **la prova con
+  una clip vera sulla staging**, che ora e' il percorso critico: tre file su
+  quattro sono filmati; (3) la pagina di caricamento nuova; (4) rinomina in
+  «consulto cardiologico» e voci del giudizio.
+  Aperti: il color (`DX1_C`, `SX1_C`...) resta facoltativo finche' il
+  collega non dice che lo vuole sempre; la durata sotto i 5 secondi **avvisa
+  e passa** (proposta mia: ci sono ecografi che tagliano a 2-3 secondi);
+  il prezzo di listino di un consulto su tre clip non e' quello di
+  un'eco completa.
+
+
 - [2026-09-11] **F2 — Andre prova la richiesta guidata e conferma le scelte**
   (branch `feat/richiesta-guidata`, da `fix/esperto-per-tipo`; collaudo
   con `seed_demo` come `gbianchi`). Fatto: quattro passi (Paziente, Esame

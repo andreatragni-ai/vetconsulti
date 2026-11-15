@@ -102,6 +102,7 @@ non confermate (consulti/views_smistamento.py).
     </div></div>
 
   {% elif richiesta.tipo_esame == 'ECO' %}
+    {% include "consulti/percorso/_che_serve_eco.html" %}
     <p class="small mb-2"><a href="{% url 'eco:protocollo' %}" target="_blank" rel="noopener"><i class="bi bi-printer me-1" aria-hidden="true"></i>Protocollo stampabile delle proiezioni</a>, da tenere accanto all'ecografo.</p>
     {% include "consulti/percorso/_zona_cartella.html" %}
 

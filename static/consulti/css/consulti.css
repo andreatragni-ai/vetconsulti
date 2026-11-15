@@ -237,6 +237,22 @@
   .visore-scheda { flex: 0 0 auto; width: 12rem; max-width: 75%; }
 }
 
+/* ── «Che cosa serve per questo consulto»: l'avviso in cima al passo 3
+   dell'eco (15/11/2026). Deve leggersi prima di cominciare a caricare,
+   non dopo: e' li' che si dice che i filmati sono tre e durano 5-10 s. ── */
+.che-serve {
+  border: 1px solid var(--ovic-bordo);
+  border-left: 4px solid var(--ovic-blu);
+  border-radius: 6px;
+  background: var(--bs-tertiary-bg);
+  padding: .75rem .9rem;
+  margin-bottom: 1rem;
+}
+.che-serve h6 { margin: 0 0 .4rem; font-size: .95rem; }
+.che-serve ul { margin: 0; padding-left: 1.1rem; font-size: .87rem; }
+.che-serve li + li { margin-top: .2rem; }
+.che-serve .nota { font-size: .82rem; color: var(--bs-secondary-color); margin: .5rem 0 0; }
+
 /* Barra delle azioni del referto: su mobile resta attaccata in basso,
    cosi' «Salva» e «Firma» non scorrono via con i testi lunghi. */
 .referto-barra { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }

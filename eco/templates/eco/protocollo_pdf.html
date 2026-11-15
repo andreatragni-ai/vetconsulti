@@ -32,8 +32,8 @@ I colori letterali qui sono ammessi: e' carta, non UI (vetway-ui non arriva in u
 </head>
 <body>
 <h1>Protocollo delle proiezioni eco</h1>
-<p class="sottotitolo">{{ obbligatorie }} proiezioni obbligatorie, nell'ordine in cui acquisirle. Sempre obbligatorio anche il referto dell'ecografo in PDF, con le misure.</p>
-<p class="consiglio">{{ consiglio }} Filmati di massimo 10 secondi; B-mode e color Doppler sono filmati separati.</p>
+<p class="sottotitolo">{{ obbligatorie }} proiezioni obbligatorie, nell'ordine in cui acquisirle; le altre si aggiungono se servono. Sempre obbligatorio anche il referto dell'ecografo in PDF, con le misure.</p>
+<p class="consiglio">{{ consiglio }} Filmati di 5-10 secondi; B-mode e color Doppler sono filmati separati.</p>
 {% for g in gruppi %}
 <section{% if forloop.first %} class="prima"{% endif %}>
   <h2>{{ g.etichetta }}</h2>

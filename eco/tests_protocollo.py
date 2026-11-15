@@ -24,7 +24,8 @@ def test_protocollo_per_gli_autenticati_nell_ordine_di_acquisizione(client, mond
     client.force_login(mondo.estraneo)
     pagina = _t(client.get(url))
     assert 'Protocollo delle proiezioni eco' in pagina and 'acquisisci nell\'ordine del protocollo' in pagina.lower()
-    assert '25 proiezioni obbligatorie' in pagina and 'window.print()' in pagina
+    assert '3 proiezioni obbligatorie' in pagina and 'window.print()' in pagina
+    assert 'le altre si aggiungono se servono' in pagina
     assert pagina.index('Asse lungo 4 camere — B-mode') < pagina.index('Asse lungo 4 camere — color Doppler') \
         < pagina.index('Sottoxifoidea — B-mode') < pagina.index('Anello mitralico — TDI con misure') \
         < pagina.index('Filmato libero 1')

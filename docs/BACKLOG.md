@@ -26,7 +26,7 @@ spunta. Le idee grosse hanno un file loro in `docs/`.
   quattro file si trascina a mano. Le righe «Altro» devono poter essere
   quante servono, quindi `ProiezioneCaricata` deve accettare una riga senza
   proiezione di catalogo: **e' l'unica migrazione**.
-  Ordine: (1) catalogo a 3 obbligatorie + avviso in cima; (2) **la prova con
+  Ordine: **(1) FATTO il 15/11**: catalogo a 3 obbligatorie + avviso in cima; (2) **la prova con
   una clip vera sulla staging**, che ora e' il percorso critico: tre file su
   quattro sono filmati; (3) la pagina di caricamento nuova; (4) rinomina in
   «consulto cardiologico» e voci del giudizio.

@@ -44,13 +44,15 @@ def test_carica_catalogo_eco_dal_repo_e_idempotente():
     out = StringIO()
     call_command('carica_catalogo_eco', stdout=out)
     assert ProiezioneCatalogo.objects.filter(attiva=True).count() == len(righe) == 27
-    assert ProiezioneCatalogo.objects.filter(attiva=True, obbligatoria=True).count() == 25
+    # Tre dal 15/11/2026 (erano 25): le altre restano nel catalogo, facoltative.
+    assert ProiezioneCatalogo.objects.filter(attiva=True, obbligatoria=True).count() == 3
     assert list(ProiezioneCatalogo.objects.filter(libera=True).values_list('codice', flat=True)) == [
         'LIBERO_1', 'LIBERO_2']
     # 74 dall'11/09 sera: sottoxifoidea, misura LAD, vasi polmonari in M-mode e
     # polmonare da sinistra hanno avuto le loro immagini (tutte le obbligatorie ne hanno).
     assert ImmagineRiferimento.objects.count() == collegamenti == 73
-    assert not ProiezioneCatalogo.objects.filter(attiva=True, obbligatoria=True, immagini__isnull=True).exists()
+    assert not ProiezioneCatalogo.objects.filter(
+        attiva=True, libera=False, immagini__isnull=True).exists()
     # La voce che nel file non c'e' piu' si disattiva, non si cancella.
     assert not ProiezioneCatalogo.objects.get(codice='VECCHIA').attiva
     assert 'Disattivate' in out.getvalue() and 'VECCHIA' in out.getvalue()
@@ -104,20 +106,38 @@ def test_carica_catalogo_eco_accetta_una_didascalia_esplicita(tmp_path):
     assert [i.didascalia for i in immagini] == ['Birettoni et al., JVC 2016', 'Schema']
 
 
-def test_filmati_del_catalogo_massimo_10_secondi():
-    """Un limite solo, ovunque compaia (collaudo dell'11/09/2026): ogni riga
-    CLIP del catalogo dice «massimo 10 secondi», nessuna «circa»."""
+def _righe_catalogo():
     import json
     from eco.management.commands.carica_catalogo_eco import CATALOGO_PREDEFINITO
     with open(CATALOGO_PREDEFINITO, encoding='utf-8') as f:
-        righe = json.load(f)['righe']
+        return json.load(f)['righe']
+
+
+def test_filmati_del_catalogo_cinque_dieci_secondi():
+    """Un limite solo, ovunque compaia (collaudo dell'11/09/2026; dal
+    15/11/2026 e' «5-10 secondi», non piu' «massimo 10»): ogni riga CLIP del
+    catalogo lo dice con le stesse parole, nessuna «circa»."""
+    righe = _righe_catalogo()
     filmati = [r for r in righe if r['tipo_media'] == 'CLIP']
     assert len(filmati) == 14
-    assert all(r['istruzioni'].startswith('Filmato di massimo 10 secondi.') for r in filmati)
+    assert all(r['istruzioni'].startswith('Filmato di 5-10 secondi.') for r in filmati)
     assert not any('circa' in r['istruzioni'] or 'decina' in r['istruzioni'] for r in righe)
 
 
-def test_testi_delle_zone_filmato_massimo_10_secondi():
+def test_testi_delle_zone_filmato_cinque_dieci_secondi():
     from consulti.views_percorso import TESTI_ZONA
-    assert 'massimo 10 secondi' in TESTI_ZONA['CLIP'][2] and 'massimo 10 secondi' in TESTI_ZONA['ENTRAMBI'][2]
+    assert '5-10 secondi' in TESTI_ZONA['CLIP'][2] and '5-10 secondi' in TESTI_ZONA['ENTRAMBI'][2]
     assert not any('circa' in t for testi in TESTI_ZONA.values() for t in testi)
+
+
+def test_il_catalogo_chiede_tre_filmati(settings):
+    """La decisione del 15/11/2026: obbligatori il referto dell'ecografo e
+    TRE clip B-mode. Le altre 22 proiezioni restano nel catalogo, ma
+    facoltative. Se un giorno si cambia idea, si cambia qui e nel JSON."""
+    righe = _righe_catalogo()
+    obbligatorie = [r for r in righe if r.get('obbligatoria')]
+    assert [r['codice'] for r in obbligatorie] == ['DX1_B', 'DX3_B', 'SX1_B']
+    assert all(r['tipo_media'] == 'CLIP' for r in obbligatorie)
+    assert len([r for r in righe if not r.get('obbligatoria') and not r.get('libera')]) == 22
+    # Nessuna delle tre e' un filmato libero, e l'ordine e' quello dell'esame.
+    assert [r['ordine'] for r in obbligatorie] == sorted(r['ordine'] for r in obbligatorie)

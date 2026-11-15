@@ -159,7 +159,8 @@ def test_criterio_di_fatto_f2(client, settings):
     eco = passi_1_2('Nuvola', 'ECO', lmonti, urgenza='on')
     assert _carica(client, eco, 'eco_referto', _file('referto_eco.pdf')).status_code == 200
     obbligatorie = list(ProiezioneCatalogo.objects.filter(obbligatoria=True, attiva=True))
-    assert len(obbligatorie) == 25  # il catalogo di Andre, eco/catalogo/catalogo_eco.json
+    # Tre filmati dal 15/11/2026: il catalogo di Andre, eco/catalogo/catalogo_eco.json
+    assert [p.codice for p in obbligatorie] == ['DX1_B', 'DX3_B', 'SX1_B']
     for p in obbligatorie:
         if p.tipo_media == TipoMedia.STATICA:
             r = _carica(client, eco, 'proiezione', _file(f'{p.codice}.png', PNG, 'image/png'), proiezione=p.pk)
@@ -471,7 +472,7 @@ def test_eco_clip_troppo_pesante_rifiutata_con_messaggio(loggato, bozza_eco, cat
     # A pezzi il rifiuto arriva gia' allo stato, prima di mandare i pezzi.
     stato = loggato.get(reverse('consulti:upload_stato', args=[bozza_eco.pk]), {
         'impronta': 'a' * 64, 'slot': 'proiezione', 'proiezione': p.pk, 'nome': 'lunga.mp4', 'dimensione': 5000})
-    assert stato.status_code == 400 and 'massimo 10 secondi' in stato.json()['errore']
+    assert stato.status_code == 400 and '5-10 secondi' in stato.json()['errore']
     # Un'immagine non ha quel limite.
     assert _carica(loggato, bozza_eco, 'proiezione', _file('ok.png', PNG * 20),
                    proiezione=catalogo['pd_statica'].pk).status_code == 200

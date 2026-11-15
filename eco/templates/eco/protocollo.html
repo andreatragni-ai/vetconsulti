@@ -28,14 +28,14 @@ pagina nuova. «Scarica PDF» fa lo stesso con WeasyPrint (protocollo_pdf.html).
   <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
     <div>
       <h4 class="caso-titolo">Protocollo delle proiezioni eco</h4>
-      <p class="protocollo-sottotitolo mb-0">{{ obbligatorie }} proiezioni obbligatorie, nell'ordine in cui acquisirle. Sempre obbligatorio anche il referto dell'ecografo in PDF, con le misure.</p>
+      <p class="protocollo-sottotitolo mb-0">{{ obbligatorie }} proiezioni obbligatorie, nell'ordine in cui acquisirle; le altre si aggiungono se servono. Sempre obbligatorio anche il referto dell'ecografo in PDF, con le misure.</p>
     </div>
     <div class="protocollo-azioni d-flex gap-2 flex-wrap">
       <button type="button" class="btn-nuova" onclick="window.print()"><i class="bi bi-printer me-1" aria-hidden="true"></i>Stampa</button>
       <a class="btn-testata-ghost" href="{% url 'eco:protocollo_pdf' %}"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i>Scarica PDF</a>
     </div>
   </div>
-  <p class="protocollo-consiglio"><i class="bi bi-lightbulb me-1" aria-hidden="true"></i>{{ consiglio }} Filmati di massimo 10 secondi; B-mode e color Doppler sono filmati separati.</p>
+  <p class="protocollo-consiglio"><i class="bi bi-lightbulb me-1" aria-hidden="true"></i>{{ consiglio }} Filmati di 5-10 secondi; B-mode e color Doppler sono filmati separati.</p>
 
   {% for g in gruppi %}
   <section class="ovic-card protocollo-finestra">

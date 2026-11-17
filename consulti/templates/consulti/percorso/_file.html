@@ -4,13 +4,17 @@ categoria e peso, «Sostituisci» (stesso slot, sostituisci=<id>) e «Rimuovi»
 (modale di conferma del pacchetto; con l'allegato se ne va anche la sua
 ProiezioneCaricata). Parametri: a (Allegato), slot, proiezione (facoltativa),
 nota (testo del filmato libero, facoltativo), accetta, a_pezzi, max_byte.
+Di un filmato si dice anche la durata, quando ffprobe l'ha misurata
+(eco/transcodifica.py): oltre ECO_CLIP_SECONDI_MAX si avvisa, non si
+blocca.
 {% endcomment %}
 {% with nome=a.nome_originale|default:a.file.name %}
 <div class="file-caricato">
   <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
   <span class="nome">
     <a href="{% url 'scarica_allegato' a.pk %}?inline=1" target="_blank" rel="noopener">{{ nome }}</a>
-    <span class="meta">{{ a.get_categoria_display }} · {{ a.dimensione|filesizeformat }}{% if nota %} · «{{ nota }}»{% endif %}</span>
+    <span class="meta">{{ a.get_categoria_display }} · {{ a.dimensione|filesizeformat }}{% if a.durata_s %} · {{ a.durata_s|floatformat:"-1" }} s{% endif %}{% if nota %} · «{{ nota }}»{% endif %}</span>
+    {% if a.durata_oltre_il_massimo %}<span class="meta avviso-durata"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>Piu' lunga del necessario: al collega bastano i cicli chiesti. Si carica lo stesso.</span>{% endif %}
   </span>
   <span class="azioni">
     <form method="post" enctype="multipart/form-data" action="{% url 'consulti:carica_allegato' richiesta.pk %}" data-zona

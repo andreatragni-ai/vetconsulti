@@ -35,6 +35,9 @@ def _frase(evento, refertatori):
         'ALLEGATO_ELIMINATO': (f'ha sostituito «{d.get("nome", "")}»' if d.get('sostituito_da')
                                else f'ha eliminato l\'allegato «{d.get("nome", "")}»'),
         'ALLEGATO_TRANSCODIFICATO': 'clip convertita per la visione nel browser',
+        'ALLEGATO_NON_CONVERTITO': (f'«{d.get("nome", "un filmato")}» non si e\' potuto convertire'
+                                    + (f' (codec {d["codec"]})' if d.get('codec') else '')
+                                    + ': resta da scaricare'),
         'INVIATA': f'ha inviato il caso a {ref()}',
         'PRESA_IN_CARICO': 'ha preso in carico il caso',
         'RILASCIATA': f'presa in carico rilasciata{motivo}',

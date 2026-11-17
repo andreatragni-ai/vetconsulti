@@ -583,6 +583,16 @@ class Allegato(models.Model):
     # Pillow per le immagini, ffmpeg per i filmati se installato). Serve allo
     # smistamento automatico dell'eco e agli elenchi dei file: `url_anteprima`.
     anteprima = models.ImageField(upload_to=percorso_anteprima, blank=True, max_length=300)
+    # Com'era il filmato quando e' arrivato, misurato con ffprobe prima della
+    # transcodifica (eco/transcodifica.py: misura). Restano vuoti dove ffprobe
+    # non c'e' (il Mac di sviluppo) o per cio' che filmato non e'.
+    durata_s = models.DecimalField(
+        max_digits=7, decimal_places=2, null=True, blank=True,
+        help_text='Durata del filmato in secondi, com\'e\' arrivato.')
+    codec = models.CharField(
+        max_length=30, blank=True,
+        help_text='Codec del filmato originale (mp4v e msmpeg4v3 dal Mindray, '
+                  'ancora da scoprire per gli altri ecografi).')
 
     class Meta:
         verbose_name = 'Allegato'
@@ -600,6 +610,15 @@ class Allegato(models.Model):
             return None
         from django.urls import reverse
         return reverse('anteprima_allegato', args=[self.pk])
+
+    @property
+    def durata_oltre_il_massimo(self):
+        """Vero per una clip eco piu' lunga di ECO_CLIP_SECONDI_MAX. Non
+        blocca niente: la pagina lo dice e basta (decisione del 17/11/2026,
+        da rivedere con i colleghi)."""
+        if self.categoria != CategoriaAllegato.ECO_CLIP or not self.durata_s:
+            return False
+        return float(self.durata_s) > getattr(settings, 'ECO_CLIP_SECONDI_MAX', 5)
 
     @property
     def genere(self):

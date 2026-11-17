@@ -46,8 +46,22 @@ chiedendo le integrazioni (`Richiesta.chiedi_integrazione`).
 from dataclasses import dataclass
 from datetime import timedelta
 
+from django.conf import settings
+
 from core.tipi import TipoEsame
 from .models import CategoriaAllegato, StatoRichiesta
+
+
+def frase_durata_clip():
+    """«almeno 4 cicli cardiaci interi, non piu' di 5 secondi»: la regola
+    delle clip a parole, dai due numeri di settings, perche' non finisca
+    riscritta a mano in cinque template che poi non si aggiornano insieme.
+
+    I cicli sono la regola clinica e il portale non li sa contare: li chiede.
+    I secondi li misura ffprobe dopo il caricamento, e oltre il massimo
+    avvisa soltanto (decisione del 17/11/2026, da rivedere coi colleghi)."""
+    return (f'almeno {settings.ECO_CLIP_CICLI_MINIMI} cicli cardiaci interi, '
+            f"non piu' di {settings.ECO_CLIP_SECONDI_MAX} secondi")
 
 
 @dataclass(frozen=True)

@@ -296,10 +296,10 @@ def _file_per_categorie(allegati, categorie):
 TESTI_ZONA = {
     # tipo_media -> (testo con il mouse, testo al tocco, sottotesto)
     'CLIP': ('Trascina qui il filmato', 'Tocca per scegliere il filmato',
-             'MP4, AVI, MOV o DICOM · 5-10 secondi'),
+             f'MP4, AVI, MOV o DICOM · {regole.frase_durata_clip()}'),
     'STATICA': ('Trascina qui l\'immagine', 'Tocca per scegliere l\'immagine', 'JPG, PNG o DICOM'),
     'ENTRAMBI': ('Trascina qui il filmato o l\'immagine', 'Tocca per scegliere il file',
-                 'Un file: filmato (5-10 secondi) oppure immagine'),
+                 f'Un file: filmato ({regole.frase_durata_clip()}) oppure immagine'),
 }
 ATTESO = {'CLIP': ('camera-reels', 'Filmato'), 'STATICA': ('image', 'Immagine'),
           'ENTRAMBI': ('collection-play', 'Filmato o immagine')}
@@ -355,6 +355,7 @@ def _gruppi_eco(per_proiezione):
             # dal catalogo, non scritti a mano in un template.
             'proiezioni_base': [r['proiezione'] for r in righe
                                 if r['proiezione'].obbligatoria and not r['proiezione'].libera],
+            'frase_durata_clip': regole.frase_durata_clip(),
             'etichetta_liberi': Finestra.ALTRO.label,
             'liberi_caricati': sum(1 for r in liberi if r['fatta']),
             'max_clip_mb': settings.ECO_CLIP_MAX_BYTE // (1024 * 1024),

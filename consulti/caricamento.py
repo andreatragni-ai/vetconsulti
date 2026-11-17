@@ -56,7 +56,8 @@ Ogni zona accetta, insieme al file, la miniatura fatta dal browser
 ## Transcodifica
 
 Una clip eco appena caricata passa a `eco.transcodifica` dopo il commit, in
-un thread a parte (puo' durare minuti). Senza ffmpeg la transcodifica
+un thread a parte (puo' durare minuti): prima si misura (durata e codec
+finiscono sull'allegato), poi si converte. Senza ffmpeg la transcodifica
 logga un avviso e l'allegato resta com'e': il collega vede l'originale.
 """
 
@@ -251,10 +252,11 @@ def _verifica(richiesta, slot, proiezione_id, sostituisci_id, nota=''):
 
 
 def _verifica_dimensione(categoria, dimensione):
+    from . import regole
     if categoria == CategoriaAllegato.ECO_CLIP and dimensione and dimensione > settings.ECO_CLIP_MAX_BYTE:
         raise CaricamentoNonValido(
             f'Il filmato pesa {_mb(dimensione)} MB: il limite per una clip e\' {_mb(settings.ECO_CLIP_MAX_BYTE)} MB. '
-            f'Esporta dall\'ecografo un filmato piu\' breve (5-10 secondi) o in MP4.')
+            f'Esporta dall\'ecografo un filmato piu\' breve ({regole.frase_durata_clip()}) o in MP4.')
 
 
 def _verifica_doppione(richiesta, slot, impronta, nome):
@@ -355,6 +357,9 @@ def pianifica_transcodifica(allegato_id):
         try:
             allegato = Allegato.objects.select_related('richiesta').filter(pk=allegato_id).first()
             if allegato is not None:
+                # Prima si misura cio' che e' arrivato (durata e codec: la
+                # transcodifica poi sostituisce il file), poi si converte.
+                transcodifica.misura(allegato)
                 transcodifica.transcodifica(allegato)
                 # Il browser non ha saputo fare la miniatura (AVI, WMV...): la fa ffmpeg.
                 from . import anteprime
@@ -367,6 +372,7 @@ def pianifica_transcodifica(allegato_id):
     if not transcodifica.ffmpeg_disponibile():
         allegato = Allegato.objects.filter(pk=allegato_id).first()
         if allegato is not None:
+            transcodifica.misura(allegato)          # ffprobe potrebbe esserci lo stesso
             transcodifica.transcodifica(allegato)
         return None
     filo = threading.Thread(target=lavoro, name=f'transcodifica-{allegato_id}', daemon=True)

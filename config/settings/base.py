@@ -170,10 +170,24 @@ FFMPEG_BIN = os.environ.get('FFMPEG_BIN', 'ffmpeg')
 UPLOAD_MAX_BYTE = int(os.environ.get('UPLOAD_MAX_BYTE', 300 * 1024 * 1024))
 # Limite per un allegato caricato in una POST singola (PDF, immagini).
 ALLEGATO_MAX_BYTE = int(os.environ.get('ALLEGATO_MAX_BYTE', 50 * 1024 * 1024))
-# Limite per una clip eco (filmato di una proiezione). Si chiedono filmati di
-# massimo 10 secondi; senza ffmpeg la durata non si misura, quindi il
-# freno e' il peso: 100 MB bastano per 10 s anche in DICOM poco compresso.
+# Limite per una clip eco (filmato di una proiezione). Il freno vero e' il
+# peso: 100 MB bastano per qualche secondo anche in DICOM poco compresso.
 ECO_CLIP_MAX_BYTE = int(os.environ.get('ECO_CLIP_MAX_BYTE', 100 * 1024 * 1024))
+
+# Quanto deve durare una clip (deciso con Andre il 17/11/2026, da rivedere con
+# i colleghi quando il portale sara' in mano loro). Due numeri diversi perche'
+# si misurano in modo diverso:
+#
+# - **cicli**: quanti battiti interi deve contenere. E' la regola clinica, ed
+#   e' quella che conta — ma il portale non conta i battiti, quindi la CHIEDE
+#   a parole (istruzioni del catalogo, zone, avviso del passo 3). I secondi
+#   corrispondenti dipendono dal cuore: a 211 bpm (il caso di prova del
+#   16/11) quattro cicli stanno in 1,1 s; a 60 bpm ne servono 4.
+# - **secondi massimi**: quelli si misurano, con ffprobe dopo il caricamento
+#   (il browser non apre gli AVI dell'ecografo). Oltre, si avvisa e basta:
+#   una clip lunga non fa male a nessuno, pesa e si guarda peggio.
+ECO_CLIP_CICLI_MINIMI = int(os.environ.get('ECO_CLIP_CICLI_MINIMI', 4))
+ECO_CLIP_SECONDI_MAX = int(os.environ.get('ECO_CLIP_SECONDI_MAX', 5))
 
 # ── Dettatura vocale: «Ripulisci» con l'AI (consulti/dettatura.py) ───────────
 # Il riconoscimento vocale e' quello del BROWSER (gratis, l'audio non esce dal

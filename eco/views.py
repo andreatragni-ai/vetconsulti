@@ -60,8 +60,10 @@ def contesto_protocollo(per_pdf=False):
             gruppi.append({'etichetta': 'Altre proiezioni' if finestra == Finestra.ALTRO else Finestra(finestra).label,
                            'righe': [riga(p) for p in della]})
     liberi = [riga(p) for p in catalogo if p.libera]
+    from consulti.regole import frase_durata_clip
     return {'gruppi': gruppi, 'liberi': liberi, 'consiglio': CONSIGLIO,
             'totale': sum(len(g['righe']) for g in gruppi),
+            'frase_durata_clip': frase_durata_clip(),
             'obbligatorie': sum(1 for p in catalogo if p.obbligatoria)}
 
 

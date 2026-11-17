@@ -472,7 +472,7 @@ def test_eco_clip_troppo_pesante_rifiutata_con_messaggio(loggato, bozza_eco, cat
     # A pezzi il rifiuto arriva gia' allo stato, prima di mandare i pezzi.
     stato = loggato.get(reverse('consulti:upload_stato', args=[bozza_eco.pk]), {
         'impronta': 'a' * 64, 'slot': 'proiezione', 'proiezione': p.pk, 'nome': 'lunga.mp4', 'dimensione': 5000})
-    assert stato.status_code == 400 and '5-10 secondi' in stato.json()['errore']
+    assert stato.status_code == 400 and 'cicli cardiaci' in stato.json()['errore']
     # Un'immagine non ha quel limite.
     assert _carica(loggato, bozza_eco, 'proiezione', _file('ok.png', PNG * 20),
                    proiezione=catalogo['pd_statica'].pk).status_code == 200

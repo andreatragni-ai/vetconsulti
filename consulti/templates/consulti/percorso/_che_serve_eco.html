@@ -3,14 +3,16 @@ Che cosa serve per un consulto eco, detto PRIMA di caricare (decisione del
 15/11/2026: l'avviso in cima, non alla fine quando il collega ha gia'
 caricato). I nomi dei filmati vengono dal catalogo — `proiezioni_base` in
 consulti/views_percorso.py: _gruppi_eco — quindi se cambiano le righe
-obbligatorie questo testo cambia da solo.
+obbligatorie questo testo cambia da solo, e cosi' la durata chiesta
+(`frase_durata_clip`, da ECO_CLIP_CICLI_MINIMI e ECO_CLIP_SECONDI_MAX).
 {% endcomment %}
 <div class="che-serve">
   <h6><i class="bi bi-list-check me-1" aria-hidden="true"></i>Che cosa serve per questo consulto</h6>
   <ul>
     <li><strong>Il referto dell'ecografo in PDF</strong>, con le misure: e' su quelle che si ragiona.</li>
     {% if proiezioni_base %}
-    <li><strong>{{ proiezioni_base|length }} filmat{{ proiezioni_base|pluralize:"o,i" }}</strong> di <strong>5-10 secondi</strong>:
+    <li><strong>{{ proiezioni_base|length }} filmat{{ proiezioni_base|pluralize:"o,i" }}</strong>, ciascuno di
+      <strong>{{ frase_durata_clip }}</strong>:
       {% for p in proiezioni_base %}{{ p.nome }}{% if not forloop.last %} · {% endif %}{% endfor %}.</li>
     {% endif %}
   </ul>

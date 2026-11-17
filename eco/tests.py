@@ -113,20 +113,27 @@ def _righe_catalogo():
         return json.load(f)['righe']
 
 
-def test_filmati_del_catalogo_cinque_dieci_secondi():
-    """Un limite solo, ovunque compaia (collaudo dell'11/09/2026; dal
-    15/11/2026 e' «5-10 secondi», non piu' «massimo 10»): ogni riga CLIP del
-    catalogo lo dice con le stesse parole, nessuna «circa»."""
-    righe = _righe_catalogo()
-    filmati = [r for r in righe if r['tipo_media'] == 'CLIP']
+def test_i_filmati_del_catalogo_chiedono_cicli_e_un_massimo():
+    """Quanto deve durare una clip si dice con le stesse parole ovunque, e le
+    parole vengono dai due numeri di settings (17/11/2026: quattro cicli
+    cardiaci interi, non piu' di cinque secondi). Se un giorno i numeri
+    cambiano, questo test fa cadere anche il catalogo, che va riscritto:
+    e' il punto, perche' le istruzioni le legge chi acquisisce."""
+    from django.conf import settings as cfg
+    attesa = (f'Filmato di almeno {cfg.ECO_CLIP_CICLI_MINIMI} cicli cardiaci interi, '
+              f"non piu' di {cfg.ECO_CLIP_SECONDI_MAX} secondi.")
+    filmati = [r for r in _righe_catalogo() if r['tipo_media'] == 'CLIP']
     assert len(filmati) == 14
-    assert all(r['istruzioni'].startswith('Filmato di 5-10 secondi.') for r in filmati)
-    assert not any('circa' in r['istruzioni'] or 'decina' in r['istruzioni'] for r in righe)
+    assert all(r['istruzioni'].startswith(attesa) for r in filmati)
+    assert not any('circa' in r['istruzioni'] or 'decina' in r['istruzioni'] for r in _righe_catalogo())
 
 
-def test_testi_delle_zone_filmato_cinque_dieci_secondi():
+def test_le_zone_e_il_catalogo_dicono_la_stessa_regola():
+    from consulti.regole import frase_durata_clip
     from consulti.views_percorso import TESTI_ZONA
-    assert '5-10 secondi' in TESTI_ZONA['CLIP'][2] and '5-10 secondi' in TESTI_ZONA['ENTRAMBI'][2]
+    frase = frase_durata_clip()
+    assert 'cicli cardiaci interi' in frase and 'secondi' in frase
+    assert frase in TESTI_ZONA['CLIP'][2] and frase in TESTI_ZONA['ENTRAMBI'][2]
     assert not any('circa' in t for testi in TESTI_ZONA.values() for t in testi)
 
 
@@ -141,3 +148,52 @@ def test_il_catalogo_chiede_tre_filmati(settings):
     assert len([r for r in righe if not r.get('obbligatoria') and not r.get('libera')]) == 22
     # Nessuna delle tre e' un filmato libero, e l'ordine e' quello dell'esame.
     assert [r['ordine'] for r in obbligatorie] == sorted(r['ordine'] for r in obbligatorie)
+
+
+# ── Durata e codec: cosa arriva dall'ecografo (17/11/2026) ──────────────────
+
+def test_sonda_senza_ffprobe_non_rompe_niente(settings):
+    """Sul Mac di sviluppo ffprobe non c'e': `sonda` torna None e chi la
+    chiama tira dritto, come fa gia' la transcodifica."""
+    from eco import transcodifica
+    settings.FFMPEG_BIN = '/nessun/posto/ffmpeg'
+    assert transcodifica.ffprobe_disponibile() is None
+    assert transcodifica.sonda('/qualsiasi/file.avi') is None
+
+
+@pytest.mark.django_db
+def test_misura_scrive_durata_e_codec(mondo, tmp_path, monkeypatch):
+    """Quello che ffprobe trova finisce sull'allegato: la durata serve
+    all'avviso, il codec a sapere cosa mandano gli ecografi (del Mindray
+    sappiamo, di Esaote no)."""
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from consulti.models import Allegato, CategoriaAllegato, Richiesta
+    from core.tipi import TipoEsame
+    from eco import transcodifica
+
+    caso = Richiesta.objects.create(tipo_esame=TipoEsame.ECO, richiedente=mondo.richiedente,
+                                    clinica=mondo.clinica, refertatore=mondo.ref)
+    allegato = Allegato.da_upload(caso, SimpleUploadedFile('c.avi', b'finta', 'video/x-msvideo'),
+                                  CategoriaAllegato.ECO_CLIP, mondo.richiedente.user)
+    monkeypatch.setattr(transcodifica, 'sonda', lambda percorso: {
+        'codec': 'msmpeg4v3', 'durata_s': 7.5, 'larghezza': 1260, 'altezza': 910, 'fps': 30.0})
+    assert transcodifica.misura(allegato)['codec'] == 'msmpeg4v3'
+    allegato.refresh_from_db()
+    assert allegato.codec == 'msmpeg4v3' and float(allegato.durata_s) == 7.5
+    # 7,5 s sono piu' del massimo: la pagina lo dice, nessuno blocca niente.
+    assert allegato.durata_oltre_il_massimo
+    allegato.durata_s = 1.6
+    assert not allegato.durata_oltre_il_massimo
+
+
+@pytest.mark.django_db
+def test_la_durata_non_riguarda_le_immagini(mondo):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from consulti.models import Allegato, CategoriaAllegato, Richiesta
+    from core.tipi import TipoEsame
+    caso = Richiesta.objects.create(tipo_esame=TipoEsame.ECO, richiedente=mondo.richiedente,
+                                    clinica=mondo.clinica, refertatore=mondo.ref)
+    statica = Allegato.da_upload(caso, SimpleUploadedFile('i.png', b'\x89PNG', 'image/png'),
+                                 CategoriaAllegato.ECO_STATICA, mondo.richiedente.user)
+    statica.durata_s = 99
+    assert not statica.durata_oltre_il_massimo

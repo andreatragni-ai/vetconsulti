@@ -35,7 +35,7 @@ pagina nuova. «Scarica PDF» fa lo stesso con WeasyPrint (protocollo_pdf.html).
       <a class="btn-testata-ghost" href="{% url 'eco:protocollo_pdf' %}"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i>Scarica PDF</a>
     </div>
   </div>
-  <p class="protocollo-consiglio"><i class="bi bi-lightbulb me-1" aria-hidden="true"></i>{{ consiglio }} Filmati di 5-10 secondi; B-mode e color Doppler sono filmati separati.</p>
+  <p class="protocollo-consiglio"><i class="bi bi-lightbulb me-1" aria-hidden="true"></i>{{ consiglio }} Filmati di {{ frase_durata_clip }}; B-mode e color Doppler sono filmati separati.</p>
 
   {% for g in gruppi %}
   <section class="ovic-card protocollo-finestra">

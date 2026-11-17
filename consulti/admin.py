@@ -14,7 +14,9 @@ class PazienteInline(SolaLettura, admin.StackedInline):
 class AllegatoInline(SolaLettura, admin.TabularInline):
     model = Allegato
     extra = 0
-    fields = ('categoria', 'nome_originale', 'stato', 'caricato_il')
+    # codec e durata: per sapere cosa mandano davvero gli ecografi dei colleghi
+    # (del Mindray sappiamo, di Esaote e degli altri no).
+    fields = ('categoria', 'nome_originale', 'stato', 'codec', 'durata_s', 'caricato_il')
 
 
 class AuditInline(SolaLettura, admin.TabularInline):

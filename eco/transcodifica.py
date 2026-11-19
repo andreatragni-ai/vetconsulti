@@ -135,7 +135,8 @@ def transcodifica(allegato):
                                         nome=allegato.nome_originale, codec=allegato.codec or '')
             return False
 
-        nome = os.path.splitext(os.path.basename(allegato.file.name))[0] + '.mp4'
+        originale = allegato.file.name
+        nome = os.path.splitext(os.path.basename(originale))[0] + '.mp4'
         with open(destinazione, 'rb') as f:
             allegato.file.save(nome, File(f), save=False)
         allegato.dimensione = os.path.getsize(destinazione)
@@ -143,4 +144,14 @@ def transcodifica(allegato):
         allegato.stato = StatoAllegato.TRANSCODIFICATO
         allegato.save(update_fields=['file', 'dimensione', 'mime', 'stato'])
         allegato.richiesta.registra('ALLEGATO_TRANSCODIFICATO', None, allegato=allegato.pk)
+        # L'originale se ne va: solo ora, a MP4 salvato e riga aggiornata. Se
+        # restasse, nessuna riga lo referenzierebbe piu' — orfano sul disco,
+        # pesante, e con dentro il nome del cliente stampato dall'ecografo
+        # (prova del 17/11/2026: 9,5 MB di AVI accanto a 1,8 MB di MP4).
+        # L'originale il collega ce l'ha comunque sull'ecografo.
+        if originale and originale != allegato.file.name:
+            try:
+                allegato.file.storage.delete(originale)
+            except OSError as e:
+                logger.warning('Originale %s non cancellato dopo la transcodifica: %s', originale, e)
         return True

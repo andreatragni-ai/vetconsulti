@@ -197,3 +197,64 @@ def test_la_durata_non_riguarda_le_immagini(mondo):
                                  CategoriaAllegato.ECO_STATICA, mondo.richiedente.user)
     statica.durata_s = 99
     assert not statica.durata_oltre_il_massimo
+
+
+@pytest.mark.django_db
+def test_la_transcodifica_cancella_l_originale(mondo, monkeypatch):
+    """Convertita la clip, l'AVI di partenza non deve restare orfano sul
+    disco (17/11/2026: pesava cinque volte l'MP4 e portava il nome del
+    cliente stampato nei fotogrammi). Senza ffmpeg sul Mac si finge: il
+    comando «scrive» un MP4 finto dove ffmpeg scriverebbe il suo."""
+    import subprocess
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from consulti.models import Allegato, CategoriaAllegato, Richiesta, StatoAllegato
+    from core.tipi import TipoEsame
+    from eco import transcodifica
+
+    caso = Richiesta.objects.create(tipo_esame=TipoEsame.ECO, richiedente=mondo.richiedente,
+                                    clinica=mondo.clinica, refertatore=mondo.ref)
+    allegato = Allegato.da_upload(caso, SimpleUploadedFile('c.avi', b'RIFF finto', 'video/x-msvideo'),
+                                  CategoriaAllegato.ECO_CLIP, mondo.richiedente.user)
+    originale = allegato.file.name
+    deposito = allegato.file.storage
+    assert deposito.exists(originale)
+
+    def ffmpeg_finto(comando, **kw):
+        with open(comando[-1], 'wb') as f:
+            f.write(b'\x00\x00\x00\x18ftypmp42 convertito')
+        return subprocess.CompletedProcess(comando, 0)
+
+    monkeypatch.setattr(transcodifica, 'ffmpeg_disponibile', lambda: True)
+    monkeypatch.setattr(transcodifica.subprocess, 'run', ffmpeg_finto)
+    assert transcodifica.transcodifica(allegato)
+    allegato.refresh_from_db()
+    assert allegato.stato == StatoAllegato.TRANSCODIFICATO and allegato.file.name.endswith('.mp4')
+    assert deposito.exists(allegato.file.name)
+    assert not deposito.exists(originale)           # l'AVI non c'e' piu'
+    assert caso.audit.filter(azione='ALLEGATO_TRANSCODIFICATO').exists()
+
+
+@pytest.mark.django_db
+def test_se_la_transcodifica_fallisce_l_originale_resta(mondo, monkeypatch):
+    import subprocess
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from consulti.models import Allegato, CategoriaAllegato, Richiesta, StatoAllegato
+    from core.tipi import TipoEsame
+    from eco import transcodifica
+
+    caso = Richiesta.objects.create(tipo_esame=TipoEsame.ECO, richiedente=mondo.richiedente,
+                                    clinica=mondo.clinica, refertatore=mondo.ref)
+    allegato = Allegato.da_upload(caso, SimpleUploadedFile('c.avi', b'RIFF finto', 'video/x-msvideo'),
+                                  CategoriaAllegato.ECO_CLIP, mondo.richiedente.user)
+    originale = allegato.file.name
+
+    def ffmpeg_rotto(comando, **kw):
+        raise subprocess.CalledProcessError(1, comando, stderr=b'Unknown codec')
+
+    monkeypatch.setattr(transcodifica, 'ffmpeg_disponibile', lambda: True)
+    monkeypatch.setattr(transcodifica.subprocess, 'run', ffmpeg_rotto)
+    assert not transcodifica.transcodifica(allegato)
+    allegato.refresh_from_db()
+    assert allegato.stato == StatoAllegato.CARICATO and allegato.file.name == originale
+    assert allegato.file.storage.exists(originale)
+    assert caso.audit.filter(azione='ALLEGATO_NON_CONVERTITO').exists()

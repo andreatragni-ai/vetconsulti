@@ -269,8 +269,15 @@ class Command(BaseCommand):
         self._allega(richiesta, utente, CategoriaAllegato.ECO_REFERTO_PDF, 'referto_ecografo_dimostrativo.pdf',
                      demo.pdf_referto_ecografo_dimostrativo(), 'application/pdf')
         for p in ProiezioneCatalogo.objects.filter(obbligatoria=True, attiva=True).order_by('ordine'):
-            immagine = self._allega(richiesta, utente, CategoriaAllegato.ECO_STATICA,
+            # Dal 15/11/2026 le obbligatorie sono filmati: una clip MP4 vera,
+            # cosi' il visore la suona. Le righe immagine restano PNG.
+            if p.tipo_media == 'CLIP':
+                file = self._allega(richiesta, utente, CategoriaAllegato.ECO_CLIP,
+                                    f'{p.codice.lower()}_dimostrativa.mp4',
+                                    demo.mp4_clip_dimostrativa(), 'video/mp4')
+            else:
+                file = self._allega(richiesta, utente, CategoriaAllegato.ECO_STATICA,
                                     f'{p.codice.lower()}_dimostrativa.png',
                                     demo.png_proiezione_dimostrativa(p.nome), 'image/png')
-            ProiezioneCaricata.objects.create(richiesta=richiesta, proiezione=p, allegato=immagine,
-                                              nota='Immagine segnaposto (seed_demo)')
+            ProiezioneCaricata.objects.create(richiesta=richiesta, proiezione=p, allegato=file,
+                                              nota='Segnaposto (seed_demo)')

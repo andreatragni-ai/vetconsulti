@@ -248,6 +248,12 @@ spunta. Le idee grosse hanno un file loro in `docs/`.
   (dd) l'esperto vede i referti firmati degli altri casi del paziente, ma
   NON i loro allegati: se serve guardare le immagini di marzo e' un'altra
   decisione.
+- [2026-11-19] `recita_consulto`, cosa non recita ancora: l'**iscrizione**
+  del collega (si parte da un account che esiste), il **declino** e il **non
+  refertabile**, la **rettifica**, e i testi sono fissi (un `--ai` che
+  faccia scrivere quesito e giudizio a Claude darebbe casi diversi a ogni
+  giro, utile per riempire la staging). Da usare anche come prova di
+  regressione a mano prima di ogni deploy: `recita_consulto --con-riserva`.
 - [2026-09-11] Commenti con allegati sul caso (resto di F2).
 - [2026-09-11] vetway-ui 0.3.0: portare nel pacchetto i componenti nati
   in `static/consulti/css/consulti.css` per F2 (`.passi`, `.schede-scelta`,

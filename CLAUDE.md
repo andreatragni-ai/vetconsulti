@@ -70,6 +70,20 @@ caso demo nuovo nasce solo se non ce n'e' uno aperto: rilanciare dopo averlo
 refertato ne prepara un altro. Le email escono in console (anche il PDF
 allegato). Grafica dal pacchetto `../vetway-ui` installato con `pip install -e`.
 
+    venv/bin/python manage.py recita_consulto [--con-riserva] [--cartella ~/clip]
+
+`recita_consulto` (19/11/2026) fa recitare un consulto eco intero a due
+colleghi finti **passando dalle pagine** (test client di Django): chi
+chiede scrive il paziente, carica referto e tre clip, invia; chi referta
+controlla il materiale, prende in carico (o con riserva, e allora il
+richiedente carica l'integrazione), scrive il giudizio e firma. Racconta
+ogni passo e lascia il caso nel database. Gira ovunque: in locale le email
+restano in memoria e, senza ffmpeg, le clip non si convertono; lanciato
+sul server con gli account veri (`--richiedente prova.clinica
+--refertatore tandre`) **manda email vere** e ffmpeg converte. Con
+`--cartella` usa i filmati di un ecografo al posto della clip dimostrativa
+(`core/demo_file/clip_dimostrativa.mp4`, 8 KB, H.264 vera).
+
 **WeasyPrint sul Mac**: senza `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib`
 `python -c "import weasyprint"` non trova pango/gobject. Dentro i processi
 Django funziona anche senza (ripiego in `config/settings/base.py`), ma la

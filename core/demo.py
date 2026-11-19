@@ -1,7 +1,11 @@
 """
-File finti per i casi dimostrativi di `seed_demo`: un PDF segnato in grande
-DIMOSTRATIVO (tracciato ECG sintetico o referto dell'ecografo inventato) e
-immagini PNG segnaposto per le proiezioni eco. Nessun file reale di pazienti.
+File finti per i casi dimostrativi di `seed_demo` e di `recita_consulto`: un
+PDF segnato in grande DIMOSTRATIVO (tracciato ECG sintetico o referto
+dell'ecografo inventato), immagini PNG segnaposto per le proiezioni eco e
+una clip MP4 vera di 2,4 secondi (`demo_file/clip_dimostrativa.mp4`, 8 KB,
+H.264 640x480 generata con ffmpeg il 19/11/2026: scritta DIMOSTRATIVO su
+fondo scuro). Serve perche' le tre proiezioni di base sono filmati e un
+browser deve poterli aprire davvero. Nessun file reale di pazienti.
 
 Il PDF e' costruito a mano (poche righe di PostScript-like PDF, font base
 Helvetica): cosi' `seed_demo` non dipende da WeasyPrint e dalle librerie di
@@ -137,3 +141,11 @@ def png_proiezione_dimostrativa(nome_proiezione, larghezza=800, altezza=600):
     uscita = io.BytesIO()
     img.save(uscita, format='PNG')
     return uscita.getvalue()
+
+
+def mp4_clip_dimostrativa():
+    """I byte della clip MP4 dimostrativa (vera, 2,4 s, si apre in ogni
+    browser). E' un file in `core/demo_file/`, non si genera: senza ffmpeg
+    un MP4 valido non si scrive a mano."""
+    import pathlib
+    return (pathlib.Path(__file__).parent / 'demo_file' / 'clip_dimostrativa.mp4').read_bytes()

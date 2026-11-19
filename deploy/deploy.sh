@@ -49,6 +49,7 @@ rsync -avz --delete \
   --exclude='.DS_Store' \
   --exclude='.claude/' \
   --exclude='static/mockup/' \
+  --exclude='gunicorn.ctl' \
   "$LOCAL/" "$SERVER:$REMOTE/"
 
 # 1b. Sync pacchetto vetway-ui (strato grafico condiviso: template base, CSS,
